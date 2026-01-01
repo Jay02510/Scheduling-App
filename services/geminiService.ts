@@ -27,30 +27,29 @@ export const generateSchedule = async (
   }));
 
   const prompt = `
-    TASK: Generate a COMPLETE weekly master schedule AND a MONTHLY curriculum roadmap.
+    TASK: Generate a WEEKLY MASTER SCHEDULE and a 12-WEEK QUARTERLY CURRICULUM ROADMAP.
     
-    CURRICULUM DATA:
-    Textbooks: ${JSON.stringify(textbooks.map(t => ({ title: t.title, chapters: t.totalChapters, pages: t.totalPages, subject: t.subject })))}
-    Red Days (Holidays/Events): ${JSON.stringify(profile?.specialEvents || [])}
+    INPUT DATA:
+    - Textbooks (Pacing Source): ${JSON.stringify(textbooks.map(t => ({ title: t.title, chapters: t.totalChapters, pages: t.totalPages, subject: t.subject })))}
+    - School Calendar (Red Days): ${JSON.stringify(profile?.specialEvents || [])}
+    - Class Requirements: ${JSON.stringify(classChecklist)}
     
-    MANDATORY CRITERIA:
-    1. WEEKLY MASTER: Create slots (period 0-${(profile?.hours.totalPeriods || 8) - 1}, days 0-4) for all classes.
-    2. MONTHLY ROADMAP: Break down each month into 4 weeks. For EACH week, calculate the Unit/Chapter and Page range to cover based on textbook totals.
-    3. SKIP RED DAYS: When calculating monthly pacing, acknowledge red days provided. If a week has 3 holidays, pacing should be slower.
-    4. DATA CHECKLIST: ${JSON.stringify(classChecklist)}
+    CONSTRAINTS:
+    1. QUARTERLY ROADMAP (12 Weeks): Distribute textbook chapters/pages across 12 weeks. 
+    2. HOLIDAY AWARENESS: Identify weeks with Red Days. Reduce the page/unit target for those weeks. Label them with "isHolidayWeek: true" and the holiday name.
+    3. MASTER SCHEDULE: Ensure all periods (0-${(profile?.hours.totalPeriods || 8) - 1}) and days (0-4) are filled according to frequency requirements.
+    4. SPEED: Be concise in the "topic" fields. Focus on textbook units.
 
-    OUTPUT JSON SCHEMA:
+    OUTPUT JSON FORMAT:
     {
-      "yearlyPlan": [
-        {
-          "month": "September",
-          "weeks": [
-            { "weekNumber": 1, "subject": "Math", "unit": "Unit 1", "pages": "1-15" }
-          ]
-        }
-      ],
+      "quarterlyPlan": {
+        "quarterName": "Quarter 1",
+        "weeks": [
+          { "weekNumber": 1, "subject": "Math", "unit": "Unit 1: Logic", "pages": "1-12", "isHolidayWeek": false }
+        ]
+      },
       "weeklySlots": [
-        { "id": "uuid", "period": 0, "day": 0, "subject": "Math", "teacherId": "t1", "classId": "c1", "topic": "Introduction to numbers" }
+        { "id": "uuid", "period": 0, "day": 0, "subject": "Math", "teacherId": "t1", "classId": "c1", "topic": "Unit 1.1 Intro" }
       ]
     }
   `;
@@ -63,22 +62,21 @@ export const generateSchedule = async (
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          yearlyPlan: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                month: { type: Type.STRING },
-                weeks: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      weekNumber: { type: Type.INTEGER },
-                      subject: { type: Type.STRING },
-                      unit: { type: Type.STRING },
-                      pages: { type: Type.STRING }
-                    }
+          quarterlyPlan: {
+            type: Type.OBJECT,
+            properties: {
+              quarterName: { type: Type.STRING },
+              weeks: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    weekNumber: { type: Type.INTEGER },
+                    subject: { type: Type.STRING },
+                    unit: { type: Type.STRING },
+                    pages: { type: Type.STRING },
+                    isHolidayWeek: { type: Type.BOOLEAN },
+                    holidayName: { type: Type.STRING }
                   }
                 }
               }
@@ -100,15 +98,17 @@ export const generateSchedule = async (
             }
           }
         },
-        required: ["yearlyPlan", "weeklySlots"]
+        required: ["quarterlyPlan", "weeklySlots"]
       }
     }
   });
 
   try {
-    const parsed = JSON.parse(response.text || '{}');
-    return parsed;
+    const text = response.text;
+    if (!text) throw new Error("Empty AI response");
+    return JSON.parse(text);
   } catch (e) {
+    console.error("AI Parse Error:", e);
     throw new Error("AI Synthesis Failed");
   }
 };

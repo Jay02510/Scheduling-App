@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, ScheduleSlot, MonthlyPlan } from '../types';
+import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, ScheduleSlot } from '../types';
 
 interface ScheduleViewerProps {
   schedule: SchoolSchedule;
@@ -11,20 +11,13 @@ interface ScheduleViewerProps {
 const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, profile }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
   const [viewMode, setViewMode] = useState<'table' | 'roadmap'>('table');
-  const [activeMonthIdx, setActiveMonthIdx] = useState(0);
   
   const days = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri'];
   const totalPeriods = profile?.hours.totalPeriods || 8;
 
   const filteredSlots = schedule.weeklySlots.filter(s => s.classId === selectedClassId);
   const currentClass = classes.find(c => c.id === selectedClassId);
-  const currentMonth = schedule.yearlyPlan?.[activeMonthIdx];
-
-  // Get relevant events for current month
-  const monthEvents = profile?.specialEvents.filter(ev => {
-    const evMonth = new Date(ev.date).toLocaleString('default', { month: 'long' });
-    return evMonth === currentMonth?.month;
-  }) || [];
+  const qPlan = schedule.quarterlyPlan;
 
   return (
     <div className="space-y-10 animate-fadeIn max-w-full overflow-hidden pb-12">
@@ -46,13 +39,13 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             onClick={() => setViewMode('table')}
             className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all ${viewMode === 'table' ? 'bg-white text-slate-900' : 'text-white hover:text-indigo-300'}`}
           >
-            Weekly Master
+            Master Schedule
           </button>
           <button 
             onClick={() => setViewMode('roadmap')}
             className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all ${viewMode === 'roadmap' ? 'bg-white text-slate-900' : 'text-white hover:text-indigo-300'}`}
           >
-            Monthly Roadmap
+            Quarterly Plan
           </button>
         </div>
       </div>
@@ -109,63 +102,55 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </table>
         </div>
       ) : (
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 animate-fadeInUp">
-          {/* Month Selector Sidebar */}
-          <div className="w-full md:w-56 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto pr-2 custom-scrollbar flex-shrink-0">
-            {schedule.yearlyPlan?.map((plan, idx) => (
-              <button
-                key={plan.month}
-                onClick={() => setActiveMonthIdx(idx)}
-                className={`flex-shrink-0 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-left ${activeMonthIdx === idx ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-400 border border-slate-100'}`}
-              >
-                {plan.month}
-              </button>
-            ))}
-          </div>
-
-          {/* Monthly Roadmap Content */}
-          <div className="flex-1 bg-white p-8 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-10 overflow-hidden">
-            <header className="border-b border-slate-100 pb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h3 className="text-3xl font-black text-slate-900">{currentMonth?.month} Roadmap</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Curriculum Targets for {currentClass?.name}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {monthEvents.map(ev => (
-                  <span key={ev.id} className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase border ${ev.type === 'holiday' ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-amber-50 border-amber-100 text-amber-500'}`}>
-                    {ev.name} ({new Date(ev.date).toLocaleDateString('en-US', { day: 'numeric' })})
-                  </span>
-                ))}
+        <div className="max-w-6xl mx-auto space-y-10 animate-fadeInUp">
+          <div className="bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-12">
+            <header className="border-b border-slate-100 pb-10">
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Textbook Progression</span>
+                  <h3 className="text-4xl font-black text-slate-900 mt-2">{qPlan?.quarterName || 'Quarterly'} Plan</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">12-Week Roadmap for {currentClass?.name}</p>
+                </div>
+                <div className="hidden lg:block text-right">
+                  <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-rose-50 border border-rose-100 rounded-lg text-[8px] font-black text-rose-500 uppercase">Red Day Adjusted</span>
+                    <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-[8px] font-black text-indigo-500 uppercase">AI Optimized</span>
+                  </div>
+                </div>
               </div>
             </header>
 
-            <div className="grid grid-cols-1 gap-12">
-              {[1, 2, 3, 4].map(weekNum => {
-                const weekTargets = currentMonth?.weeks.filter(w => w.weekNumber === weekNum) || [];
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {Array.from({ length: 12 }).map((_, i) => {
+                const weekNum = i + 1;
+                const weekTargets = qPlan?.weeks.filter(w => w.weekNumber === weekNum) || [];
+                const isHoliday = weekTargets.some(t => t.isHolidayWeek);
+                
                 return (
-                  <div key={weekNum} className="space-y-6 relative">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow-lg">
-                        W{weekNum}
+                  <div key={weekNum} className={`p-8 rounded-[2.5rem] border transition-all relative overflow-hidden group ${isHoliday ? 'bg-rose-50/30 border-rose-100' : 'bg-slate-50/50 border-slate-100 hover:border-indigo-200'}`}>
+                    {isHoliday && (
+                      <div className="absolute top-0 right-0 p-4">
+                        <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       </div>
-                      <div className="h-px bg-slate-100 flex-1"></div>
+                    )}
+                    
+                    <div className="flex items-center justify-between mb-6">
+                      <span className="text-2xl font-black text-slate-900">Week {weekNum}</span>
+                      {isHoliday && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-white px-2 py-1 rounded-md border border-rose-100">Holiday Week</span>}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-4">
                       {weekTargets.length === 0 ? (
-                        <p className="text-[10px] text-slate-300 font-bold uppercase py-4">Pacing adjusted for calendar events</p>
+                        <p className="text-[10px] text-slate-300 font-bold uppercase py-4 italic text-center">No units assigned</p>
                       ) : weekTargets.map((target, tIdx) => (
-                        <div key={tIdx} className="p-6 bg-slate-50 rounded-3xl border border-transparent hover:border-indigo-100 transition-all group">
-                          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2">{target.subject}</p>
-                          <h4 className="font-black text-slate-900 text-sm leading-tight group-hover:text-indigo-600 transition-colors">
+                        <div key={tIdx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                          <div className="flex justify-between items-start">
+                             <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">{target.subject}</p>
+                             <span className="text-[9px] font-black text-slate-400">pp. {target.pages}</span>
+                          </div>
+                          <h4 className="font-bold text-slate-800 text-xs leading-tight">
                             {target.unit}
                           </h4>
-                          <div className="mt-4 flex items-center justify-between">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Target:</span>
-                            <span className="px-2 py-1 bg-white rounded-lg border border-slate-200 text-[9px] font-black text-slate-700">
-                              pp. {target.pages}
-                            </span>
-                          </div>
                         </div>
                       ))}
                     </div>
@@ -177,14 +162,18 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-6 pt-4">
-        <div className="flex items-center gap-2">
-           <div className="w-3 h-3 border border-slate-900 bg-white"></div>
-           <span className="text-[8px] font-black uppercase text-slate-400">Standard Lesson</span>
+      <div className="flex items-center justify-center gap-8 pt-8 border-t border-slate-100">
+        <div className="flex items-center gap-3">
+           <div className="w-4 h-4 rounded-md border-2 border-slate-900 bg-white"></div>
+           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Academic Day</span>
         </div>
-        <div className="flex items-center gap-2">
-           <div className="w-3 h-3 border border-slate-900 bg-slate-50"></div>
-           <span className="text-[8px] font-black uppercase text-slate-400">Institutional Break</span>
+        <div className="flex items-center gap-3">
+           <div className="w-4 h-4 rounded-md border-2 border-slate-900 bg-slate-100"></div>
+           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">School Break</span>
+        </div>
+        <div className="flex items-center gap-3">
+           <div className="w-4 h-4 rounded-md border-2 border-rose-200 bg-rose-50"></div>
+           <span className="text-[9px] font-black uppercase text-rose-400 tracking-widest">Red Day (Holiday)</span>
         </div>
       </div>
     </div>

@@ -101,15 +101,17 @@ export interface WeeklyCurriculumTarget {
   subject: string;
   unit: string;
   pages: string;
+  isHolidayWeek?: boolean;
+  holidayName?: string;
 }
 
-export interface MonthlyPlan {
-  month: string;
+export interface QuarterlyPlan {
+  quarterName: string;
   weeks: WeeklyCurriculumTarget[];
 }
 
 export interface SchoolSchedule {
-  yearlyPlan: MonthlyPlan[];
+  quarterlyPlan: QuarterlyPlan;
   weeklySlots: ScheduleSlot[];
 }
 
