@@ -85,10 +85,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     
                     if (fixed) {
                       return (
-                        <td key={dIdx} className="border-r-2 last:border-r-0 border-slate-900 p-0 relative h-28 min-w-[160px] bg-slate-100">
+                        <td key={dIdx} className="border-r-2 last:border-r-0 border-slate-900 p-0 relative h-28 min-w-[160px] bg-slate-100/80">
                           <div className="h-full flex flex-col justify-center items-center text-center px-4">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Locked Slot</span>
-                            <span className="text-[11px] font-black text-slate-900 uppercase leading-tight">{fixed.name}</span>
+                            <span className="text-[12px] font-black text-slate-800 uppercase leading-tight tracking-wider">{fixed.name}</span>
                           </div>
                         </td>
                       );
@@ -202,7 +201,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         </div>
         <div className="flex items-center gap-3">
            <div className="w-4 h-4 rounded-md border-2 border-slate-900 bg-slate-100"></div>
-           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Fixed/Locked Block</span>
+           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Fixed Institutional Block</span>
         </div>
       </div>
     </div>

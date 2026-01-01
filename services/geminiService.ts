@@ -11,6 +11,7 @@ export const generateWeeklyMaster = async (
 
   const inputData = {
     totalPeriods: profile.hours.totalPeriods,
+    validSubjectNames: profile.subjects.map(s => s.name),
     classes: classes.map(c => ({
       id: c.id,
       name: c.name,
@@ -31,18 +32,21 @@ export const generateWeeklyMaster = async (
   const prompt = `
     TASK: Generate a Weekly Master Schedule grid (Days 0-4, Periods 0-${inputData.totalPeriods - 1}).
     
-    STRICT RULES:
-    1. LOCKED SLOTS: Do NOT place any subject lessons in these slots: ${JSON.stringify(inputData.locks)}.
-    2. ASSIGNMENTS ONLY: Only place lessons from the assignments provided: ${JSON.stringify(inputData.classes)}.
-    3. NO FILLER: If a class has empty periods, leave them as null. Do NOT create extra subjects.
-    4. TEACHER CONFLICTS: A teacher cannot be in two places at once.
+    STRICT CONSTRAINTS (MANDATORY):
+    1. SUBJECT NAMES: You MUST use the exact subject names provided: ${JSON.stringify(inputData.validSubjectNames)}. DO NOT rename them or use abbreviations.
+    2. TEACHER AVAILABILITY: A teacher (teacherId) CANNOT be assigned to more than one class during the same (day, period). Cross-check all teacher schedules to ensure zero overlaps.
+    3. LOCKED SLOTS: Do NOT place any lessons in these coordinates as they are reserved: ${JSON.stringify(inputData.locks)}.
+    4. ASSIGNMENT QUOTAS: Respect the "freq" (frequency per week) for each subject in each class.
+    5. DATA: ${JSON.stringify(inputData.classes)}
+
+    Output should be a flat list of occupied slots.
   `;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
-      thinkingConfig: { thinkingBudget: 2000 },
+      thinkingConfig: { thinkingBudget: 4000 },
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -55,7 +59,8 @@ export const generateWeeklyMaster = async (
             teacherId: { type: Type.STRING },
             classId: { type: Type.STRING },
             topic: { type: Type.STRING }
-          }
+          },
+          required: ["period", "day", "subject", "teacherId", "classId"]
         }
       }
     }
@@ -64,7 +69,7 @@ export const generateWeeklyMaster = async (
   try {
     return JSON.parse(response.text || '[]');
   } catch (e) {
-    throw new Error("Master Schedule synthesis failed.");
+    throw new Error("Master Schedule synthesis failed. The AI model returned an invalid format.");
   }
 };
 
@@ -82,14 +87,13 @@ export const generateCurriculumRoadmap = async (
   const prompt = `
     TASK: Create a 12-week pacing roadmap for textbooks.
     
-    DATA: 
-    - Books: ${JSON.stringify(inputData.books)}
-    - Holidays: ${JSON.stringify(inputData.holidays)}
-    
     RULES:
-    1. Distribute book pages across 12 weeks.
-    2. If a week contains a holiday (Red Day), reduce the page target by 40%.
-    3. Output exactly 12 weeks of targets per subject.
+    1. Distribute book pages across 12 weeks for each subject.
+    2. RED DAYS (Holidays): If a week contains a holiday, significantly reduce the page target for that week.
+    3. SUBJECTS: Use the exact subject names linked to the books.
+    4. DATA: 
+       - Books: ${JSON.stringify(inputData.books)}
+       - Holidays: ${JSON.stringify(inputData.holidays)}
   `;
 
   const response = await ai.models.generateContent({
@@ -112,10 +116,12 @@ export const generateCurriculumRoadmap = async (
                 pages: { type: Type.STRING },
                 isHolidayWeek: { type: Type.BOOLEAN },
                 holidayName: { type: Type.STRING }
-              }
+              },
+              required: ["weekNumber", "subject", "unit", "pages"]
             }
           }
-        }
+        },
+        required: ["weeks"]
       }
     }
   });
