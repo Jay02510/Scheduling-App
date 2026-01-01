@@ -36,16 +36,16 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           ))}
         </div>
 
-        <div className="flex bg-[#0f172a] p-1 rounded-2xl shadow-xl">
+        <div className="flex bg-[#0f172a] p-1.5 rounded-2xl shadow-xl">
           <button 
             onClick={() => setViewMode('table')}
-            className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all ${viewMode === 'table' ? 'bg-white text-slate-900' : 'text-white hover:text-indigo-300'}`}
+            className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all ${viewMode === 'table' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:text-indigo-300'}`}
           >
             Master Schedule
           </button>
           <button 
             onClick={() => setViewMode('roadmap')}
-            className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all ${viewMode === 'roadmap' ? 'bg-white text-slate-900' : 'text-white hover:text-indigo-300'}`}
+            className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all ${viewMode === 'roadmap' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:text-indigo-300'}`}
           >
             Quarterly Plan
           </button>
@@ -53,15 +53,15 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       </div>
 
       {viewMode === 'table' ? (
-        <div className="bg-white border-[3px] border-slate-900 overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.05)] rounded-[1rem]">
+        <div className="bg-white border-[3px] border-slate-900 overflow-hidden shadow-[16px_16px_0px_rgba(15,23,42,0.05)] rounded-[0.75rem]">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-white border-b-[3px] border-slate-900">
-                <th className="border-r-[3px] border-slate-900 p-6 text-[12px] font-black uppercase text-slate-800 w-32 bg-slate-50">
-                  {currentClass?.name || 'Group'}
+                <th className="border-r-[3px] border-slate-900 p-6 text-[12px] font-black uppercase text-slate-900 w-32 bg-slate-50">
+                  {currentClass?.name || 'Class'}
                 </th>
                 {days.map(day => (
-                  <th key={day} className="border-r-[3px] last:border-r-0 border-slate-900 p-6 text-[11px] font-black uppercase text-slate-800">
+                  <th key={day} className="border-r-[3px] last:border-r-0 border-slate-900 p-6 text-[11px] font-black uppercase text-slate-900">
                     {day}
                   </th>
                 ))}
@@ -70,7 +70,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             <tbody>
               {Array.from({ length: totalPeriods }).map((_, pIdx) => (
                 <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
-                  <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50">
+                  <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-5xl bg-slate-50">
                     {pIdx + 1}
                   </td>
                   {Array.from({ length: 5 }).map((_, dIdx) => {
@@ -85,31 +85,31 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     
                     if (fixed) {
                       return (
-                        <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 relative h-32 min-w-[180px] bg-slate-50">
+                        <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 relative h-36 min-w-[200px] bg-slate-50">
                           <div className="h-full flex flex-col justify-center items-center text-center px-4">
-                            <span className="text-[14px] font-black text-slate-900 uppercase leading-tight tracking-wider">{fixed.name}</span>
+                            <span className="text-[14px] font-black text-slate-900 uppercase leading-tight tracking-[0.05em]">{fixed.name}</span>
                           </div>
                         </td>
                       );
                     }
 
                     return (
-                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 relative h-32 min-w-[180px] bg-white group hover:bg-slate-50/50 transition-colors">
+                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 relative h-36 min-w-[200px] bg-white group hover:bg-slate-50/50 transition-colors">
                         {slot ? (
                           <div className="h-full flex flex-col">
                             <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-                              <span className="text-[12px] font-black leading-tight text-slate-900 uppercase tracking-tight mb-1">{slot.subject}</span>
-                              {slot.topic && <span className="text-[8px] font-bold text-slate-400 italic line-clamp-1">{slot.topic}</span>}
+                              <span className="text-[12px] font-black leading-tight text-slate-900 uppercase tracking-tight">{slot.subject}</span>
+                              {slot.topic && <span className="text-[9px] font-bold text-slate-400 mt-1 italic line-clamp-1">{slot.topic}</span>}
                             </div>
                             <div 
-                              className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 transition-all group-hover:brightness-95"
+                              className="h-14 flex items-center justify-center border-t-[3px] border-slate-900 transition-all group-hover:brightness-95"
                               style={{ backgroundColor: teacher?.color || '#cbd5e1' }}
                             >
-                              <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-900">{teacher?.name}</span>
+                              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900">{teacher?.name}</span>
                             </div>
                           </div>
                         ) : (
-                          <div className="h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#f8fafc_5px,#f8fafc_10px)] opacity-40"></div>
+                          <div className="h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#f8fafc_5px,#f8fafc_10px)] opacity-30"></div>
                         )}
                       </td>
                     );
@@ -139,15 +139,15 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             <div className="bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-12">
               <header className="border-b border-slate-100 pb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
-                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Curriculum Roadmap</span>
-                  <h3 className="text-4xl font-black text-slate-900 mt-2">Weekly Pacing</h3>
+                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Resource Roadmap</span>
+                  <h3 className="text-4xl font-black text-slate-900 mt-2">Pacing Breakdown</h3>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">12-Week targets for {currentClass?.name}</p>
                 </div>
                 <button 
                   onClick={onGenerateRoadmap}
                   className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-600 transition-all"
                 >
-                  Regenerate
+                  Regenerate Plan
                 </button>
               </header>
 
@@ -161,7 +161,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     <div key={weekNum} className={`p-8 rounded-[2.5rem] border transition-all relative overflow-hidden group ${isHoliday ? 'bg-rose-50/30 border-rose-100' : 'bg-slate-50/50 border-slate-100 hover:border-indigo-200'}`}>
                       <div className="flex items-center justify-between mb-6">
                         <span className="text-2xl font-black text-slate-900">Week {weekNum}</span>
-                        {isHoliday && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-white px-2 py-1 rounded-md border border-rose-100">Holiday Week</span>}
+                        {isHoliday && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-white px-2 py-1 rounded-md border border-rose-100">Short Week</span>}
                       </div>
 
                       <div className="space-y-4">
@@ -187,17 +187,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           )}
         </div>
       )}
-
-      <div className="flex items-center justify-center gap-8 pt-8 border-t border-slate-100">
-        <div className="flex items-center gap-3">
-           <div className="w-4 h-4 rounded-md border-2 border-slate-900 bg-white"></div>
-           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Academic Lesson</span>
-        </div>
-        <div className="flex items-center gap-3">
-           <div className="w-4 h-4 rounded-md border-2 border-slate-900 bg-slate-50"></div>
-           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Institutional Block</span>
-        </div>
-      </div>
     </div>
   );
 };

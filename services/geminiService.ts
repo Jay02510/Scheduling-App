@@ -9,7 +9,7 @@ export const generateWeeklyMaster = async (
 ): Promise<ScheduleSlot[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Prepare a mapping of Subject IDs to their Exact Names to prevent AI hallucinations
+  // Prepare a mapping of Subject IDs to their Exact Names
   const subjectMap = profile.subjects.reduce((acc, s) => {
     acc[s.id] = s.name;
     return acc;
@@ -17,43 +17,46 @@ export const generateWeeklyMaster = async (
 
   const inputData = {
     totalPeriods: profile.hours.totalPeriods,
-    // Explicit list of names the AI is allowed to use
-    allowedSubjectNames: Object.values(subjectMap),
+    exactAllowedNames: Object.values(subjectMap),
     classes: classes.map(c => ({
       id: c.id,
       name: c.name,
       requirements: c.assignments.map(a => {
         const subName = subjectMap[a.subjectId];
         return { 
+          subjectId: a.subjectId,
           subjectName: subName, 
           frequency: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 0, 
-          teacherId: a.teacherId,
-          teacherName: teachers.find(t => t.id === a.teacherId)?.name
+          teacherId: a.teacherId
         };
       }).filter(r => r.frequency > 0)
     })),
     institutionalBlocks: fixedClasses.map(f => ({
       day: f.dayOfWeek,
       period: f.period,
-      label: f.name, // e.g. "GYM", "LUNCH"
+      name: f.name,
       isGlobal: f.isSchoolWide,
-      affectedClasses: f.classIds
+      classIds: f.classIds
     }))
   };
 
   const prompt = `
-    TASK: Generate a Weekly Master Schedule for all classes.
+    TASK: Generate a Weekly Master Schedule for ALL classes simultaneously.
     
-    STRICT RULES (FAILURE TO FOLLOW RESULTS IN ERROR):
-    1. SUBJECT NAMES: You MUST use the exact strings provided in "allowedSubjectNames": ${JSON.stringify(inputData.allowedSubjectNames)}. 
-       DO NOT use generic terms like "Math" if the subject is named "Into Reading".
-    2. TEACHER CONFLICTS (CRITICAL): A teacherId can only be in ONE class at any given (Day, Period). 
-       You MUST cross-check all class grids to ensure Teacher "Jason" is never in two places at once.
-    3. INSTITUTIONAL BLOCKS: These slots are occupied. Do NOT schedule any lessons here: ${JSON.stringify(inputData.institutionalBlocks)}.
-    4. COVERAGE: For each class, schedule exactly the number of lessons specified in "frequency".
-    5. DATA CONTEXT: ${JSON.stringify(inputData.classes)}
+    STRICT SUBJECT NAMING RULE:
+    - You MUST ONLY use names from this list: ${JSON.stringify(inputData.exactAllowedNames)}.
+    - FORBIDDEN: Do NOT use generic names like "English", "Math", "Reading", or "Science" UNLESS they appear in the allowed list above. 
+    - Example: If the allowed list has "Into Reading", do NOT output "English" or "Reading". Output "Into Reading".
 
-    Return a JSON array of slots.
+    TEACHER AVAILABILITY RULE (ZERO CONFLICTS):
+    - A teacher (teacherId) can ONLY be in ONE place at any given time (Day X, Period Y).
+    - If Teacher "Jason" is in Class "Zest" at Mon P1, he is UNAVAILABLE for all other classes at Mon P1.
+    - You MUST cross-check all class assignments to ensure zero overlaps.
+
+    LOCKED SLOTS:
+    - Do NOT place lessons in these coordinates: ${JSON.stringify(inputData.institutionalBlocks)}.
+
+    DATA: ${JSON.stringify(inputData.classes)}
   `;
 
   const response = await ai.models.generateContent({
@@ -69,10 +72,9 @@ export const generateWeeklyMaster = async (
           properties: {
             period: { type: Type.NUMBER },
             day: { type: Type.NUMBER },
-            subject: { type: Type.STRING, description: "Must match allowedSubjectNames exactly" },
+            subject: { type: Type.STRING },
             teacherId: { type: Type.STRING },
-            classId: { type: Type.STRING },
-            topic: { type: Type.STRING }
+            classId: { type: Type.STRING }
           },
           required: ["period", "day", "subject", "teacherId", "classId"]
         }
@@ -81,16 +83,25 @@ export const generateWeeklyMaster = async (
   });
 
   try {
-    const data = JSON.parse(response.text || '[]');
-    // Secondary validation to ensure AI didn't hallucinate subject names
-    return data.map((slot: any) => ({
-      ...slot,
-      id: Math.random().toString(36).substr(2, 9),
-      isFixed: false,
-      isBreak: false
-    }));
+    const rawData = JSON.parse(response.text || '[]');
+    
+    // Post-Processing Sanitizer: Correct AI Hallucinations
+    return rawData.map((slot: any) => {
+      // Find the intended subject name by looking at the class assignments
+      const cls = classes.find(c => c.id === slot.classId);
+      const assignment = cls?.assignments.find(a => a.teacherId === slot.teacherId);
+      const correctedName = assignment ? subjectMap[assignment.subjectId] : slot.subject;
+
+      return {
+        ...slot,
+        id: Math.random().toString(36).substr(2, 9),
+        subject: correctedName, // Force use of user-defined name
+        isFixed: false,
+        isBreak: false
+      };
+    });
   } catch (e) {
-    throw new Error("Master Schedule synthesis failed. The model generated an invalid plan.");
+    throw new Error("Failed to synthesize schedule. Please check your data and try again.");
   }
 };
 
@@ -99,20 +110,7 @@ export const generateCurriculumRoadmap = async (
   profile: SchoolProfile
 ): Promise<QuarterlyPlan> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  const inputData = {
-    books: textbooks.map(t => ({ title: t.title, pages: t.totalPages, subject: t.subject })),
-    holidays: profile.specialEvents || []
-  };
-
-  const prompt = `
-    TASK: Create a 12-week pacing roadmap for textbooks.
-    
-    RULES:
-    1. Distribute book pages across 12 weeks for each subject.
-    2. RED DAYS: Reduce pacing for holiday weeks: ${JSON.stringify(inputData.holidays)}.
-    3. SUBJECTS: Match exactly with: ${JSON.stringify(inputData.books.map(b => b.subject))}.
-  `;
+  const prompt = `Create a 12-week pacing roadmap for these books: ${JSON.stringify(textbooks.map(t => ({ title: t.title, pages: t.totalPages, subject: t.subject })))}`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
@@ -132,14 +130,11 @@ export const generateCurriculumRoadmap = async (
                 subject: { type: Type.STRING },
                 unit: { type: Type.STRING },
                 pages: { type: Type.STRING },
-                isHolidayWeek: { type: Type.BOOLEAN },
-                holidayName: { type: Type.STRING }
-              },
-              required: ["weekNumber", "subject", "unit", "pages"]
+                isHolidayWeek: { type: Type.BOOLEAN }
+              }
             }
           }
-        },
-        required: ["weeks"]
+        }
       }
     }
   });
