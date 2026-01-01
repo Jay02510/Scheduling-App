@@ -6,9 +6,10 @@ interface ScheduleViewerProps {
   classes: ClassGroup[];
   teachers: Teacher[];
   profile: SchoolProfile | null;
+  onGenerateRoadmap: () => void;
 }
 
-const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, profile }) => {
+const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, profile, onGenerateRoadmap }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
   const [viewMode, setViewMode] = useState<'table' | 'roadmap'>('table');
   
@@ -18,6 +19,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   const filteredSlots = schedule.weeklySlots.filter(s => s.classId === selectedClassId);
   const currentClass = classes.find(c => c.id === selectedClassId);
   const qPlan = schedule.quarterlyPlan;
+  const hasRoadmap = qPlan && qPlan.weeks && qPlan.weeks.length > 0;
 
   return (
     <div className="space-y-10 animate-fadeIn max-w-full overflow-hidden pb-12">
@@ -72,7 +74,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     {pIdx + 1}
                   </td>
                   {Array.from({ length: 5 }).map((_, dIdx) => {
-                    // Check for Fixed/Locked classes first
                     const fixed = profile?.fixedClasses.find(f => 
                       f.dayOfWeek === dIdx && 
                       f.period === pIdx && 
@@ -121,62 +122,76 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         </div>
       ) : (
         <div className="max-w-6xl mx-auto space-y-10 animate-fadeInUp">
-          <div className="bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-12">
-            <header className="border-b border-slate-100 pb-10">
-              <div className="flex justify-between items-end">
+          {!hasRoadmap ? (
+            <div className="bg-white p-20 rounded-[3.5rem] border-2 border-dashed border-slate-200 text-center flex flex-col items-center">
+              <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500 mb-6">
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900">No Roadmap Generated</h3>
+              <p className="text-slate-500 text-sm mt-2 mb-8 max-w-md">The curriculum roadmap calculates exactly how many pages to cover per week based on your textbooks and red days.</p>
+              <button 
+                onClick={onGenerateRoadmap}
+                className="gradient-primary text-white px-10 py-5 rounded-[2rem] shadow-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:scale-105 transition-all"
+              >
+                Generate 12-Week Plan
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-12">
+              <header className="border-b border-slate-100 pb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
                   <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Resource Roadmap</span>
-                  <h3 className="text-4xl font-black text-slate-900 mt-2">Quarterly Progression</h3>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Curriculum targets for {currentClass?.name}</p>
+                  <h3 className="text-4xl font-black text-slate-900 mt-2">Pacing Breakdown</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">12-Week targets for {currentClass?.name}</p>
                 </div>
-                <div className="hidden lg:block text-right">
-                  <div className="flex gap-2">
-                    <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-[8px] font-black text-indigo-500 uppercase">Book Correlated</span>
-                    <span className="px-3 py-1 bg-amber-50 border border-amber-100 rounded-lg text-[8px] font-black text-amber-500 uppercase">Fixed Slots Balanced</span>
-                  </div>
-                </div>
-              </div>
-            </header>
+                <button 
+                  onClick={onGenerateRoadmap}
+                  className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-600 transition-all"
+                >
+                  Regenerate Plan
+                </button>
+              </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {Array.from({ length: 12 }).map((_, i) => {
-                const weekNum = i + 1;
-                const weekTargets = qPlan?.weeks.filter(w => w.weekNumber === weekNum) || [];
-                const isHoliday = weekTargets.some(t => t.isHolidayWeek);
-                
-                return (
-                  <div key={weekNum} className={`p-8 rounded-[2.5rem] border transition-all relative overflow-hidden group ${isHoliday ? 'bg-rose-50/30 border-rose-100' : 'bg-slate-50/50 border-slate-100 hover:border-indigo-200'}`}>
-                    {isHoliday && (
-                      <div className="absolute top-0 right-0 p-4">
-                        <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between mb-6">
-                      <span className="text-2xl font-black text-slate-900">Week {weekNum}</span>
-                      {isHoliday && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-white px-2 py-1 rounded-md border border-rose-100">Holiday Week</span>}
-                    </div>
-
-                    <div className="space-y-4">
-                      {weekTargets.length === 0 ? (
-                        <p className="text-[10px] text-slate-300 font-bold uppercase py-4 italic text-center">No units assigned</p>
-                      ) : weekTargets.map((target, tIdx) => (
-                        <div key={tIdx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
-                          <div className="flex justify-between items-start">
-                             <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">{target.subject}</p>
-                             <span className="text-[9px] font-black text-slate-400">pp. {target.pages}</span>
-                          </div>
-                          <h4 className="font-bold text-slate-800 text-xs leading-tight">
-                            {target.unit}
-                          </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const weekNum = i + 1;
+                  const weekTargets = qPlan?.weeks.filter(w => w.weekNumber === weekNum) || [];
+                  const isHoliday = weekTargets.some(t => t.isHolidayWeek);
+                  
+                  return (
+                    <div key={weekNum} className={`p-8 rounded-[2.5rem] border transition-all relative overflow-hidden group ${isHoliday ? 'bg-rose-50/30 border-rose-100' : 'bg-slate-50/50 border-slate-100 hover:border-indigo-200'}`}>
+                      {isHoliday && (
+                        <div className="absolute top-0 right-0 p-4">
+                          <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
-                      ))}
+                      )}
+                      
+                      <div className="flex items-center justify-between mb-6">
+                        <span className="text-2xl font-black text-slate-900">Week {weekNum}</span>
+                        {isHoliday && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-white px-2 py-1 rounded-md border border-rose-100">Short Week</span>}
+                      </div>
+
+                      <div className="space-y-4">
+                        {weekTargets.length === 0 ? (
+                          <p className="text-[10px] text-slate-300 font-bold uppercase py-4 italic text-center">No pacing data</p>
+                        ) : weekTargets.map((target, tIdx) => (
+                          <div key={tIdx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                            <div className="flex justify-between items-start">
+                               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">{target.subject}</p>
+                               <span className="text-[9px] font-black text-slate-400">pp. {target.pages}</span>
+                            </div>
+                            <h4 className="font-bold text-slate-800 text-xs leading-tight">
+                              {target.unit}
+                            </h4>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

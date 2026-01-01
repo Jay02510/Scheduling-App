@@ -1,62 +1,41 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Teacher, Textbook, FixedClass, ClassGroup, SchoolSchedule, SchoolProfile } from "../types";
+import { Teacher, Textbook, FixedClass, ClassGroup, SchoolSchedule, SchoolProfile, QuarterlyPlan, ScheduleSlot } from "../types";
 
-export const generateSchedule = async (
+export const generateWeeklyMaster = async (
   teachers: Teacher[],
-  textbooks: Textbook[],
   fixedClasses: FixedClass[],
   classes: ClassGroup[],
-  profile: SchoolProfile | null
-): Promise<SchoolSchedule> => {
+  profile: SchoolProfile
+): Promise<ScheduleSlot[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Map textbooks for AI to reference by subject
-  const textbookMap = textbooks.reduce((acc, tb) => {
-    acc[tb.id] = { title: tb.title, pages: tb.totalPages, chapters: tb.totalChapters };
-    return acc;
-  }, {} as any);
-
-  const classData = classes.map(c => ({
-    id: c.id,
-    name: c.name,
-    assignments: c.assignments.map(a => {
-      const s = profile?.subjects.find(sub => sub.id === a.subjectId);
-      const tb = textbooks.find(t => t.id === s?.textbookId);
-      return { 
-        subject: s?.name, 
-        freq: s?.frequencyPerWeek || 0, 
-        teacherId: a.teacherId,
-        textbook: tb ? { title: tb.title, pages: tb.totalPages } : null
-      };
-    }).filter(a => a.freq > 0)
-  }));
-
-  const lockedSlots = fixedClasses.map(f => ({
-    day: f.dayOfWeek,
-    period: f.period,
-    name: f.name,
-    isGlobal: f.isSchoolWide,
-    targetClasses: f.classIds
-  }));
+  const inputData = {
+    totalPeriods: profile.hours.totalPeriods,
+    classes: classes.map(c => ({
+      id: c.id,
+      name: c.name,
+      reqs: c.assignments.map(a => {
+        const sub = profile.subjects.find(s => s.id === a.subjectId);
+        return { subject: sub?.name, freq: sub?.frequencyPerWeek, teacherId: a.teacherId };
+      }).filter(r => r.freq && r.freq > 0)
+    })),
+    locks: fixedClasses.map(f => ({
+      day: f.dayOfWeek,
+      period: f.period,
+      name: f.name,
+      isGlobal: f.isSchoolWide,
+      classes: f.classIds
+    }))
+  };
 
   const prompt = `
-    TASK: Generate a Weekly Master Schedule and 12-Week Quarterly Roadmap.
+    TASK: Generate a Weekly Master Schedule grid (Days 0-4, Periods 0-${inputData.totalPeriods - 1}).
     
-    CONSTRAINTS (CRITICAL):
-    1. FIXED SLOTS: The following slots are already occupied. DO NOT place any subject lessons here:
-       ${JSON.stringify(lockedSlots)}
-    2. STRICT SUBJECTS: ONLY use the subjects provided in the assignments. DO NOT add "filler" or "extra" subjects. If a class has fewer lessons than available periods, leave the remaining periods empty (null).
-    3. TEXTBOOK PACING: Use the provided textbook page counts to distribute 12 weeks of targets.
-    4. HOLIDAYS: Adjust pacing for: ${JSON.stringify(profile?.specialEvents || [])}.
-    5. DATA: ${JSON.stringify(classData)}
-
-    JSON SCHEMA:
-    {
-      "quarterlyPlan": {
-        "weeks": [{ "weekNumber": 1, "subject": "Math", "unit": "Unit 1", "pages": "1-10", "isHolidayWeek": false }]
-      },
-      "weeklySlots": [{ "period": 0, "day": 0, "subject": "Math", "teacherId": "t1", "classId": "c1", "topic": "Brief Intro" }]
-    }
+    STRICT RULES:
+    1. LOCKED SLOTS: Do NOT place any subject lessons in these slots: ${JSON.stringify(inputData.locks)}.
+    2. ASSIGNMENTS ONLY: Only place lessons from the assignments provided: ${JSON.stringify(inputData.classes)}.
+    3. NO FILLER: If a class has empty periods, leave them as null. Do NOT create extra subjects.
+    4. TEACHER CONFLICTS: A teacher cannot be in two places at once.
   `;
 
   const response = await ai.models.generateContent({
@@ -66,51 +45,85 @@ export const generateSchedule = async (
       thinkingConfig: { thinkingBudget: 2000 },
       responseMimeType: "application/json",
       responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          quarterlyPlan: {
-            type: Type.OBJECT,
-            properties: {
-              weeks: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    weekNumber: { type: Type.INTEGER },
-                    subject: { type: Type.STRING },
-                    unit: { type: Type.STRING },
-                    pages: { type: Type.STRING },
-                    isHolidayWeek: { type: Type.BOOLEAN },
-                    holidayName: { type: Type.STRING }
-                  }
-                }
-              }
-            }
-          },
-          weeklySlots: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                period: { type: Type.NUMBER }, 
-                day: { type: Type.NUMBER }, 
-                subject: { type: Type.STRING },
-                teacherId: { type: Type.STRING },
-                classId: { type: Type.STRING },
-                topic: { type: Type.STRING }
-              }
-            }
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            period: { type: Type.NUMBER },
+            day: { type: Type.NUMBER },
+            subject: { type: Type.STRING },
+            teacherId: { type: Type.STRING },
+            classId: { type: Type.STRING },
+            topic: { type: Type.STRING }
           }
-        },
-        required: ["quarterlyPlan", "weeklySlots"]
+        }
       }
     }
   });
 
   try {
-    return JSON.parse(response.text || '{}');
+    return JSON.parse(response.text || '[]');
   } catch (e) {
-    throw new Error("AI Synthesis Error. Please simplify constraints.");
+    throw new Error("Master Schedule synthesis failed.");
+  }
+};
+
+export const generateCurriculumRoadmap = async (
+  textbooks: Textbook[],
+  profile: SchoolProfile
+): Promise<QuarterlyPlan> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const inputData = {
+    books: textbooks.map(t => ({ title: t.title, pages: t.totalPages, subject: t.subject })),
+    holidays: profile.specialEvents || []
+  };
+
+  const prompt = `
+    TASK: Create a 12-week pacing roadmap for textbooks.
+    
+    DATA: 
+    - Books: ${JSON.stringify(inputData.books)}
+    - Holidays: ${JSON.stringify(inputData.holidays)}
+    
+    RULES:
+    1. Distribute book pages across 12 weeks.
+    2. If a week contains a holiday (Red Day), reduce the page target by 40%.
+    3. Output exactly 12 weeks of targets per subject.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          quarterName: { type: Type.STRING },
+          weeks: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                weekNumber: { type: Type.INTEGER },
+                subject: { type: Type.STRING },
+                unit: { type: Type.STRING },
+                pages: { type: Type.STRING },
+                isHolidayWeek: { type: Type.BOOLEAN },
+                holidayName: { type: Type.STRING }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  try {
+    return JSON.parse(response.text || '{"weeks":[]}');
+  } catch (e) {
+    throw new Error("Curriculum Roadmap synthesis failed.");
   }
 };
 

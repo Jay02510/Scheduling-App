@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
 import { Teacher, Textbook, ClassGroup, FixedClass, SchoolSchedule, SchoolProfile, SubjectConfig } from './types';
-import { generateSchedule } from './services/geminiService';
+import { generateWeeklyMaster, generateCurriculumRoadmap } from './services/geminiService';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ScheduleForm from './components/ScheduleForm';
@@ -20,7 +20,7 @@ const App: React.FC = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
+  const [loadingMsg, setLoadingMsg] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [timetableMode, setTimetableMode] = useState<'school' | 'staff'>('school');
   
@@ -35,27 +35,6 @@ const App: React.FC = () => {
   const [fixedClasses, setFixedClasses] = useState<FixedClass[]>([]);
   const [subjects, setSubjects] = useState<SubjectConfig[]>([]);
   const [schedule, setSchedule] = useState<SchoolSchedule | null>(null);
-
-  const loadingMessages = [
-    "Crunching curriculum data...",
-    "Balancing teacher workloads...",
-    "Mapping textbook page targets...",
-    "Adjusting for red days and holidays...",
-    "Finalizing quarterly roadmap...",
-    "Almost there - crafting the master view..."
-  ];
-
-  useEffect(() => {
-    let interval: number;
-    if (isLoading) {
-      interval = window.setInterval(() => {
-        setLoadingStep(prev => (prev + 1) % loadingMessages.length);
-      }, 3500);
-    } else {
-      setLoadingStep(0);
-    }
-    return () => window.clearInterval(interval);
-  }, [isLoading]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -105,6 +84,7 @@ const App: React.FC = () => {
   const handleOnboardingComplete = async (newProfile: SchoolProfile) => {
     if (!user) return;
     setIsLoading(true);
+    setLoadingMsg("Saving your school profile...");
     const state = {
       profile: { ...newProfile, specialEvents: [] },
       teachers: newProfile.teachers,
@@ -127,34 +107,63 @@ const App: React.FC = () => {
     setActiveTab('home');
   };
 
-  const resetSystem = async () => {
-    if (!user) return;
-    if (!confirm("Delete all school data? This cannot be undone.")) return;
-    syncLocked.current = true;
-    initialLoadDone.current = false;
+  const handleGenerateMaster = async () => {
+    if (!user || !profile) return;
     setIsLoading(true);
+    setLoadingMsg("Synthesizing Weekly Master Grid...");
     try {
-      await clearUserData(user.uid);
-      await signOut(auth);
-      window.location.reload();
-    } catch (e) {
-      alert("Reset failed");
-      syncLocked.current = false;
+      const slots = await generateWeeklyMaster(teachers, fixedClasses, classes, profile);
+      const newSchedule = { 
+        weeklySlots: slots, 
+        quarterlyPlan: schedule?.quarterlyPlan || { quarterName: 'Not Generated', weeks: [] } 
+      };
+      setSchedule(newSchedule);
+      setActiveTab('timetable');
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGenerateSchedule = async () => {
+  const handleGenerateRoadmap = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
+    setLoadingMsg("Calculating Curriculum Roadmap...");
     try {
-      const generated = await generateSchedule(teachers, textbooks, fixedClasses, classes, profile);
-      setSchedule(generated);
-      await saveUserData(user.uid, { profile, teachers, classes, textbooks, fixedClasses, subjects, schedule: generated });
+      const plan = await generateCurriculumRoadmap(textbooks, profile);
+      const newSchedule = { 
+        weeklySlots: schedule?.weeklySlots || [], 
+        quarterlyPlan: plan 
+      };
+      setSchedule(newSchedule);
       setActiveTab('timetable');
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Scheduling error. The server might be busy or your constraints are too complex.");
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fix: Added resetSystem function to handle data clearing and state reset
+  const resetSystem = async () => {
+    if (!user || !window.confirm("Are you sure you want to reset all data? This cannot be undone.")) return;
+    setIsLoading(true);
+    setLoadingMsg("Resetting system...");
+    try {
+      await clearUserData(user.uid);
+      setProfile(null);
+      setTeachers([]);
+      setTextbooks([]);
+      setClasses([]);
+      setFixedClasses([]);
+      setSubjects([]);
+      setSchedule(null);
+      setShowOnboarding(true);
+      initialLoadDone.current = false;
+      setActiveTab('home');
+    } catch (e) {
+      alert("Failed to reset data.");
     } finally {
       setIsLoading(false);
     }
@@ -163,38 +172,48 @@ const App: React.FC = () => {
   if (authLoading) return null;
   if (!user) return <Auth />;
 
-  const renderContent = () => {
-    if (isLoading) {
-      return (
+  return (
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+      {isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fadeIn">
-          <div className="relative w-20 h-20">
+          <div className="relative w-20 h-20 mb-8">
             <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
             <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <div className="text-center space-y-3 mt-10">
-            <p className="text-sm font-black text-slate-900 uppercase tracking-widest animate-pulse-soft">
-              {loadingMessages[loadingStep]}
-            </p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Please wait while Gemini synthesizes your data
-            </p>
-          </div>
+          <p className="text-sm font-black text-slate-900 uppercase tracking-widest animate-pulse-soft">{loadingMsg}</p>
         </div>
-      );
-    }
-
-    switch (activeTab) {
-      case 'home': return <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} />;
-      case 'setup': return <ScheduleForm profile={profile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} fixedClasses={fixedClasses} setFixedClasses={setFixedClasses} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateSchedule} />;
-      case 'planner': return <div className="space-y-16 pb-20"><ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} /><div className="h-px bg-slate-200 w-full"></div><SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} /></div>;
-      case 'timetable': return !schedule ? <div className="text-center py-40">No schedule. Create one in setup.</div> : <div className="space-y-8"><div className="flex justify-center bg-slate-100 p-1 rounded-xl w-fit mx-auto"><button onClick={() => setTimetableMode('school')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Classes</button><button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff</button></div>{timetableMode === 'school' ? <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} profile={profile} /> : <TeacherView schedule={schedule} teachers={teachers} classes={classes} profile={profile} />}</div>;
-      case 'insights': return schedule && profile ? <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} /> : <div className="text-center py-40">Create a schedule to see stats.</div>;
-      case 'settings': return <Settings user={user} profile={profile} onReset={resetSystem} onLogout={() => signOut(auth)} />;
-      default: return <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} />;
-    }
-  };
-
-  return <><>{showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}</><Layout activeTab={activeTab} setActiveTab={setActiveTab}>{renderContent()}</Layout></>;
+      ) : (
+        <>
+          {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
+          {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} />}
+          {activeTab === 'setup' && <ScheduleForm profile={profile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} fixedClasses={fixedClasses} setFixedClasses={setFixedClasses} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} />}
+          {activeTab === 'timetable' && (
+            <div className="space-y-8">
+              <div className="flex justify-center bg-slate-100 p-1 rounded-xl w-fit mx-auto shadow-sm">
+                <button onClick={() => setTimetableMode('school')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class Schedules</button>
+                <button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff Workloads</button>
+              </div>
+              {schedule ? (
+                timetableMode === 'school' ? (
+                  <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} />
+                ) : (
+                  <TeacherView schedule={schedule} teachers={teachers} classes={classes} profile={profile} />
+                )
+              ) : (
+                <div className="text-center py-40 border-2 border-dashed border-slate-200 rounded-[3rem]">
+                  <p className="text-slate-400 font-black uppercase tracking-widest text-[11px]">No schedule found</p>
+                  <button onClick={() => setActiveTab('setup')} className="mt-4 text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:underline">Go to Setup</button>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === 'planner' && <div className="space-y-16 pb-20"><ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} /><div className="h-px bg-slate-200 w-full"></div><SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} /></div>}
+          {activeTab === 'insights' && (schedule && profile ? <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} /> : <div className="text-center py-40">Generate a schedule to view analytics.</div>)}
+          {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={resetSystem} onLogout={() => signOut(auth)} />}
+        </>
+      )}
+    </Layout>
+  );
 };
 
 export default App;
