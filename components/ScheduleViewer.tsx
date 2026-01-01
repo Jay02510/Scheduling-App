@@ -72,9 +72,27 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     {pIdx + 1}
                   </td>
                   {Array.from({ length: 5 }).map((_, dIdx) => {
+                    // Check for Fixed/Locked classes first
+                    const fixed = profile?.fixedClasses.find(f => 
+                      f.dayOfWeek === dIdx && 
+                      f.period === pIdx && 
+                      (f.isSchoolWide || f.classIds?.includes(selectedClassId))
+                    );
+
                     const slot = filteredSlots.find(s => s.day === dIdx && s.period === pIdx);
                     const teacher = teachers.find(t => t.id === slot?.teacherId);
                     
+                    if (fixed) {
+                      return (
+                        <td key={dIdx} className="border-r-2 last:border-r-0 border-slate-900 p-0 relative h-28 min-w-[160px] bg-slate-100">
+                          <div className="h-full flex flex-col justify-center items-center text-center px-4">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Locked Slot</span>
+                            <span className="text-[11px] font-black text-slate-900 uppercase leading-tight">{fixed.name}</span>
+                          </div>
+                        </td>
+                      );
+                    }
+
                     return (
                       <td key={dIdx} className="border-r-2 last:border-r-0 border-slate-900 p-0 relative h-28 min-w-[160px] bg-white group hover:bg-slate-50/50 transition-colors">
                         {slot ? (
@@ -107,14 +125,14 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             <header className="border-b border-slate-100 pb-10">
               <div className="flex justify-between items-end">
                 <div>
-                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Textbook Progression</span>
-                  <h3 className="text-4xl font-black text-slate-900 mt-2">{qPlan?.quarterName || 'Quarterly'} Plan</h3>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">12-Week Roadmap for {currentClass?.name}</p>
+                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Resource Roadmap</span>
+                  <h3 className="text-4xl font-black text-slate-900 mt-2">Quarterly Progression</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Curriculum targets for {currentClass?.name}</p>
                 </div>
                 <div className="hidden lg:block text-right">
                   <div className="flex gap-2">
-                    <span className="px-3 py-1 bg-rose-50 border border-rose-100 rounded-lg text-[8px] font-black text-rose-500 uppercase">Red Day Adjusted</span>
-                    <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-[8px] font-black text-indigo-500 uppercase">AI Optimized</span>
+                    <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-[8px] font-black text-indigo-500 uppercase">Book Correlated</span>
+                    <span className="px-3 py-1 bg-amber-50 border border-amber-100 rounded-lg text-[8px] font-black text-amber-500 uppercase">Fixed Slots Balanced</span>
                   </div>
                 </div>
               </div>
@@ -165,15 +183,11 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       <div className="flex items-center justify-center gap-8 pt-8 border-t border-slate-100">
         <div className="flex items-center gap-3">
            <div className="w-4 h-4 rounded-md border-2 border-slate-900 bg-white"></div>
-           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Academic Day</span>
+           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Academic Lesson</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="w-4 h-4 rounded-md border-2 border-slate-900 bg-slate-100"></div>
-           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">School Break</span>
-        </div>
-        <div className="flex items-center gap-3">
-           <div className="w-4 h-4 rounded-md border-2 border-rose-200 bg-rose-50"></div>
-           <span className="text-[9px] font-black uppercase text-rose-400 tracking-widest">Red Day (Holiday)</span>
+           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Fixed/Locked Block</span>
         </div>
       </div>
     </div>
