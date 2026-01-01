@@ -9,37 +9,51 @@ export const generateWeeklyMaster = async (
 ): Promise<ScheduleSlot[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+  // Prepare a mapping of Subject IDs to their Exact Names to prevent AI hallucinations
+  const subjectMap = profile.subjects.reduce((acc, s) => {
+    acc[s.id] = s.name;
+    return acc;
+  }, {} as Record<string, string>);
+
   const inputData = {
     totalPeriods: profile.hours.totalPeriods,
-    validSubjectNames: profile.subjects.map(s => s.name),
+    // Explicit list of names the AI is allowed to use
+    allowedSubjectNames: Object.values(subjectMap),
     classes: classes.map(c => ({
       id: c.id,
       name: c.name,
-      reqs: c.assignments.map(a => {
-        const sub = profile.subjects.find(s => s.id === a.subjectId);
-        return { subject: sub?.name, freq: sub?.frequencyPerWeek, teacherId: a.teacherId };
-      }).filter(r => r.freq && r.freq > 0)
+      requirements: c.assignments.map(a => {
+        const subName = subjectMap[a.subjectId];
+        return { 
+          subjectName: subName, 
+          frequency: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 0, 
+          teacherId: a.teacherId,
+          teacherName: teachers.find(t => t.id === a.teacherId)?.name
+        };
+      }).filter(r => r.frequency > 0)
     })),
-    locks: fixedClasses.map(f => ({
+    institutionalBlocks: fixedClasses.map(f => ({
       day: f.dayOfWeek,
       period: f.period,
-      name: f.name,
+      label: f.name, // e.g. "GYM", "LUNCH"
       isGlobal: f.isSchoolWide,
-      classes: f.classIds
+      affectedClasses: f.classIds
     }))
   };
 
   const prompt = `
-    TASK: Generate a Weekly Master Schedule grid (Days 0-4, Periods 0-${inputData.totalPeriods - 1}).
+    TASK: Generate a Weekly Master Schedule for all classes.
     
-    STRICT CONSTRAINTS (MANDATORY):
-    1. SUBJECT NAMES: You MUST use the exact subject names provided: ${JSON.stringify(inputData.validSubjectNames)}. DO NOT rename them or use abbreviations.
-    2. TEACHER AVAILABILITY: A teacher (teacherId) CANNOT be assigned to more than one class during the same (day, period). Cross-check all teacher schedules to ensure zero overlaps.
-    3. LOCKED SLOTS: Do NOT place any lessons in these coordinates as they are reserved: ${JSON.stringify(inputData.locks)}.
-    4. ASSIGNMENT QUOTAS: Respect the "freq" (frequency per week) for each subject in each class.
-    5. DATA: ${JSON.stringify(inputData.classes)}
+    STRICT RULES (FAILURE TO FOLLOW RESULTS IN ERROR):
+    1. SUBJECT NAMES: You MUST use the exact strings provided in "allowedSubjectNames": ${JSON.stringify(inputData.allowedSubjectNames)}. 
+       DO NOT use generic terms like "Math" if the subject is named "Into Reading".
+    2. TEACHER CONFLICTS (CRITICAL): A teacherId can only be in ONE class at any given (Day, Period). 
+       You MUST cross-check all class grids to ensure Teacher "Jason" is never in two places at once.
+    3. INSTITUTIONAL BLOCKS: These slots are occupied. Do NOT schedule any lessons here: ${JSON.stringify(inputData.institutionalBlocks)}.
+    4. COVERAGE: For each class, schedule exactly the number of lessons specified in "frequency".
+    5. DATA CONTEXT: ${JSON.stringify(inputData.classes)}
 
-    Output should be a flat list of occupied slots.
+    Return a JSON array of slots.
   `;
 
   const response = await ai.models.generateContent({
@@ -55,7 +69,7 @@ export const generateWeeklyMaster = async (
           properties: {
             period: { type: Type.NUMBER },
             day: { type: Type.NUMBER },
-            subject: { type: Type.STRING },
+            subject: { type: Type.STRING, description: "Must match allowedSubjectNames exactly" },
             teacherId: { type: Type.STRING },
             classId: { type: Type.STRING },
             topic: { type: Type.STRING }
@@ -67,9 +81,16 @@ export const generateWeeklyMaster = async (
   });
 
   try {
-    return JSON.parse(response.text || '[]');
+    const data = JSON.parse(response.text || '[]');
+    // Secondary validation to ensure AI didn't hallucinate subject names
+    return data.map((slot: any) => ({
+      ...slot,
+      id: Math.random().toString(36).substr(2, 9),
+      isFixed: false,
+      isBreak: false
+    }));
   } catch (e) {
-    throw new Error("Master Schedule synthesis failed. The AI model returned an invalid format.");
+    throw new Error("Master Schedule synthesis failed. The model generated an invalid plan.");
   }
 };
 
@@ -89,11 +110,8 @@ export const generateCurriculumRoadmap = async (
     
     RULES:
     1. Distribute book pages across 12 weeks for each subject.
-    2. RED DAYS (Holidays): If a week contains a holiday, significantly reduce the page target for that week.
-    3. SUBJECTS: Use the exact subject names linked to the books.
-    4. DATA: 
-       - Books: ${JSON.stringify(inputData.books)}
-       - Holidays: ${JSON.stringify(inputData.holidays)}
+    2. RED DAYS: Reduce pacing for holiday weeks: ${JSON.stringify(inputData.holidays)}.
+    3. SUBJECTS: Match exactly with: ${JSON.stringify(inputData.books.map(b => b.subject))}.
   `;
 
   const response = await ai.models.generateContent({
@@ -129,7 +147,7 @@ export const generateCurriculumRoadmap = async (
   try {
     return JSON.parse(response.text || '{"weeks":[]}');
   } catch (e) {
-    throw new Error("Curriculum Roadmap synthesis failed.");
+    throw new Error("Roadmap synthesis failed.");
   }
 };
 

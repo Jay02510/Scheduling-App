@@ -240,7 +240,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                           } else {
                             const newId = Math.random().toString(36).substr(2, 9);
                             setFixedClasses([...fixedClasses, {
-                              id: newId, name: 'LOCKED', provider: 'School', dayOfWeek: d, period: p, classIds: [], isSchoolWide: true, color: BLOCK_COLORS[1].hex
+                              id: newId, name: '', provider: 'School', dayOfWeek: d, period: p, classIds: [], isSchoolWide: true, color: BLOCK_COLORS[1].hex
                             }]);
                             setSelectedFixedId(newId);
                           }
