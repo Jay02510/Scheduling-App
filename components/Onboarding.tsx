@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { SchoolProfile, Teacher, SubjectConfig, Textbook, ClassGroup } from '../types';
+import { SchoolProfile, Teacher, SubjectConfig, Textbook, ClassGroup, FixedClass } from '../types';
 import { TEACHER_COLORS, CLASS_COLORS } from '../constants';
 
 interface OnboardingProps {
@@ -138,6 +137,20 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     });
   };
 
+  const toggleClassForFixed = (classId: string, fixedId: string) => {
+    setProfile(prev => ({
+      ...prev,
+      fixedClasses: prev.fixedClasses.map(f => {
+        if (f.id !== fixedId) return f;
+        const currentIds = f.classIds || [];
+        const newIds = currentIds.includes(classId) 
+          ? currentIds.filter(id => id !== classId)
+          : [...currentIds, classId];
+        return { ...f, classIds: newIds, isSchoolWide: false };
+      })
+    }));
+  };
+
   const handleAssignmentChange = (classId: string, subjectId: string, teacherId: string) => {
     setProfile(prev => ({
       ...prev,
@@ -260,7 +273,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div className="space-y-8 animate-fadeIn max-w-full">
             <div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 3: Blocked Slots</h2>
-              <p className="text-slate-500 mt-1 text-sm">Lock times for all groups (Assemblies, etc).</p>
+              <p className="text-slate-500 mt-1 text-sm">Lock times for all groups or specific classes.</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm overflow-x-auto">
@@ -282,17 +295,19 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                               } else {
                                 const newId = Math.random().toString(36).substr(2, 9);
                                 setProfile({...profile, fixedClasses: [...profile.fixedClasses, {
-                                  id: newId, name: 'Activity', provider: 'Facility', dayOfWeek: d, period: p, classIds: [], isSchoolWide: true, color: BLOCK_COLORS[0].hex
+                                  id: newId, name: 'Locked Slot', provider: 'School', dayOfWeek: d, period: p, classIds: [], isSchoolWide: true, color: BLOCK_COLORS[0].hex
                                 }]});
                                 setSelectedFixedId(newId);
                               }
                             }}
-                            className={`h-10 rounded-lg border transition-all text-[7px] font-black uppercase flex items-center justify-center text-center px-0.5 overflow-hidden ${
+                            className={`h-10 rounded-lg border transition-all text-[7px] font-black uppercase flex flex-col items-center justify-center text-center px-0.5 overflow-hidden ${
                               fixed ? (fixed.id === selectedFixedId ? 'ring-2 ring-black z-10' : '') : 'bg-slate-50 border-transparent hover:border-indigo-100'
                             }`}
                             style={fixed ? { backgroundColor: fixed.color || '#6366f1', color: 'white', borderColor: 'transparent' } : {}}
                           >
-                            {fixed ? fixed.name : '+'}
+                            <span className="truncate w-full">{fixed ? fixed.name : '+'}</span>
+                            {fixed && fixed.isSchoolWide && <span className="text-[5px] opacity-50">Global</span>}
+                            {fixed && !fixed.isSchoolWide && <span className="text-[5px] opacity-50">{fixed.classIds?.length} Groups</span>}
                           </button>
                         );
                       })}
@@ -302,7 +317,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
               <div className="space-y-4">
                 {selectedFixed ? (
-                  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-md space-y-5 animate-fadeIn">
+                  <div className="bg-white p-6 rounded-3xl border border-indigo-100 shadow-md space-y-5 animate-fadeIn">
                     <div className="space-y-1">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Lock Name</span>
                       <input 
@@ -314,8 +329,44 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         }))}
                       />
                     </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Target Classes</span>
+                        <button 
+                          onClick={() => setProfile(prev => ({
+                            ...prev,
+                            fixedClasses: prev.fixedClasses.map(f => f.id === selectedFixedId ? { ...f, isSchoolWide: !f.isSchoolWide, classIds: !f.isSchoolWide ? [] : f.classIds } : f)
+                          }))}
+                          className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all ${selectedFixed.isSchoolWide ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}
+                        >
+                          {selectedFixed.isSchoolWide ? 'All Classes' : 'Specific Only'}
+                        </button>
+                      </div>
+
+                      {!selectedFixed.isSchoolWide && (
+                        <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                          {profile.classes.map(c => {
+                            const isSelected = selectedFixed.classIds?.includes(c.id);
+                            return (
+                              <button
+                                key={c.id}
+                                onClick={() => toggleClassForFixed(c.id, selectedFixed.id)}
+                                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${isSelected ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-100'}`}
+                              >
+                                {c.name}
+                              </button>
+                            );
+                          })}
+                          {(!selectedFixed.classIds || selectedFixed.classIds.length === 0) && (
+                            <p className="text-[8px] font-bold text-rose-400 uppercase w-full text-center">Select at least one class</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="space-y-2">
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Block Brand Color</span>
+                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Block Color</span>
                        <div className="flex flex-wrap gap-2">
                          {BLOCK_COLORS.map(c => (
                            <button 
@@ -324,7 +375,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                ...prev,
                                fixedClasses: prev.fixedClasses.map(f => f.id === selectedFixedId ? { ...f, color: c.hex } : f)
                              }))}
-                             className={`w-8 h-8 rounded-full border-2 transition-all ${selectedFixed.color === c.hex ? 'border-black scale-110' : 'border-transparent'}`}
+                             className={`w-7 h-7 rounded-full border-2 transition-all ${selectedFixed.color === c.hex ? 'border-black scale-110' : 'border-transparent'}`}
                              style={{ backgroundColor: c.hex }}
                            />
                          ))}
@@ -333,7 +384,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     <button onClick={() => {
                         setProfile(prev => ({ ...prev, fixedClasses: prev.fixedClasses.filter(f => f.id !== selectedFixedId) }));
                         setSelectedFixedId(null);
-                    }} className="w-full py-2 bg-rose-50 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest mt-2 hover:bg-rose-100 transition-colors">Release Lock</button>
+                    }} className="w-full py-2 bg-rose-50 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest mt-2 hover:bg-rose-100 transition-colors">Delete Block</button>
                   </div>
                 ) : (
                   <div className="h-40 flex items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-100 text-slate-300 text-center p-6">
