@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Teacher, Textbook, FixedClass, ClassGroup, SchoolSchedule, SchoolProfile } from "../types";
 
@@ -11,7 +10,6 @@ export const generateSchedule = async (
 ): Promise<SchoolSchedule> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Explicit mapping of requirements for AI consumption
   const classChecklist = classes.map(c => ({
     id: c.id,
     name: c.name,
@@ -29,25 +27,32 @@ export const generateSchedule = async (
   }));
 
   const prompt = `
-    TASK: Generate a COMPLETE and ACCURATE weekly master schedule for ${profile?.name}.
+    TASK: Generate a COMPLETE weekly master schedule AND a MONTHLY curriculum roadmap.
     
-    COUNT CHECK: You are scheduling for exactly ${classes.length} class groups.
-    CLASSES TO INCLUDE: [${classes.map(c => c.name).join(', ')}]
+    CURRICULUM DATA:
+    Textbooks: ${JSON.stringify(textbooks.map(t => ({ title: t.title, chapters: t.totalChapters, pages: t.totalPages, subject: t.subject })))}
+    Red Days (Holidays/Events): ${JSON.stringify(profile?.specialEvents || [])}
     
     MANDATORY CRITERIA:
-    1. INDIVIDUAL CLASS COVERAGE: For EVERY class ID provided, you MUST return a set of schedule slots that satisfy its curriculum requirements.
-    2. TEACHER CONFLICTS: A teacher cannot teach multiple classes at the same period.
-    3. TIME SLOTS: Use period numbers 0 to ${ (profile?.hours.totalPeriods || 8) - 1 } and days 0 to 4 (Mon-Fri).
-    4. INSTITUTIONAL BLOCKS: ${JSON.stringify(fixedClasses.map(f => ({ day: f.dayOfWeek, period: f.period, name: f.name })))}
-    5. DATA CHECKLIST: ${JSON.stringify(classChecklist)}
+    1. WEEKLY MASTER: Create slots (period 0-${(profile?.hours.totalPeriods || 8) - 1}, days 0-4) for all classes.
+    2. MONTHLY ROADMAP: Break down each month into 4 weeks. For EACH week, calculate the Unit/Chapter and Page range to cover based on textbook totals.
+    3. SKIP RED DAYS: When calculating monthly pacing, acknowledge red days provided. If a week has 3 holidays, pacing should be slower.
+    4. DATA CHECKLIST: ${JSON.stringify(classChecklist)}
 
-    RULES:
-    - If a class has 'Math' 5 times/week, assign it to 5 distinct periods for that class.
-    - If a class has NO assignments, leave it as is but ensure it exists in the master list.
-    - Provide a unique 'topic' or 'lesson goal' for each slot using curriculum sources: ${JSON.stringify(textbooks.map(t => t.title))}.
-
-    OUTPUT:
-    Return a JSON object containing "yearlyPlan" (curriculum overview) and "weeklySlots" (full array of period assignments).
+    OUTPUT JSON SCHEMA:
+    {
+      "yearlyPlan": [
+        {
+          "month": "September",
+          "weeks": [
+            { "weekNumber": 1, "subject": "Math", "unit": "Unit 1", "pages": "1-15" }
+          ]
+        }
+      ],
+      "weeklySlots": [
+        { "id": "uuid", "period": 0, "day": 0, "subject": "Math", "teacherId": "t1", "classId": "c1", "topic": "Introduction to numbers" }
+      ]
+    }
   `;
 
   const response = await ai.models.generateContent({
@@ -64,13 +69,14 @@ export const generateSchedule = async (
               type: Type.OBJECT,
               properties: {
                 month: { type: Type.STRING },
-                topics: {
+                weeks: {
                   type: Type.ARRAY,
                   items: {
                     type: Type.OBJECT,
                     properties: {
+                      weekNumber: { type: Type.INTEGER },
                       subject: { type: Type.STRING },
-                      chapters: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      unit: { type: Type.STRING },
                       pages: { type: Type.STRING }
                     }
                   }
@@ -101,12 +107,9 @@ export const generateSchedule = async (
 
   try {
     const parsed = JSON.parse(response.text || '{}');
-    if (!parsed.weeklySlots || parsed.weeklySlots.length === 0) {
-      throw new Error("AI returned an empty schedule.");
-    }
     return parsed;
   } catch (e) {
-    throw new Error("AI Synthesis Failed: " + (e as Error).message);
+    throw new Error("AI Synthesis Failed");
   }
 };
 

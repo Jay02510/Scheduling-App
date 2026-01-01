@@ -1,4 +1,3 @@
-
 export interface SchoolLevel {
   id: string;
   name: string;
@@ -67,7 +66,7 @@ export interface FixedClass {
   isSchoolWide: boolean; 
   room?: string;
   notes?: string;
-  color?: string; // Custom color for blocked blocks
+  color?: string;
 }
 
 export interface ClassSubjectAssignment {
@@ -80,7 +79,7 @@ export interface ClassGroup {
   name: string;
   grade: string;
   homeroomTeacherId: string;
-  koreanTeacherId?: string; // Added support for a second lead teacher
+  koreanTeacherId?: string;
   assignments: ClassSubjectAssignment[];
   color: string;
 }
@@ -97,13 +96,16 @@ export interface ScheduleSlot {
   topic?: string;
 }
 
+export interface WeeklyCurriculumTarget {
+  weekNumber: number;
+  subject: string;
+  unit: string;
+  pages: string;
+}
+
 export interface MonthlyPlan {
   month: string;
-  topics: {
-    subject: string;
-    chapters: string[];
-    pages?: string;
-  }[];
+  weeks: WeeklyCurriculumTarget[];
 }
 
 export interface SchoolSchedule {
