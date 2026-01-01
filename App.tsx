@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
@@ -21,6 +20,7 @@ const App: React.FC = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [timetableMode, setTimetableMode] = useState<'school' | 'staff'>('school');
   
@@ -35,6 +35,27 @@ const App: React.FC = () => {
   const [fixedClasses, setFixedClasses] = useState<FixedClass[]>([]);
   const [subjects, setSubjects] = useState<SubjectConfig[]>([]);
   const [schedule, setSchedule] = useState<SchoolSchedule | null>(null);
+
+  const loadingMessages = [
+    "Crunching curriculum data...",
+    "Balancing teacher workloads...",
+    "Mapping textbook page targets...",
+    "Adjusting for red days and holidays...",
+    "Finalizing quarterly roadmap...",
+    "Almost there - crafting the master view..."
+  ];
+
+  useEffect(() => {
+    let interval: number;
+    if (isLoading) {
+      interval = window.setInterval(() => {
+        setLoadingStep(prev => (prev + 1) % loadingMessages.length);
+      }, 3500);
+    } else {
+      setLoadingStep(0);
+    }
+    return () => window.clearInterval(interval);
+  }, [isLoading]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -131,8 +152,9 @@ const App: React.FC = () => {
       setSchedule(generated);
       await saveUserData(user.uid, { profile, teachers, classes, textbooks, fixedClasses, subjects, schedule: generated });
       setActiveTab('timetable');
-    } catch (error) {
-      alert("Scheduling error");
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Scheduling error. The server might be busy or your constraints are too complex.");
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +164,25 @@ const App: React.FC = () => {
   if (!user) return <Auth />;
 
   const renderContent = () => {
-    if (isLoading) return <div className="flex flex-col items-center justify-center min-h-[70vh]"><div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6">Updating school data...</p></div>;
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fadeIn">
+          <div className="relative w-20 h-20">
+            <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div className="text-center space-y-3 mt-10">
+            <p className="text-sm font-black text-slate-900 uppercase tracking-widest animate-pulse-soft">
+              {loadingMessages[loadingStep]}
+            </p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              Please wait while Gemini synthesizes your data
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'home': return <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} />;
       case 'setup': return <ScheduleForm profile={profile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} fixedClasses={fixedClasses} setFixedClasses={setFixedClasses} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateSchedule} />;

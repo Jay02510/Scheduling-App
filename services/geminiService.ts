@@ -10,54 +10,39 @@ export const generateSchedule = async (
 ): Promise<SchoolSchedule> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+  // Minimalist data set to reduce prompt size and speed up processing
   const classChecklist = classes.map(c => ({
     id: c.id,
-    name: c.name,
-    grade: c.grade,
-    requirements: c.assignments.map(a => {
+    reqs: c.assignments.map(a => {
       const s = profile?.subjects.find(sub => sub.id === a.subjectId);
-      const t = teachers.find(teach => teach.id === a.teacherId);
       return { 
-        subject: s?.name, 
-        frequency: s?.frequencyPerWeek || 0, 
-        teacher: t?.name,
-        teacherId: a.teacherId 
+        s: s?.name, 
+        f: s?.frequencyPerWeek || 0, 
+        tId: a.teacherId 
       };
-    }).filter(a => a.frequency > 0 && a.teacherId)
+    }).filter(a => a.f > 0 && a.tId)
   }));
 
   const prompt = `
-    TASK: Generate a WEEKLY MASTER SCHEDULE and a 12-WEEK QUARTERLY CURRICULUM ROADMAP.
+    TASK: Generate a Weekly Master Schedule AND a 12-Week Quarterly Roadmap.
     
-    INPUT DATA:
-    - Textbooks (Pacing Source): ${JSON.stringify(textbooks.map(t => ({ title: t.title, chapters: t.totalChapters, pages: t.totalPages, subject: t.subject })))}
-    - School Calendar (Red Days): ${JSON.stringify(profile?.specialEvents || [])}
-    - Class Requirements: ${JSON.stringify(classChecklist)}
+    INPUT:
+    - Textbooks: ${JSON.stringify(textbooks.map(t => ({ title: t.title, chapters: t.totalChapters, pages: t.totalPages, subject: t.subject })))}
+    - Holidays/Red Days: ${JSON.stringify(profile?.specialEvents || [])}
+    - Requirements: ${JSON.stringify(classChecklist)}
     
-    CONSTRAINTS:
-    1. QUARTERLY ROADMAP (12 Weeks): Distribute textbook chapters/pages across 12 weeks. 
-    2. HOLIDAY AWARENESS: Identify weeks with Red Days. Reduce the page/unit target for those weeks. Label them with "isHolidayWeek: true" and the holiday name.
-    3. MASTER SCHEDULE: Ensure all periods (0-${(profile?.hours.totalPeriods || 8) - 1}) and days (0-4) are filled according to frequency requirements.
-    4. SPEED: Be concise in the "topic" fields. Focus on textbook units.
-
-    OUTPUT JSON FORMAT:
-    {
-      "quarterlyPlan": {
-        "quarterName": "Quarter 1",
-        "weeks": [
-          { "weekNumber": 1, "subject": "Math", "unit": "Unit 1: Logic", "pages": "1-12", "isHolidayWeek": false }
-        ]
-      },
-      "weeklySlots": [
-        { "id": "uuid", "period": 0, "day": 0, "subject": "Math", "teacherId": "t1", "classId": "c1", "topic": "Unit 1.1 Intro" }
-      ]
-    }
+    STRICT RULES:
+    1. QUARTERLY ROADMAP: Exactly 12 weeks. Distribute textbook pages logically.
+    2. RED DAYS: If a week has holidays, reduce the page target significantly. Mark isHolidayWeek: true.
+    3. MASTER SCHEDULE: Fill periods 0-${(profile?.hours.totalPeriods || 8) - 1} for days 0-4. Ensure teacher/subject frequencies match requirements.
+    4. EFFICIENCY: Keep "topic" strings under 30 characters.
   `;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
+      thinkingConfig: { thinkingBudget: 4000 }, // Enable moderate reasoning for complex scheduling
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -80,7 +65,8 @@ export const generateSchedule = async (
                   }
                 }
               }
-            }
+            },
+            required: ["quarterName", "weeks"]
           },
           weeklySlots: {
             type: Type.ARRAY,
@@ -104,12 +90,13 @@ export const generateSchedule = async (
   });
 
   try {
-    const text = response.text;
-    if (!text) throw new Error("Empty AI response");
-    return JSON.parse(text);
+    const rawText = response.text || "";
+    // Clean up potential markdown if the model ignored responseMimeType (safeguard)
+    const jsonStr = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+    return JSON.parse(jsonStr);
   } catch (e) {
-    console.error("AI Parse Error:", e);
-    throw new Error("AI Synthesis Failed");
+    console.error("Critical AI Response Error:", e);
+    throw new Error("The AI failed to generate a valid schedule structure. Please try again with fewer constraints.");
   }
 };
 
@@ -119,7 +106,8 @@ export const analyzeSchedule = async (
   teachers: Teacher[]
 ): Promise<any> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Audit institutional performance: ${JSON.stringify({ profile, schedule })}`;
+  const prompt = `Audit institutional performance for the following schedule data: ${JSON.stringify({ profile, schedule })}`;
+  
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
@@ -138,5 +126,10 @@ export const analyzeSchedule = async (
       }
     }
   });
-  return JSON.parse(response.text || '{}');
+  
+  try {
+    return JSON.parse(response.text || '{}');
+  } catch (e) {
+    return { score: 0, insights: ["Unable to analyze at this time."], burnoutRisks: [], efficiency: 0, constraintScore: 0 };
+  }
 };
