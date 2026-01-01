@@ -46,12 +46,11 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     }));
   };
 
-  const deleteTeacher = (id: string, e: React.MouseEvent) => {
+  const handleDeleteTeacher = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (confirm("Delete this teacher? This will clear their assignments.")) {
-      const updatedTeachers = teachers.filter(t => t.id !== id);
-      setTeachers(updatedTeachers);
+    if (confirm("Delete this teacher? This will remove all their classes.")) {
+      setTeachers(teachers.filter(t => t.id !== id));
       setClasses(classes.map(c => ({
         ...c,
         homeroomTeacherId: c.homeroomTeacherId === id ? '' : c.homeroomTeacherId,
@@ -61,24 +60,23 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     }
   };
 
-  const deleteClass = (id: string, e: React.MouseEvent) => {
+  const handleDeleteClass = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (confirm("Delete this class?")) {
-      const updatedClasses = classes.filter(c => c.id !== id);
-      setClasses(updatedClasses);
+      const updated = classes.filter(c => c.id !== id);
+      setClasses(updated);
       if (activeClassTab === id) {
-        setActiveClassTab(updatedClasses[0]?.id || '');
+        setActiveClassTab(updated[0]?.id || '');
       }
     }
   };
 
-  const deleteSubject = (id: string, e: React.MouseEvent) => {
+  const handleDeleteSubject = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (confirm("Delete this subject? It will be removed from all classes.")) {
-      const updatedSubjects = subjects.filter(s => s.id !== id);
-      setSubjects(updatedSubjects);
+    if (confirm("Delete this subject?")) {
+      setSubjects(subjects.filter(s => s.id !== id));
       setClasses(classes.map(c => ({
         ...c,
         assignments: c.assignments.filter(a => a.subjectId !== id)
@@ -118,7 +116,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
     setTextbooks([...textbooks, {
       id: Math.random().toString(36).substr(2, 9),
-      title: `Book for ${className}`,
+      title: `Curriculum: ${className}`,
       subject: 'General',
       gradeLevel: 'Grade 1',
       totalChapters: 12,
@@ -133,18 +131,18 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div>
           <h2 className="text-4xl font-black text-slate-900 tracking-tight">Setup</h2>
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Manage your school information</p>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Manage staff, classes, and subjects.</p>
         </div>
         <button
           onClick={onGenerate}
           className="gradient-primary text-white px-10 py-5 rounded-[2rem] shadow-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all"
         >
-          Generate Schedule
+          Create Schedule
         </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Teachers */}
+        {/* Staff Section */}
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-black text-slate-800">Staff</h3>
@@ -152,10 +150,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           </div>
           <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
             {teachers.map(t => (
-              <div key={t.id} className="p-4 bg-slate-50 rounded-2xl border-l-8 transition-all group" style={{ borderLeftColor: t.color }}>
+              <div key={t.id} className="p-4 bg-slate-50 rounded-2xl border-l-8 relative group" style={{ borderLeftColor: t.color }}>
                 <div className="flex justify-between items-center mb-1">
                   <input className="bg-transparent border-0 p-0 font-black text-slate-700 focus:ring-0 text-xs w-full" value={t.name} onChange={e => setTeachers(teachers.map(p => p.id === t.id ? {...p, name: e.target.value} : p))} />
-                  <button onClick={(e) => deleteTeacher(t.id, e)} className="p-1 text-slate-300 hover:text-rose-500 transition-colors shrink-0">
+                  <button type="button" onClick={(e) => handleDeleteTeacher(t.id, e)} className="p-1 text-slate-300 hover:text-rose-500 transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -168,7 +166,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           </div>
         </section>
 
-        {/* Classes */}
+        {/* Classes Section */}
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-black text-slate-800">Classes</h3>
@@ -176,10 +174,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           </div>
           <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
             {classes.map(c => (
-              <div key={c.id} className="p-4 bg-slate-50 rounded-2xl border-l-8 transition-all group" style={{ borderLeftColor: c.color }}>
+              <div key={c.id} className="p-4 bg-slate-50 rounded-2xl border-l-8 relative group" style={{ borderLeftColor: c.color }}>
                 <div className="flex justify-between items-center mb-1">
                   <input className="bg-transparent border-0 p-0 font-black text-slate-700 focus:ring-0 text-xs w-full" value={c.name} onChange={e => setClasses(classes.map(p => p.id === c.id ? {...p, name: e.target.value} : p))} />
-                  <button onClick={(e) => deleteClass(c.id, e)} className="p-1 text-slate-300 hover:text-rose-500 transition-colors shrink-0">
+                  <button type="button" onClick={(e) => handleDeleteClass(c.id, e)} className="p-1 text-slate-300 hover:text-rose-500 transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -192,7 +190,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           </div>
         </section>
 
-        {/* Subjects */}
+        {/* Subjects Section */}
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-black text-slate-800">Subjects</h3>
@@ -204,7 +202,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                 <input className="bg-transparent border-0 p-0 font-black text-slate-700 focus:ring-0 text-xs flex-1" value={s.name} onChange={e => setSubjects(subjects.map(p => p.id === s.id ? {...p, name: e.target.value} : p))} />
                 <div className="flex items-center gap-2">
                   <input type="number" className="w-10 bg-white border border-slate-200 rounded-lg text-center font-black text-[10px] py-1" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(p => p.id === s.id ? {...p, frequencyPerWeek: parseInt(e.target.value) || 0} : p))} />
-                  <button onClick={(e) => deleteSubject(s.id, e)} className="p-1 text-slate-300 hover:text-rose-500 transition-colors shrink-0">
+                  <button type="button" onClick={(e) => handleDeleteSubject(s.id, e)} className="p-1 text-slate-300 hover:text-rose-500 transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -217,12 +215,19 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       <section className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
         <div className="text-center">
           <h3 className="text-2xl font-black text-slate-800">Assign Teachers</h3>
-          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Assign staff to subjects for each class.</p>
+          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Pick a class and assign staff to subjects.</p>
         </div>
         
         <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide justify-center">
           {classes.map(c => (
-            <button key={c.id} onClick={() => setActiveClassTab(c.id)} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeClassTab === c.id ? 'bg-[#0f172a] text-white shadow-xl scale-105' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`} style={activeClassTab === c.id ? { borderBottom: `4px solid ${c.color}` } : {}}>{c.name}</button>
+            <button 
+              key={c.id} 
+              onClick={() => setActiveClassTab(c.id)} 
+              className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeClassTab === c.id ? 'bg-[#0f172a] text-white shadow-xl scale-105' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`} 
+              style={activeClassTab === c.id ? { borderBottom: `4px solid ${c.color}` } : {}}
+            >
+              {c.name}
+            </button>
           ))}
         </div>
 
@@ -234,10 +239,14 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
               <div key={sub.id} className="p-6 bg-slate-50 rounded-[2.5rem] space-y-4 border border-transparent hover:border-slate-200 transition-all shadow-sm">
                 <div className="text-center">
                   <p className="text-[11px] font-black text-slate-800 uppercase tracking-wider">{sub.name}</p>
-                  <p className="text-[9px] font-bold text-indigo-500 uppercase mt-1">{sub.frequencyPerWeek} p/w</p>
+                  <p className="text-[9px] font-bold text-indigo-500 uppercase mt-1">{sub.frequencyPerWeek} Lessons/Week</p>
                 </div>
-                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-[10px] font-black text-slate-700 outline-none shadow-inner" value={assignment?.teacherId || ''} onChange={e => handleAssignmentChange(activeClassTab, sub.id, e.target.value)}>
-                  <option value="">Unassigned</option>
+                <select 
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-[10px] font-black text-slate-700 outline-none shadow-inner" 
+                  value={assignment?.teacherId || ''} 
+                  onChange={e => handleAssignmentChange(activeClassTab, sub.id, e.target.value)}
+                >
+                  <option value="">No Teacher</option>
                   {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
