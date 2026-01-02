@@ -55,7 +55,7 @@ export interface Teacher {
 export interface FixedClass {
   id: string;
   name: string;
-  provider?: string; // Added to match Onboarding usage
+  provider?: string;
   dayOfWeek: number;
   period: number;
   classIds: string[]; 
