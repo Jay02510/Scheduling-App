@@ -3,7 +3,8 @@ import { Teacher, Textbook, FixedClass, ClassGroup, SchoolSchedule, SchoolProfil
 
 /**
  * Synthesizes a master schedule grid while respecting all provided institutional constraints.
- * Uses gemini-3-pro-preview for advanced reasoning requirements of combinatorial scheduling.
+ * Uses gemini-3-flash-preview for high quota and fast performance, 
+ * with a thinking budget to maintain high reasoning quality for scheduling.
  */
 export const generateWeeklyMaster = async (
   teachers: Teacher[],
@@ -56,10 +57,10 @@ export const generateWeeklyMaster = async (
     
     STRICT RULES (NON-NEGOTIABLE):
     1. SUBJECT NAMES: Use ONLY these strings: ${JSON.stringify(inputData.validSubjectNames)}. 
-       DO NOT use abbreviations or generic academic terms (e.g., if "Into Reading" is provided, do NOT output "English").
+       DO NOT use abbreviations or generic academic terms.
     2. TEACHER CONFLICTS: A teacher (teacherId) CANNOT be in two classes at the same (Day, Period). 
     3. MAX LOAD: A teacher cannot exceed their "maxDaily" periods in any single day across all classes.
-    4. BREAKS: Ensure teachers have at least some gaps in their schedule based on their "minBreaks" requirement.
+    4. BREAKS: Ensure teachers have gaps based on their "minBreaks" requirement.
     5. LUNCH: Period index ${inputData.lunchPeriod} is reserved for LUNCH for all classes. Do NOT schedule anything there.
     6. FIXED BLOCKS: Do not schedule lessons in these pre-occupied slots: ${JSON.stringify(inputData.locks)}.
     7. DATA: ${JSON.stringify(inputData.classes)}
@@ -67,9 +68,8 @@ export const generateWeeklyMaster = async (
     Output a flat JSON list of ScheduleSlot objects.
   `;
 
-  // Upgrading to gemini-3-pro-preview for complex reasoning task (scheduling)
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       thinkingConfig: { thinkingBudget: 4000 },
@@ -94,7 +94,6 @@ export const generateWeeklyMaster = async (
   try {
     const rawData = JSON.parse(response.text || '[]');
     
-    // Sanitizer: Ensure subject names match the assignments exactly to prevent "English/Math" hallucinations
     return rawData.map((slot: any) => {
       const cls = classes.find(c => c.id === slot.classId);
       const assignment = cls?.assignments.find(a => a.teacherId === slot.teacherId);
@@ -113,9 +112,6 @@ export const generateWeeklyMaster = async (
   }
 };
 
-/**
- * Generates a weekly lesson roadmap based on textbook resources and school events.
- */
 export const generateCurriculumRoadmap = async (
   textbooks: Textbook[],
   profile: SchoolProfile
@@ -164,10 +160,6 @@ export const generateCurriculumRoadmap = async (
   }
 };
 
-/**
- * Analyzes a completed schedule for efficiency, constraints, and potential teacher burnout.
- * Resolves the missing export for AnalyticsDashboard.
- */
 export const analyzeSchedule = async (
   schedule: SchoolSchedule,
   profile: SchoolProfile,
@@ -180,13 +172,6 @@ export const analyzeSchedule = async (
     PROFILE: ${JSON.stringify(profile)}
     TEACHERS: ${JSON.stringify(teachers)}
     SCHEDULE: ${JSON.stringify(schedule)}
-    
-    Evaluate and provide:
-    1. A total quality score (0-100).
-    2. A constraintScore (0-100) specifically for logic/rule adherence.
-    3. An efficiency rating (0.0 to 1.0).
-    4. A list of burnoutRisks (strings) for overloaded staff.
-    5. A list of actionable insights (strings).
   `;
 
   const response = await ai.models.generateContent({

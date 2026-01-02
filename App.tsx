@@ -120,7 +120,12 @@ const App: React.FC = () => {
       setSchedule(newSchedule);
       setActiveTab('timetable');
     } catch (e: any) {
-      alert(e.message);
+      const errorMsg = e.message?.toLowerCase() || "";
+      if (errorMsg.includes("429") || errorMsg.includes("quota")) {
+        alert("Quota exceeded: The AI is busy handling requests. Please wait about 60 seconds before trying again.");
+      } else {
+        alert("Failed to generate schedule: " + e.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +144,12 @@ const App: React.FC = () => {
       setSchedule(newSchedule);
       setActiveTab('timetable');
     } catch (e: any) {
-      alert(e.message);
+      const errorMsg = e.message?.toLowerCase() || "";
+      if (errorMsg.includes("429") || errorMsg.includes("quota")) {
+        alert("Quota exceeded: The AI is busy handling requests. Please wait about 60 seconds before trying again.");
+      } else {
+        alert("Roadmap calculation failed: " + e.message);
+      }
     } finally {
       setIsLoading(false);
     }
