@@ -25,11 +25,9 @@ export interface SubjectConfig {
   frequencyPerWeek: number;
   gradeLevels: string[];
   textbookId?: string;
-  aiNotes?: string;
+  // Added missing constraints property used in Onboarding.tsx
   constraints?: {
     morningOnly?: boolean;
-    requiresSpecialRoom?: string;
-    doublePeriod?: boolean;
   };
 }
 
@@ -49,23 +47,20 @@ export interface Teacher {
   role: 'homeroom' | 'korean' | 'subject';
   subjects: string[];
   maxDailyPeriods: number;
-  assignedClasses: string[];
-  availabilityNotes?: string;
-  employmentType: 'full-time' | 'part-time';
   breaksNeededPerWeek: number;
   color: string;
+  // Added missing properties used in Onboarding.tsx
+  assignedClasses: string[];
+  employmentType: string;
 }
 
 export interface FixedClass {
   id: string;
   name: string;
-  provider: string;
   dayOfWeek: number;
   period: number;
   classIds: string[]; 
   isSchoolWide: boolean; 
-  room?: string;
-  notes?: string;
   color?: string;
 }
 
@@ -79,7 +74,8 @@ export interface ClassGroup {
   name: string;
   grade: string;
   homeroomTeacherId: string;
-  koreanTeacherId?: string;
+  // Added missing property used in Onboarding.tsx
+  koreanTeacherId: string;
   assignments: ClassSubjectAssignment[];
   color: string;
 }
@@ -88,12 +84,13 @@ export interface ScheduleSlot {
   id: string;
   period: number;
   day: number;
-  subject: string;
+  subjectId: string; // Changed to ID-based
   teacherId: string;
   classId: string;
-  isFixed: boolean;
-  isBreak: boolean;
+  // Optional topic for visual display
   topic?: string;
+  // Optional subject name for visual display
+  subject?: string;
 }
 
 export interface WeeklyCurriculumTarget {
@@ -102,7 +99,6 @@ export interface WeeklyCurriculumTarget {
   unit: string;
   pages: string;
   isHolidayWeek?: boolean;
-  holidayName?: string;
 }
 
 export interface QuarterlyPlan {
@@ -115,30 +111,27 @@ export interface SchoolSchedule {
   weeklySlots: ScheduleSlot[];
 }
 
-export interface DayConfig {
-  day: number;
-  endTime: string;
-}
-
 export interface SchoolHours {
   startTime: string; 
-  periodDuration: number; 
   totalPeriods: number; 
-  lunchAfterPeriod: number; // The period index after which lunch occurs
+  lunchAfterPeriod: number;
+  // Added missing properties used in Onboarding.tsx
+  periodDuration: number;
   recessAfterPeriod: number;
   homeworkAfterPeriod: number;
-  dailyConfigs: DayConfig[];
+  dailyConfigs: { day: number; endTime: string }[];
 }
 
 export interface SchoolProfile {
   name: string;
   hours: SchoolHours;
+  // Added missing levels and terms used in Onboarding.tsx
   levels: SchoolLevel[];
   terms: Term[];
-  specialEvents: SchoolEvent[];
   subjects: SubjectConfig[];
   textbooks: Textbook[];
   teachers: Teacher[];
   classes: ClassGroup[];
   fixedClasses: FixedClass[];
+  specialEvents: SchoolEvent[];
 }

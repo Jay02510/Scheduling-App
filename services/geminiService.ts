@@ -1,11 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Teacher, Textbook, FixedClass, ClassGroup, SchoolSchedule, SchoolProfile, QuarterlyPlan, ScheduleSlot } from "../types";
+import { Teacher, FixedClass, ClassGroup, SchoolProfile, QuarterlyPlan, ScheduleSlot, Textbook, SchoolSchedule } from "../types";
 
-/**
- * Synthesizes a master schedule grid while respecting all provided institutional constraints.
- * Uses gemini-3-flash-preview for high quota and fast performance, 
- * with a thinking budget to maintain high reasoning quality for scheduling.
- */
 export const generateWeeklyMaster = async (
   teachers: Teacher[],
   fixedClasses: FixedClass[],
@@ -14,58 +9,55 @@ export const generateWeeklyMaster = async (
 ): Promise<ScheduleSlot[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Map IDs to exact names for sanitization and identification
-  const subjectMap = profile.subjects.reduce((acc, s) => {
-    acc[s.id] = s.name;
-    return acc;
-  }, {} as Record<string, string>);
+  // Extract valid IDs for the AI to use
+  const validSubjectIds = profile.subjects.map(s => s.id);
+  const validTeacherIds = teachers.map(t => t.id);
+  const validClassIds = classes.map(c => c.id);
 
   const inputData = {
     totalPeriods: profile.hours.totalPeriods,
     lunchPeriod: profile.hours.lunchAfterPeriod,
-    validSubjectNames: Object.values(subjectMap),
     teachers: teachers.map(t => ({
       id: t.id,
-      name: t.name,
       maxDaily: t.maxDailyPeriods,
       minBreaks: t.breaksNeededPerWeek
     })),
     classes: classes.map(c => ({
       id: c.id,
-      name: c.name,
-      requirements: c.assignments.map(a => {
-        const subName = subjectMap[a.subjectId];
-        return {
-          subjectId: a.subjectId,
-          subjectName: subName,
-          frequency: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 0,
-          teacherId: a.teacherId
-        };
-      }).filter(r => r.frequency > 0)
+      assignments: c.assignments.map(a => ({
+        subjectId: a.subjectId,
+        frequency: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 0,
+        teacherId: a.teacherId
+      })).filter(r => r.frequency > 0)
     })),
     locks: fixedClasses.map(f => ({
       day: f.dayOfWeek,
       period: f.period,
-      name: f.name,
       isGlobal: f.isSchoolWide,
       classIds: f.classIds
     }))
   };
 
   const prompt = `
-    TASK: Generate a Weekly Master Schedule (Days 0-4, Periods 0-${inputData.totalPeriods - 1}).
+    TASK: Generate a Weekly Master Schedule for a school.
     
-    STRICT RULES (NON-NEGOTIABLE):
-    1. SUBJECT NAMES: Use ONLY these strings: ${JSON.stringify(inputData.validSubjectNames)}. 
-       DO NOT use abbreviations or generic academic terms.
-    2. TEACHER CONFLICTS: A teacher (teacherId) CANNOT be in two classes at the same (Day, Period). 
-    3. MAX LOAD: A teacher cannot exceed their "maxDaily" periods in any single day across all classes.
-    4. BREAKS: Ensure teachers have gaps based on their "minBreaks" requirement.
-    5. LUNCH: Period index ${inputData.lunchPeriod} is reserved for LUNCH for all classes. Do NOT schedule anything there.
-    6. FIXED BLOCKS: Do not schedule lessons in these pre-occupied slots: ${JSON.stringify(inputData.locks)}.
-    7. DATA: ${JSON.stringify(inputData.classes)}
+    ENVIRONMENT:
+    - Days: 0 (Mon) to 4 (Fri).
+    - Periods: 0 to ${inputData.totalPeriods - 1}.
+    - LUNCH: Period ${inputData.lunchPeriod} is reserved for lunch for ALL classes.
 
-    Output a flat JSON list of ScheduleSlot objects.
+    STRICT CONSTRAINTS:
+    1. Only use these Teacher IDs: ${JSON.stringify(validTeacherIds)}.
+    2. Only use these Subject IDs: ${JSON.stringify(validSubjectIds)}.
+    3. Only use these Class IDs: ${JSON.stringify(validClassIds)}.
+    4. A Teacher cannot be in two places at once (same Day/Period).
+    5. Honor the teacher "maxDaily" (max classes per day).
+    6. Honor the "locks" (pre-scheduled slots): ${JSON.stringify(inputData.locks)}.
+    7. Each class must meet its subject "frequency" per week.
+
+    Input Data: ${JSON.stringify(inputData)}
+
+    Return a JSON array of ScheduleSlot objects with keys: period, day, subjectId, teacherId, classId.
   `;
 
   const response = await ai.models.generateContent({
@@ -81,11 +73,11 @@ export const generateWeeklyMaster = async (
           properties: {
             period: { type: Type.NUMBER },
             day: { type: Type.NUMBER },
-            subject: { type: Type.STRING },
+            subjectId: { type: Type.STRING },
             teacherId: { type: Type.STRING },
             classId: { type: Type.STRING }
           },
-          required: ["period", "day", "subject", "teacherId", "classId"]
+          required: ["period", "day", "subjectId", "teacherId", "classId"]
         }
       }
     }
@@ -93,20 +85,15 @@ export const generateWeeklyMaster = async (
 
   try {
     const rawData = JSON.parse(response.text || '[]');
-    
-    return rawData.map((slot: any) => {
-      const cls = classes.find(c => c.id === slot.classId);
-      const assignment = cls?.assignments.find(a => a.teacherId === slot.teacherId);
-      const finalSubjectName = assignment ? subjectMap[assignment.subjectId] : slot.subject;
-
-      return {
-        ...slot,
-        id: Math.random().toString(36).substr(2, 9),
-        subject: finalSubjectName,
-        isFixed: false,
-        isBreak: false
-      };
-    });
+    // Filter out invalid IDs that the AI might have hallucinated despite instructions
+    return rawData.filter((slot: any) => 
+      validSubjectIds.includes(slot.subjectId) && 
+      validTeacherIds.includes(slot.teacherId) && 
+      validClassIds.includes(slot.classId)
+    ).map((slot: any) => ({
+      ...slot,
+      id: Math.random().toString(36).substr(2, 9)
+    }));
   } catch (e) {
     throw new Error("Master Schedule synthesis failed. The model generated invalid JSON.");
   }
@@ -118,9 +105,8 @@ export const generateCurriculumRoadmap = async (
 ): Promise<QuarterlyPlan> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `
-    Generate a 12-week lesson plan pacing guide for these textbooks: ${JSON.stringify(textbooks.map(t => ({ title: t.title, pages: t.totalPages, subject: t.subject })))}.
-    Consider the school profile and any holidays: ${JSON.stringify(profile.specialEvents)}.
-    Distribute the total pages reasonably across the 12 weeks.
+    Generate a 12-week lesson plan roadmap for these books: ${JSON.stringify(textbooks.map(t => ({ title: t.title, pages: t.totalPages, subject: t.subject })))}.
+    School profile: ${JSON.stringify(profile.specialEvents)}.
   `;
 
   const response = await ai.models.generateContent({
@@ -141,8 +127,7 @@ export const generateCurriculumRoadmap = async (
                 subject: { type: Type.STRING },
                 unit: { type: Type.STRING },
                 pages: { type: Type.STRING },
-                isHolidayWeek: { type: Type.BOOLEAN },
-                holidayName: { type: Type.STRING }
+                isHolidayWeek: { type: Type.BOOLEAN }
               },
               required: ["weekNumber", "subject", "unit", "pages"]
             }
@@ -153,25 +138,29 @@ export const generateCurriculumRoadmap = async (
     }
   });
 
-  try {
-    return JSON.parse(response.text || '{"weeks":[]}');
-  } catch (e) {
-    throw new Error("Roadmap synthesis failed.");
-  }
+  return JSON.parse(response.text || '{"weeks":[]}');
 };
 
+/**
+ * Analyzes the school schedule using Gemini AI to identify burnout risks and efficiency metrics.
+ * Required by the AnalyticsDashboard component.
+ */
 export const analyzeSchedule = async (
   schedule: SchoolSchedule,
   profile: SchoolProfile,
   teachers: Teacher[]
 ): Promise<any> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+
   const prompt = `
-    Audit this school schedule for quality, constraints, and efficiency.
-    PROFILE: ${JSON.stringify(profile)}
-    TEACHERS: ${JSON.stringify(teachers)}
-    SCHEDULE: ${JSON.stringify(schedule)}
+    Perform a comprehensive audit of the following school schedule.
+    Evaluate for teacher burnout, constraint satisfaction, and general pedagogical efficiency.
+    
+    School Context: ${JSON.stringify(profile)}
+    Weekly Slots: ${JSON.stringify(schedule.weeklySlots)}
+    Teacher Data: ${JSON.stringify(teachers)}
+
+    Return the analysis in a strictly formatted JSON object.
   `;
 
   const response = await ai.models.generateContent({
@@ -182,11 +171,11 @@ export const analyzeSchedule = async (
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          score: { type: Type.NUMBER },
-          constraintScore: { type: Type.NUMBER },
-          efficiency: { type: Type.NUMBER },
-          burnoutRisks: { type: Type.ARRAY, items: { type: Type.STRING } },
-          insights: { type: Type.ARRAY, items: { type: Type.STRING } }
+          score: { type: Type.NUMBER, description: "Overall quality score from 0 to 100" },
+          constraintScore: { type: Type.NUMBER, description: "Rule adherence score from 0 to 100" },
+          efficiency: { type: Type.NUMBER, description: "Resource utilization ratio from 0.0 to 1.0" },
+          burnoutRisks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of identified risks for staff" },
+          insights: { type: Type.ARRAY, items: { type: Type.STRING }, description: "General observations and tips" }
         },
         required: ["score", "constraintScore", "efficiency", "burnoutRisks", "insights"]
       }
@@ -196,6 +185,13 @@ export const analyzeSchedule = async (
   try {
     return JSON.parse(response.text || '{}');
   } catch (e) {
-    throw new Error("Schedule audit failed.");
+    console.error("Audit parsing failed", e);
+    return {
+      score: 50,
+      constraintScore: 50,
+      efficiency: 0.5,
+      burnoutRisks: ["Analysis parsing failed"],
+      insights: ["The AI response was invalid."]
+    };
   }
 };

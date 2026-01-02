@@ -22,11 +22,6 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [timetableMode, setTimetableMode] = useState<'school' | 'staff'>('school');
-  
-  const syncLocked = useRef(false);
-  const initialLoadDone = useRef(false);
-  const syncTimeoutRef = useRef<number | null>(null);
 
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -51,81 +46,40 @@ const App: React.FC = () => {
           setSubjects(cloudData.subjects || []);
           setSchedule(cloudData.schedule || null);
           setShowOnboarding(false);
-          initialLoadDone.current = true;
         } else {
           setShowOnboarding(true);
-          initialLoadDone.current = false;
         }
       } else {
         setUser(null);
-        initialLoadDone.current = false;
       }
       setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (syncLocked.current || !user || !profile || !initialLoadDone.current) return;
-    if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current);
-
-    syncTimeoutRef.current = window.setTimeout(async () => {
-      if (syncLocked.current || !user) return;
-      try {
-        await saveUserData(user.uid, { profile, teachers, textbooks, classes, fixedClasses, subjects, schedule });
-      } catch (e) {
-        console.warn("Sync error");
-      }
-    }, 2000);
-
-    return () => { if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current); };
-  }, [profile, teachers, textbooks, classes, fixedClasses, subjects, schedule, user]);
-
   const handleOnboardingComplete = async (newProfile: SchoolProfile) => {
-    if (!user) return;
-    setIsLoading(true);
-    setLoadingMsg("Saving your school profile...");
-    const state = {
-      profile: { ...newProfile, specialEvents: [] },
-      teachers: newProfile.teachers,
-      classes: newProfile.classes,
-      fixedClasses: newProfile.fixedClasses,
-      textbooks: newProfile.textbooks,
-      subjects: newProfile.subjects,
-      schedule: null
-    };
-    setProfile(state.profile);
-    setTeachers(state.teachers);
-    setClasses(state.classes);
-    setFixedClasses(state.fixedClasses);
-    setTextbooks(state.textbooks);
-    setSubjects(state.subjects);
-    await saveUserData(user.uid, state);
-    initialLoadDone.current = true;
+    setProfile(newProfile);
+    setTeachers(newProfile.teachers);
+    setClasses(newProfile.classes);
+    setTextbooks(newProfile.textbooks);
+    setFixedClasses(newProfile.fixedClasses);
+    setSubjects(newProfile.subjects);
     setShowOnboarding(false);
-    setIsLoading(false);
     setActiveTab('home');
   };
 
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Synthesizing Weekly Master Grid...");
+    setLoadingMsg("Synthesizing ID-mapped Master Schedule...");
     try {
-      const slots = await generateWeeklyMaster(teachers, fixedClasses, classes, profile);
-      const newSchedule = { 
-        weeklySlots: slots, 
-        quarterlyPlan: schedule?.quarterlyPlan || { quarterName: 'Not Generated', weeks: [] } 
-      };
-      setSchedule(newSchedule);
+      // Ensure we're using latest state for the synthesis profile
+      const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, fixedClasses, subjects };
+      const slots = await generateWeeklyMaster(teachers, fixedClasses, classes, currentProfile);
+      setSchedule({ weeklySlots: slots, quarterlyPlan: schedule?.quarterlyPlan || { quarterName: '', weeks: [] } });
       setActiveTab('timetable');
     } catch (e: any) {
-      const errorMsg = e.message?.toLowerCase() || "";
-      if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-        alert("Quota exceeded: The AI is busy handling requests. Please wait about 60 seconds before trying again.");
-      } else {
-        alert("Failed to generate schedule: " + e.message);
-      }
+      alert(e.message);
     } finally {
       setIsLoading(false);
     }
@@ -136,43 +90,11 @@ const App: React.FC = () => {
     setIsLoading(true);
     setLoadingMsg("Calculating Curriculum Roadmap...");
     try {
-      const plan = await generateCurriculumRoadmap(textbooks, profile);
-      const newSchedule = { 
-        weeklySlots: schedule?.weeklySlots || [], 
-        quarterlyPlan: plan 
-      };
-      setSchedule(newSchedule);
-      setActiveTab('timetable');
+      const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, fixedClasses, subjects };
+      const plan = await generateCurriculumRoadmap(textbooks, currentProfile);
+      setSchedule({ weeklySlots: schedule?.weeklySlots || [], quarterlyPlan: plan });
     } catch (e: any) {
-      const errorMsg = e.message?.toLowerCase() || "";
-      if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-        alert("Quota exceeded: The AI is busy handling requests. Please wait about 60 seconds before trying again.");
-      } else {
-        alert("Roadmap calculation failed: " + e.message);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const resetSystem = async () => {
-    if (!user || !window.confirm("Are you sure you want to reset all data? This cannot be undone.")) return;
-    setIsLoading(true);
-    setLoadingMsg("Resetting system...");
-    try {
-      await clearUserData(user.uid);
-      setProfile(null);
-      setTeachers([]);
-      setTextbooks([]);
-      setClasses([]);
-      setFixedClasses([]);
-      setSubjects([]);
-      setSchedule(null);
-      setShowOnboarding(true);
-      initialLoadDone.current = false;
-      setActiveTab('home');
-    } catch (e) {
-      alert("Failed to reset data.");
+      alert(e.message);
     } finally {
       setIsLoading(false);
     }
@@ -184,12 +106,9 @@ const App: React.FC = () => {
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fadeIn">
-          <div className="relative w-20 h-20 mb-8">
-            <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <p className="text-sm font-black text-slate-900 uppercase tracking-widest animate-pulse-soft">{loadingMsg}</p>
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-8"></div>
+          <p className="text-xs font-black text-slate-900 uppercase tracking-widest">{loadingMsg}</p>
         </div>
       ) : (
         <>
@@ -197,44 +116,21 @@ const App: React.FC = () => {
           {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} />}
           {activeTab === 'setup' && (
             <ScheduleForm 
-              profile={profile} 
-              setProfile={setProfile}
-              teachers={teachers} 
-              setTeachers={setTeachers} 
-              classes={classes} 
-              setClasses={setClasses} 
-              textbooks={textbooks} 
-              setTextbooks={setTextbooks} 
-              fixedClasses={fixedClasses} 
-              setFixedClasses={setFixedClasses} 
-              subjects={subjects} 
-              setSubjects={setSubjects} 
-              onGenerate={handleGenerateMaster} 
+              profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} fixedClasses={fixedClasses} setFixedClasses={setFixedClasses} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} 
             />
           )}
-          {activeTab === 'timetable' && (
-            <div className="space-y-8">
-              <div className="flex justify-center bg-slate-100 p-1.5 rounded-2xl w-fit mx-auto shadow-inner">
-                <button onClick={() => setTimetableMode('school')} className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400'}`}>Class Schedules</button>
-                <button onClick={() => setTimetableMode('staff')} className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400'}`}>Staff Workloads</button>
-              </div>
-              {schedule ? (
-                timetableMode === 'school' ? (
-                  <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} />
-                ) : (
-                  <TeacherView schedule={schedule} teachers={teachers} classes={classes} profile={profile} />
-                )
-              ) : (
-                <div className="text-center py-40 border-2 border-dashed border-slate-200 rounded-[3rem]">
-                  <p className="text-slate-400 font-black uppercase tracking-widest text-[11px]">No active schedule grid found</p>
-                  <button onClick={() => setActiveTab('setup')} className="mt-4 text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:underline">Return to Setup</button>
-                </div>
-              )}
-            </div>
+          {activeTab === 'timetable' && schedule && (
+            <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} subjects={subjects} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} />
           )}
-          {activeTab === 'planner' && <div className="space-y-16 pb-20"><ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} /><div className="h-px bg-slate-200 w-full"></div><SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} /></div>}
-          {activeTab === 'insights' && (schedule && profile ? <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} /> : <div className="text-center py-40">Generate a schedule to view analytics.</div>)}
-          {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={resetSystem} onLogout={() => signOut(auth)} />}
+          {!schedule && activeTab === 'timetable' && (
+             <div className="text-center py-40 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+               <p className="text-slate-400 font-black text-[11px] uppercase tracking-[0.3em]">No schedule generated yet</p>
+               <button onClick={() => setActiveTab('setup')} className="mt-4 text-indigo-600 font-bold uppercase text-[10px]">Return to Setup</button>
+             </div>
+          )}
+          {activeTab === 'planner' && <div className="space-y-16"><ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} /><SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} /></div>}
+          {activeTab === 'insights' && schedule && profile && <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />}
+          {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={() => {}} onLogout={() => signOut(auth)} />}
         </>
       )}
     </Layout>
