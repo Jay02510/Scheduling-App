@@ -22,7 +22,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
   onGenerate, profile, setProfile, teachers, setTeachers, classes, setClasses, textbooks, setTextbooks, fixedClasses, setFixedClasses, subjects, setSubjects 
 }) => {
   const [activeTab, setActiveTab] = useState<'staff' | 'classes' | 'books' | 'locks'>('staff');
-  const [editingFixedId, setEditingFixedId] = useState<string | null>(null);
 
   const addNewTeacher = () => {
     setTeachers([...teachers, { 
@@ -32,6 +31,8 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       subjects: [], 
       maxDailyPeriods: 6, 
       breaksNeededPerWeek: 5, 
+      assignedClasses: [],
+      employmentType: 'full-time',
       color: TEACHER_COLORS[teachers.length % TEACHER_COLORS.length] 
     }]);
   };

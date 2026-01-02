@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [timetableMode, setTimetableMode] = useState<'school' | 'staff'>('school');
 
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -73,7 +74,6 @@ const App: React.FC = () => {
     setIsLoading(true);
     setLoadingMsg("Synthesizing ID-mapped Master Schedule...");
     try {
-      // Ensure we're using latest state for the synthesis profile
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, fixedClasses, subjects };
       const slots = await generateWeeklyMaster(teachers, fixedClasses, classes, currentProfile);
       setSchedule({ weeklySlots: slots, quarterlyPlan: schedule?.quarterlyPlan || { quarterName: '', weeks: [] } });
@@ -120,7 +120,17 @@ const App: React.FC = () => {
             />
           )}
           {activeTab === 'timetable' && schedule && (
-            <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} subjects={subjects} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} />
+            <div className="space-y-6">
+               <div className="flex justify-center bg-slate-100 p-1 rounded-2xl w-fit mx-auto shadow-inner">
+                  <button onClick={() => setTimetableMode('school')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class Schedules</button>
+                  <button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff View</button>
+               </div>
+               {timetableMode === 'school' ? (
+                 <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} subjects={subjects} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} />
+               ) : (
+                 <TeacherView schedule={schedule} teachers={teachers} classes={classes} subjects={subjects} profile={profile} />
+               )}
+            </div>
           )}
           {!schedule && activeTab === 'timetable' && (
              <div className="text-center py-40 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">

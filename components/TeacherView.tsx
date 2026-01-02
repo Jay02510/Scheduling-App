@@ -1,21 +1,23 @@
-
 import React, { useState } from 'react';
-import { SchoolSchedule, Teacher, ClassGroup, SchoolProfile } from '../types';
+import { SchoolSchedule, Teacher, ClassGroup, SchoolProfile, SubjectConfig } from '../types';
 
 interface TeacherViewProps {
   schedule: SchoolSchedule;
   teachers: Teacher[];
   classes: ClassGroup[];
+  subjects: SubjectConfig[];
   profile: SchoolProfile | null;
 }
 
-const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, profile }) => {
+const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, subjects, profile }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>(teachers[0]?.id || '');
   const days = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri'];
   const totalPeriods = profile?.hours.totalPeriods || 8;
 
   const filteredSlots = schedule.weeklySlots.filter(s => s.teacherId === selectedTeacherId);
   const teacher = teachers.find(t => t.id === selectedTeacherId);
+
+  const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || 'Unknown Subject';
 
   return (
     <div className="space-y-10 animate-fadeIn max-w-full overflow-hidden pb-12">
@@ -60,7 +62,9 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                       {slot ? (
                         <div className="h-full flex flex-col">
                           <div className="flex-1 flex flex-col items-center justify-center p-3 text-center">
-                            <span className="text-[11px] font-black leading-tight text-slate-900 uppercase tracking-tight">{slot.subject}</span>
+                            <span className="text-[11px] font-black leading-tight text-slate-900 uppercase tracking-tight">
+                              {getSubjectName(slot.subjectId)}
+                            </span>
                             {slot.topic && <span className="text-[8px] font-bold text-slate-400 mt-1 italic line-clamp-2">{slot.topic}</span>}
                           </div>
                           <div 

@@ -25,7 +25,6 @@ export interface SubjectConfig {
   frequencyPerWeek: number;
   gradeLevels: string[];
   textbookId?: string;
-  // Added missing constraints property used in Onboarding.tsx
   constraints?: {
     morningOnly?: boolean;
   };
@@ -49,7 +48,6 @@ export interface Teacher {
   maxDailyPeriods: number;
   breaksNeededPerWeek: number;
   color: string;
-  // Added missing properties used in Onboarding.tsx
   assignedClasses: string[];
   employmentType: string;
 }
@@ -57,6 +55,7 @@ export interface Teacher {
 export interface FixedClass {
   id: string;
   name: string;
+  provider?: string; // Added to match Onboarding usage
   dayOfWeek: number;
   period: number;
   classIds: string[]; 
@@ -74,7 +73,6 @@ export interface ClassGroup {
   name: string;
   grade: string;
   homeroomTeacherId: string;
-  // Added missing property used in Onboarding.tsx
   koreanTeacherId: string;
   assignments: ClassSubjectAssignment[];
   color: string;
@@ -84,13 +82,10 @@ export interface ScheduleSlot {
   id: string;
   period: number;
   day: number;
-  subjectId: string; // Changed to ID-based
+  subjectId: string;
   teacherId: string;
   classId: string;
-  // Optional topic for visual display
   topic?: string;
-  // Optional subject name for visual display
-  subject?: string;
 }
 
 export interface WeeklyCurriculumTarget {
@@ -115,7 +110,6 @@ export interface SchoolHours {
   startTime: string; 
   totalPeriods: number; 
   lunchAfterPeriod: number;
-  // Added missing properties used in Onboarding.tsx
   periodDuration: number;
   recessAfterPeriod: number;
   homeworkAfterPeriod: number;
@@ -125,7 +119,6 @@ export interface SchoolHours {
 export interface SchoolProfile {
   name: string;
   hours: SchoolHours;
-  // Added missing levels and terms used in Onboarding.tsx
   levels: SchoolLevel[];
   terms: Term[];
   subjects: SubjectConfig[];
