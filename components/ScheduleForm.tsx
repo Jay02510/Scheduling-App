@@ -5,6 +5,7 @@ import { TEACHER_COLORS, CLASS_COLORS } from '../constants';
 interface ScheduleFormProps {
   onGenerate: () => void;
   profile: SchoolProfile | null;
+  setProfile: (profile: SchoolProfile) => void;
   teachers: Teacher[];
   setTeachers: (teachers: Teacher[]) => void;
   classes: ClassGroup[];
@@ -29,6 +30,7 @@ const BLOCK_COLORS = [
 const ScheduleForm: React.FC<ScheduleFormProps> = ({ 
   onGenerate, 
   profile, 
+  setProfile,
   teachers, 
   setTeachers, 
   classes, 
@@ -55,30 +57,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     }));
   };
 
-  const deleteTeacher = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (confirm("Remove this teacher?")) {
-      setTeachers(teachers.filter(t => t.id !== id));
-    }
-  };
-
-  const deleteClass = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (confirm("Remove this class?")) {
-      setClasses(classes.filter(c => c.id !== id));
-    }
-  };
-
-  const deleteSubject = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (confirm("Remove this subject?")) {
-      setSubjects(subjects.filter(s => s.id !== id));
-    }
-  };
-
   const addNewTeacher = () => {
     const colorIndex = teachers.length % TEACHER_COLORS.length;
     setTeachers([...teachers, { 
@@ -86,7 +64,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       name: 'New Teacher', 
       role: 'homeroom', 
       subjects: [], 
-      maxDailyPeriods: totalPeriods, 
+      maxDailyPeriods: totalPeriods - 2, 
       assignedClasses: [], 
       employmentType: 'full-time', 
       breaksNeededPerWeek: 5, 
@@ -107,100 +85,93 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     }]);
   };
 
-  const toggleClassForFixed = (classId: string, fixedId: string) => {
-    setFixedClasses(prev => prev.map(f => {
-      if (f.id !== fixedId) return f;
-      const currentIds = f.classIds || [];
-      const newIds = currentIds.includes(classId) 
-        ? currentIds.filter(id => id !== classId)
-        : [...currentIds, classId];
-      return { ...f, classIds: newIds, isSchoolWide: false };
-    }));
+  const updateProfile = (updates: Partial<SchoolProfile>) => {
+    if (profile) setProfile({ ...profile, ...updates });
   };
-
-  const selectedFixed = fixedClasses.find(f => f.id === selectedFixedId);
 
   return (
     <div className="space-y-12 pb-40 animate-fadeIn">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tight">Setup</h2>
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Manage institutional data</p>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tight">Institutional Setup</h2>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Configure parameters for the AI Synthesis engine</p>
         </div>
         <button
           onClick={onGenerate}
           className="gradient-primary text-white px-10 py-5 rounded-[2rem] shadow-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all"
         >
-          Generate Weekly Master
+          Synthesize All Schedules
         </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Staff & Classes Column */}
-        <div className="space-y-8">
-          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+        {/* Core Constraints Section */}
+        <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8 h-fit">
+          <div className="space-y-4">
+             <h3 className="text-lg font-black text-slate-800">Hours & Lunch</h3>
+             <div className="space-y-4">
+               <div>
+                  <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">Lunch Break Period</label>
+                  <select 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-xs outline-none"
+                    value={profile?.hours.lunchAfterPeriod}
+                    onChange={(e) => {
+                      if (profile) setProfile({...profile, hours: {...profile.hours, lunchAfterPeriod: parseInt(e.target.value)}});
+                    }}
+                  >
+                    {Array.from({length: totalPeriods}).map((_, i) => (
+                      <option key={i} value={i}>After Period {i + 1}</option>
+                    ))}
+                  </select>
+                  <p className="text-[8px] font-bold text-slate-400 mt-2 uppercase tracking-tight">This slot is globally blocked for all classes.</p>
+               </div>
+             </div>
+          </div>
+
+          <div className="space-y-4 pt-4 border-t border-slate-50">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-black text-slate-800">Staff</h3>
+              <h3 className="text-lg font-black text-slate-800">Staff Constraints</h3>
               <button onClick={addNewTeacher} className="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest">+ Add</button>
             </div>
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {teachers.map(t => (
-                <div key={t.id} className="p-4 bg-slate-50 rounded-2xl border-l-8" style={{ borderLeftColor: t.color }}>
-                  <div className="flex justify-between items-center">
-                    <input className="bg-transparent border-0 p-0 font-black text-slate-700 focus:ring-0 text-xs w-full" value={t.name} onChange={e => setTeachers(teachers.map(p => p.id === t.id ? {...p, name: e.target.value} : p))} />
-                    <button onClick={(e) => deleteTeacher(t.id, e)} className="text-slate-300 hover:text-rose-500 transition-colors">
-                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+                <div key={t.id} className="p-5 bg-slate-50 rounded-3xl border-l-8 border-slate-200 space-y-3" style={{ borderLeftColor: t.color }}>
+                  <input className="bg-transparent border-0 p-0 font-black text-slate-800 focus:ring-0 text-sm w-full" value={t.name} onChange={e => setTeachers(teachers.map(p => p.id === t.id ? {...p, name: e.target.value} : p))} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[7px] font-black uppercase text-slate-400">Max Per/Day</label>
+                      <input type="number" className="w-full bg-white border border-slate-200 rounded-lg p-2 text-[10px] font-black text-center" value={t.maxDailyPeriods} onChange={e => setTeachers(teachers.map(p => p.id === t.id ? {...p, maxDailyPeriods: parseInt(e.target.value) || 0} : p))} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[7px] font-black uppercase text-slate-400">Breaks/Week</label>
+                      <input type="number" className="w-full bg-white border border-slate-200 rounded-lg p-2 text-[10px] font-black text-center" value={t.breaksNeededPerWeek} onChange={e => setTeachers(teachers.map(p => p.id === t.id ? {...p, breaksNeededPerWeek: parseInt(e.target.value) || 0} : p))} />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-black text-slate-800">Classes</h3>
-              <button onClick={addNewClass} className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest">+ Add</button>
-            </div>
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-              {classes.map(c => (
-                <div key={c.id} className="p-4 bg-slate-50 rounded-2xl border-l-8" style={{ borderLeftColor: c.color }}>
-                  <div className="flex justify-between items-center">
-                    <input className="bg-transparent border-0 p-0 font-black text-slate-700 focus:ring-0 text-xs w-full" value={c.name} onChange={e => setClasses(classes.map(p => p.id === c.id ? {...p, name: e.target.value} : p))} />
-                    <button onClick={(e) => deleteClass(c.id, e)} className="text-slate-300 hover:text-rose-500 transition-colors">
-                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Subjects Section with Textbook Correlation */}
+        {/* Subjects & Textbooks */}
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-black text-slate-800">Subjects</h3>
-            <button onClick={() => setSubjects([...subjects, { id: Math.random().toString(36).substr(2, 9), name: 'New Subject', frequencyPerWeek: 5, gradeLevels: ['Grade 1'] }])} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest">+ Add</button>
+            <h3 className="text-lg font-black text-slate-800">Curricula</h3>
+            <button onClick={() => setSubjects([...subjects, { id: Math.random().toString(36).substr(2, 9), name: 'New Subject', frequencyPerWeek: 5, gradeLevels: ['G1'] }])} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest">+ Add</button>
           </div>
           <div className="space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
             {subjects.map(s => (
-              <div key={s.id} className="p-5 bg-slate-50 rounded-3xl border border-transparent hover:border-slate-200 transition-all space-y-3">
-                <div className="flex items-center justify-between">
-                  <input className="bg-transparent border-0 p-0 font-black text-slate-800 focus:ring-0 text-xs flex-1" value={s.name} onChange={e => setSubjects(subjects.map(p => p.id === s.id ? {...p, name: e.target.value} : p))} />
-                  <button onClick={(e) => deleteSubject(s.id, e)} className="text-slate-300 hover:text-rose-500 transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
+              <div key={s.id} className="p-5 bg-slate-50 rounded-3xl border border-transparent hover:border-slate-200 transition-all space-y-3 shadow-sm">
+                <input className="bg-transparent border-0 p-0 font-black text-slate-800 focus:ring-0 text-xs w-full" value={s.name} onChange={e => setSubjects(subjects.map(p => p.id === s.id ? {...p, name: e.target.value} : p))} />
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase text-slate-400">Freq/Wk</label>
-                    <input type="number" className="w-full bg-white border border-slate-200 rounded-lg text-center font-black text-[10px] py-1.5" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(p => p.id === s.id ? {...p, frequencyPerWeek: parseInt(e.target.value) || 0} : p))} />
+                    <label className="text-[7px] font-black uppercase text-slate-400">Freq/Wk</label>
+                    <input type="number" className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-black" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(p => p.id === s.id ? {...p, frequencyPerWeek: parseInt(e.target.value) || 0} : p))} />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase text-slate-400">Textbook</label>
+                    <label className="text-[7px] font-black uppercase text-slate-400">Resource</label>
                     <select 
-                      className="w-full bg-white border border-slate-200 rounded-lg text-[10px] font-bold py-1.5 outline-none"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold outline-none"
                       value={s.textbookId || ''}
                       onChange={e => setSubjects(subjects.map(p => p.id === s.id ? { ...p, textbookId: e.target.value } : p))}
                     >
@@ -214,105 +185,75 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           </div>
         </section>
 
-        {/* Locked Times Section */}
+        {/* Immutable Fixed Classes */}
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-black text-slate-800">Locked Slots</h3>
+            <h3 className="text-lg font-black text-slate-800">Locked Blocks</h3>
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fixed Institutional Events</p>
           </div>
-          
-          <div className="space-y-6">
-            <div className="grid grid-cols-6 gap-1 min-w-[200px]">
-              <div className="h-4"></div>
-              {['M','T','W','T','F'].map(d => <div key={d} className="text-center text-[8px] font-black text-slate-400 uppercase">{d}</div>)}
-              {Array.from({length: totalPeriods}).map((_, p) => (
-                <React.Fragment key={p}>
-                  <div className="text-[7px] font-black text-slate-300 flex items-center justify-center">P{p+1}</div>
-                  {Array.from({length: 5}).map((_, d) => {
-                    const fixed = fixedClasses.find(f => f.dayOfWeek === d && f.period === p);
-                    return (
-                      <button
-                        key={d}
-                        onClick={() => {
-                          const existingIdx = fixedClasses.findIndex(f => f.dayOfWeek === d && f.period === p);
-                          if (existingIdx > -1) {
-                            setSelectedFixedId(fixedClasses[existingIdx].id);
-                          } else {
-                            const newId = Math.random().toString(36).substr(2, 9);
-                            setFixedClasses([...fixedClasses, {
-                              id: newId, name: '', provider: 'School', dayOfWeek: d, period: p, classIds: [], isSchoolWide: true, color: BLOCK_COLORS[1].hex
-                            }]);
-                            setSelectedFixedId(newId);
-                          }
-                        }}
-                        className={`h-7 rounded border transition-all ${
-                          fixed ? 'ring-1 ring-slate-900 ring-offset-1 z-10' : 'bg-slate-50 border-transparent hover:border-slate-200'
-                        }`}
-                        style={fixed ? { backgroundColor: fixed.color || '#6366f1' } : {}}
-                      />
-                    );
-                  })}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {selectedFixed ? (
-              <div className="p-5 bg-slate-50 rounded-2xl space-y-4 border border-slate-100 animate-fadeIn">
-                <div className="flex justify-between items-start">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Edit Locked Slot</span>
-                  <button onClick={() => setSelectedFixedId(null)} className="text-slate-300 hover:text-slate-900 transition-colors">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-                <input 
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-[10px] font-bold outline-none"
-                  value={selectedFixed.name}
-                  placeholder="e.g. GYM, ASSEMBLY"
-                  onChange={e => setFixedClasses(fixedClasses.map(f => f.id === selectedFixedId ? { ...f, name: e.target.value } : f))}
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-black text-slate-400">Global Lock</span>
-                  <button 
-                    onClick={() => setFixedClasses(fixedClasses.map(f => f.id === selectedFixedId ? { ...f, isSchoolWide: !f.isSchoolWide, classIds: !f.isSchoolWide ? [] : f.classIds } : f))}
-                    className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all ${selectedFixed.isSchoolWide ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400 border'}`}
-                  >
-                    {selectedFixed.isSchoolWide ? 'All Classes' : 'Specific Only'}
-                  </button>
-                </div>
-                {!selectedFixed.isSchoolWide && (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-white rounded-lg border border-slate-100">
-                    {classes.map(c => (
-                      <button
-                        key={c.id}
-                        onClick={() => toggleClassForFixed(c.id, selectedFixed.id)}
-                        className={`px-2 py-1 rounded text-[7px] font-black uppercase transition-all ${selectedFixed.classIds?.includes(c.id) ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-400'}`}
-                      >
-                        {c.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button onClick={() => { setFixedClasses(fixedClasses.filter(f => f.id !== selectedFixedId)); setSelectedFixedId(null); }} className="w-full py-2 bg-rose-50 text-rose-500 rounded-lg text-[8px] font-black uppercase hover:bg-rose-100">Delete Lock</button>
-              </div>
-            ) : (
-              <div className="p-10 border-2 border-dashed border-slate-100 rounded-2xl text-center">
-                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Select grid slot to lock</p>
-              </div>
-            )}
+          <div className="grid grid-cols-6 gap-1">
+            <div className="h-4"></div>
+            {['M','T','W','T','F'].map(d => <div key={d} className="text-center text-[8px] font-black text-slate-400">{d}</div>)}
+            {Array.from({length: totalPeriods}).map((_, p) => (
+              <React.Fragment key={p}>
+                <div className="text-[7px] font-black text-slate-300 flex items-center justify-center">P{p+1}</div>
+                {Array.from({length: 5}).map((_, d) => {
+                  const fixed = fixedClasses.find(f => f.dayOfWeek === d && f.period === p);
+                  const isLunch = p === profile?.hours.lunchAfterPeriod;
+                  return (
+                    <button
+                      key={d}
+                      disabled={isLunch}
+                      onClick={() => {
+                        const existingIdx = fixedClasses.findIndex(f => f.dayOfWeek === d && f.period === p);
+                        if (existingIdx > -1) {
+                          setSelectedFixedId(fixedClasses[existingIdx].id);
+                        } else {
+                          const newId = Math.random().toString(36).substr(2, 9);
+                          setFixedClasses([...fixedClasses, {
+                            id: newId, name: 'Activity', provider: 'School', dayOfWeek: d, period: p, classIds: [], isSchoolWide: true, color: '#f1f5f9'
+                          }]);
+                          setSelectedFixedId(newId);
+                        }
+                      }}
+                      className={`h-9 rounded-xl border transition-all ${isLunch ? 'bg-slate-200 border-transparent cursor-not-allowed opacity-40' : (fixed ? 'ring-2 ring-slate-900 ring-offset-2' : 'bg-slate-50 border-transparent hover:border-slate-200')}`}
+                      style={fixed ? { backgroundColor: fixed.color || '#cbd5e1' } : {}}
+                    />
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </div>
+          {selectedFixedId && (
+            <div className="p-6 bg-slate-900 rounded-[2rem] space-y-4 animate-fadeIn">
+              <input 
+                className="w-full bg-slate-800 border-0 rounded-xl px-4 py-3 text-white font-black text-xs outline-none" 
+                placeholder="Name (e.g. GYM)" 
+                value={fixedClasses.find(f => f.id === selectedFixedId)?.name || ''} 
+                onChange={e => setFixedClasses(fixedClasses.map(f => f.id === selectedFixedId ? { ...f, name: e.target.value } : f))}
+              />
+              <div className="flex flex-wrap gap-2">
+                 {BLOCK_COLORS.map(c => (
+                   <button key={c.hex} onClick={() => setFixedClasses(fixedClasses.map(f => f.id === selectedFixedId ? {...f, color: c.hex} : f))} className="w-6 h-6 rounded-full border border-white/20" style={{backgroundColor: c.hex}} />
+                 ))}
+              </div>
+              <button onClick={() => setSelectedFixedId(null)} className="w-full py-2 bg-indigo-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest">Done</button>
+            </div>
+          )}
         </section>
       </div>
 
-      <section className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
+      <section className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-10">
         <div className="text-center">
-          <h3 className="text-2xl font-black text-slate-800">Assign Staff Lessons</h3>
-          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Pick a class and define which teacher leads each subject.</p>
+          <h3 className="text-2xl font-black text-slate-800">Faculty Assignments</h3>
+          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Select class groups and define curriculum leads</p>
         </div>
         
         <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide justify-center">
           {classes.map(c => (
-            <button key={c.id} onClick={() => setActiveClassTab(c.id)} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeClassTab === c.id ? 'bg-[#0f172a] text-white shadow-xl scale-105' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`} style={activeClassTab === c.id ? { borderBottom: `4px solid ${c.color}` } : {}}>{c.name}</button>
+            <button key={c.id} onClick={() => setActiveClassTab(c.id)} className={`px-8 py-4 rounded-[1.75rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeClassTab === c.id ? 'bg-[#0f172a] text-white shadow-xl scale-105' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>{c.name}</button>
           ))}
+          <button onClick={addNewClass} className="px-8 py-4 rounded-[1.75rem] text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-slate-200 text-slate-400">+ New Group</button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -320,10 +261,9 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
             const currentC = classes.find(c => c.id === activeClassTab);
             const assignment = currentC?.assignments.find(a => a.subjectId === sub.id);
             return (
-              <div key={sub.id} className="p-6 bg-slate-50 rounded-[2.5rem] space-y-4 border border-transparent hover:border-slate-200 transition-all shadow-sm">
+              <div key={sub.id} className="p-6 bg-slate-50 rounded-[2rem] space-y-4 border border-transparent hover:border-slate-200 transition-all shadow-sm">
                 <div className="text-center">
                   <p className="text-[11px] font-black text-slate-800 uppercase tracking-wider">{sub.name}</p>
-                  <p className="text-[9px] font-bold text-indigo-500 uppercase mt-1">{sub.frequencyPerWeek} Lessons Required</p>
                 </div>
                 <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-[10px] font-black text-slate-700 outline-none shadow-inner" value={assignment?.teacherId || ''} onChange={e => handleAssignmentChange(activeClassTab, sub.id, e.target.value)}>
                   <option value="">No Teacher Assigned</option>

@@ -124,7 +124,7 @@ export interface SchoolHours {
   startTime: string; 
   periodDuration: number; 
   totalPeriods: number; 
-  lunchAfterPeriod: number; 
+  lunchAfterPeriod: number; // The period index after which lunch occurs
   recessAfterPeriod: number;
   homeworkAfterPeriod: number;
   dailyConfigs: DayConfig[];

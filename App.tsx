@@ -145,7 +145,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Fix: Added resetSystem function to handle data clearing and state reset
   const resetSystem = async () => {
     if (!user || !window.confirm("Are you sure you want to reset all data? This cannot be undone.")) return;
     setIsLoading(true);
@@ -186,12 +185,28 @@ const App: React.FC = () => {
         <>
           {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
           {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} />}
-          {activeTab === 'setup' && <ScheduleForm profile={profile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} fixedClasses={fixedClasses} setFixedClasses={setFixedClasses} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} />}
+          {activeTab === 'setup' && (
+            <ScheduleForm 
+              profile={profile} 
+              setProfile={setProfile}
+              teachers={teachers} 
+              setTeachers={setTeachers} 
+              classes={classes} 
+              setClasses={setClasses} 
+              textbooks={textbooks} 
+              setTextbooks={setTextbooks} 
+              fixedClasses={fixedClasses} 
+              setFixedClasses={setFixedClasses} 
+              subjects={subjects} 
+              setSubjects={setSubjects} 
+              onGenerate={handleGenerateMaster} 
+            />
+          )}
           {activeTab === 'timetable' && (
             <div className="space-y-8">
-              <div className="flex justify-center bg-slate-100 p-1 rounded-xl w-fit mx-auto shadow-sm">
-                <button onClick={() => setTimetableMode('school')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class Schedules</button>
-                <button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff Workloads</button>
+              <div className="flex justify-center bg-slate-100 p-1.5 rounded-2xl w-fit mx-auto shadow-inner">
+                <button onClick={() => setTimetableMode('school')} className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400'}`}>Class Schedules</button>
+                <button onClick={() => setTimetableMode('staff')} className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400'}`}>Staff Workloads</button>
               </div>
               {schedule ? (
                 timetableMode === 'school' ? (
@@ -201,8 +216,8 @@ const App: React.FC = () => {
                 )
               ) : (
                 <div className="text-center py-40 border-2 border-dashed border-slate-200 rounded-[3rem]">
-                  <p className="text-slate-400 font-black uppercase tracking-widest text-[11px]">No schedule found</p>
-                  <button onClick={() => setActiveTab('setup')} className="mt-4 text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:underline">Go to Setup</button>
+                  <p className="text-slate-400 font-black uppercase tracking-widest text-[11px]">No active schedule grid found</p>
+                  <button onClick={() => setActiveTab('setup')} className="mt-4 text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:underline">Return to Setup</button>
                 </div>
               )}
             </div>
