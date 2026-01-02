@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { SchoolProfile, Teacher, SubjectConfig, Textbook, ClassGroup, FixedClass } from '../types';
-import { TEACHER_COLORS, CLASS_COLORS } from '../constants';
+import { SchoolProfile, Teacher, SubjectConfig, Textbook, ClassGroup, FixedClass } from './types';
+import { TEACHER_COLORS, CLASS_COLORS } from './constants';
 
 interface OnboardingProps {
   onComplete: (profile: SchoolProfile) => void;
@@ -47,11 +47,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       subjects: initialSubjects,
       textbooks: initialTextbooks,
       teachers: [
-        { id: 't-1', name: 'Lead Teacher A', role: 'homeroom', subjects: ['Mathematics'], maxDailyPeriods: 8, assignedClasses: [], employmentType: 'full-time', breaksNeededPerWeek: 5, color: TEACHER_COLORS[0] },
-        { id: 't-2', name: 'Korean Teacher B', role: 'korean', subjects: ['English'], maxDailyPeriods: 8, assignedClasses: [], employmentType: 'full-time', breaksNeededPerWeek: 5, color: TEACHER_COLORS[1] }
+        { id: 't-1', name: 'Lead Teacher A', role: 'homeroom', subjects: ['Mathematics'], maxDailyPeriods: 8, assignedClasses: [], employmentType: 'full-time', breaksNeededPerWeek: 5, color: TEACHER_COLORS[0] } as Teacher,
+        { id: 't-2', name: 'Korean Teacher B', role: 'korean', subjects: ['English'], maxDailyPeriods: 8, assignedClasses: [], employmentType: 'full-time', breaksNeededPerWeek: 5, color: TEACHER_COLORS[1] } as Teacher
       ],
       classes: [
-        { id: 'c-1', name: 'Class 1', grade: 'Grade 1', homeroomTeacherId: 't-1', koreanTeacherId: 't-2', assignments: [{ subjectId: 'sub-1', teacherId: 't-1' }, { subjectId: 'sub-2', teacherId: 't-2' }], color: CLASS_COLORS[0] }
+        { id: 'c-1', name: 'Class 1', grade: 'Grade 1', homeroomTeacherId: 't-1', koreanTeacherId: 't-2', assignments: [{ subjectId: 'sub-1', teacherId: 't-1' }, { subjectId: 'sub-2', teacherId: 't-2' }], color: CLASS_COLORS[0] } as ClassGroup
       ],
       fixedClasses: [],
       specialEvents: []
@@ -294,9 +294,17 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                 setSelectedFixedId(profile.fixedClasses[existingIdx].id);
                               } else {
                                 const newId = Math.random().toString(36).substr(2, 9);
-                                setProfile({...profile, fixedClasses: [...profile.fixedClasses, {
-                                  id: newId, name: 'Locked Slot', provider: 'School', dayOfWeek: d, period: p, classIds: [], isSchoolWide: true, color: BLOCK_COLORS[0].hex
-                                }]});
+                                const newFixed: FixedClass = {
+                                  id: newId, 
+                                  name: 'Locked Slot', 
+                                  provider: 'School', 
+                                  dayOfWeek: d, 
+                                  period: p, 
+                                  classIds: [], 
+                                  isSchoolWide: true, 
+                                  color: BLOCK_COLORS[0].hex
+                                };
+                                setProfile({...profile, fixedClasses: [...profile.fixedClasses, newFixed]});
                                 setSelectedFixedId(newId);
                               }
                             }}
@@ -532,9 +540,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           />
                         </div>
 
-                        <div className="w-full md:w-2/4 flex flex-col gap-2">
+                        <div className="w-full md:w-2/4 flex items-center gap-2">
                           <select
-                            className={`w-full border-0 rounded-xl px-4 py-3 text-[11px] font-black outline-none appearance-none cursor-pointer transition-colors ${isActive ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}
+                            className={`flex-1 border-0 rounded-xl px-4 py-3 text-[11px] font-black outline-none appearance-none cursor-pointer transition-colors ${isActive ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}
                             value={assignment?.teacherId || ''}
                             disabled={!isActive}
                             onChange={(e) => handleAssignmentChange(currentClass.id, sub.id, e.target.value)}
@@ -546,6 +554,21 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                               </option>
                             ))}
                           </select>
+                          <button 
+                            onClick={() => {
+                                setProfile(prev => ({
+                                    ...prev,
+                                    subjects: prev.subjects.filter(s => s.id !== sub.id),
+                                    classes: prev.classes.map(c => ({
+                                        ...c,
+                                        assignments: c.assignments.filter(a => a.subjectId !== sub.id)
+                                    }))
+                                }));
+                            }}
+                            className="text-slate-200 hover:text-rose-500 transition-colors p-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
                         </div>
                       </div>
                     </div>
