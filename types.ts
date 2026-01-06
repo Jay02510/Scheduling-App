@@ -27,6 +27,7 @@ export interface SubjectConfig {
   textbookId?: string;
   constraints?: {
     morningOnly?: boolean;
+    consecutiveMax?: number;
   };
 }
 
@@ -50,6 +51,10 @@ export interface Teacher {
   color: string;
   assignedClasses: string[];
   employmentType: string;
+  preferences?: {
+    prefersMornings?: boolean;
+    maxConsecutivePeriods?: number;
+  };
 }
 
 export interface FixedClass {
