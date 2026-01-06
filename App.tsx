@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
 import { Teacher, Textbook, ClassGroup, FixedClass, SchoolSchedule, SchoolProfile, SubjectConfig } from './types';
@@ -32,6 +32,7 @@ const App: React.FC = () => {
   const [subjects, setSubjects] = useState<SubjectConfig[]>([]);
   const [schedule, setSchedule] = useState<SchoolSchedule | null>(null);
 
+  // Initial Load
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setAuthLoading(true);
@@ -58,6 +59,24 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Persistence Hook: Auto-save changes to cloud
+  useEffect(() => {
+    if (user && profile && !isLoading) {
+      const timeoutId = setTimeout(() => {
+        saveUserData(user.uid, {
+          profile,
+          teachers,
+          classes,
+          textbooks,
+          fixedClasses,
+          subjects,
+          schedule
+        });
+      }, 2000); // Debounce saves by 2 seconds
+      return () => clearTimeout(timeoutId);
+    }
+  }, [user, profile, teachers, classes, textbooks, fixedClasses, subjects, schedule, isLoading]);
+
   const handleOnboardingComplete = async (newProfile: SchoolProfile) => {
     setProfile(newProfile);
     setTeachers(newProfile.teachers);
@@ -67,6 +86,19 @@ const App: React.FC = () => {
     setSubjects(newProfile.subjects);
     setShowOnboarding(false);
     setActiveTab('home');
+    
+    // Explicit save after onboarding
+    if (user) {
+      await saveUserData(user.uid, {
+        profile: newProfile,
+        teachers: newProfile.teachers,
+        classes: newProfile.classes,
+        textbooks: newProfile.textbooks,
+        fixedClasses: newProfile.fixedClasses,
+        subjects: newProfile.subjects,
+        schedule: null
+      });
+    }
   };
 
   const handleGenerateMaster = async () => {
@@ -97,6 +129,35 @@ const App: React.FC = () => {
       alert(e.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResetData = async () => {
+    if (!user) return;
+    const confirmed = window.confirm(
+      "CRITICAL: This will permanently delete ALL institutional data, faculty rosters, and schedules from the cloud. This cannot be undone. Proceed?"
+    );
+    
+    if (confirmed) {
+      setIsLoading(true);
+      setLoadingMsg("Purging Institutional Records...");
+      try {
+        await clearUserData(user.uid);
+        // Wipe local state
+        setProfile(null);
+        setTeachers([]);
+        setClasses([]);
+        setTextbooks([]);
+        setFixedClasses([]);
+        setSubjects([]);
+        setSchedule(null);
+        setShowOnboarding(true);
+        setActiveTab('home');
+      } catch (e) {
+        alert("Failed to purge cloud data. Please check your connection.");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -140,7 +201,7 @@ const App: React.FC = () => {
           )}
           {activeTab === 'planner' && <div className="space-y-16"><ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} /><SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} /></div>}
           {activeTab === 'insights' && schedule && profile && <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />}
-          {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={() => {}} onLogout={() => signOut(auth)} />}
+          {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={handleResetData} onLogout={() => signOut(auth)} />}
         </>
       )}
     </Layout>
