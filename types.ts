@@ -1,3 +1,4 @@
+
 export interface SchoolEvent {
   id: string;
   name: string;
@@ -11,11 +12,7 @@ export interface SubjectConfig {
   name: string;
   frequencyPerWeek: number;
   gradeLevels: string[];
-  textbookId?: string;
-  constraints?: {
-    morningOnly?: boolean;
-    [key: string]: any;
-  };
+  textbookId?: string; // Links to a specific textbook blueprint
 }
 
 export interface Textbook {
@@ -54,6 +51,7 @@ export interface LockedSlot {
 export interface ClassSubjectAssignment {
   subjectId: string;
   teacherId: string;
+  textbookId?: string; // Specific textbook used by this class for this subject
 }
 
 export interface ClassGroup {
@@ -114,6 +112,4 @@ export interface SchoolProfile {
   classes: ClassGroup[];
   lockedSlots: LockedSlot[];
   specialEvents: SchoolEvent[];
-  levels?: { id: string; name: string; grades: string[] }[];
-  terms?: { id: string; name: string; startDate: string; endDate: string }[];
 }

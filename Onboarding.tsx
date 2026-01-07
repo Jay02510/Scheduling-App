@@ -22,7 +22,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   const [profile, setProfile] = useState<SchoolProfile>(() => {
     const initialSubjects: SubjectConfig[] = [
-      { id: 'sub-1', name: 'Mathematics', frequencyPerWeek: 5, gradeLevels: ['Grade 1'], textbookId: 'tb-1', constraints: { morningOnly: true } },
+      // Fix: Removed 'constraints' property which is not defined in SubjectConfig interface
+      { id: 'sub-1', name: 'Mathematics', frequencyPerWeek: 5, gradeLevels: ['Grade 1'], textbookId: 'tb-1' },
       { id: 'sub-2', name: 'English', frequencyPerWeek: 5, gradeLevels: ['Grade 1'], textbookId: 'tb-2' }
     ];
     
