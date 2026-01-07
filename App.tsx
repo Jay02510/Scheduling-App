@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
-import { Teacher, Textbook, ClassGroup, FixedClass, SchoolSchedule, SchoolProfile, SubjectConfig } from './types';
+import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolSchedule, SchoolProfile, SubjectConfig } from './types';
 import { generateWeeklyMaster, generateCurriculumRoadmap } from './services/geminiService';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -28,11 +28,10 @@ const App: React.FC = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [textbooks, setTextbooks] = useState<Textbook[]>([]);
   const [classes, setClasses] = useState<ClassGroup[]>([]);
-  const [fixedClasses, setFixedClasses] = useState<FixedClass[]>([]);
+  const [lockedSlots, setLockedSlots] = useState<LockedSlot[]>([]);
   const [subjects, setSubjects] = useState<SubjectConfig[]>([]);
   const [schedule, setSchedule] = useState<SchoolSchedule | null>(null);
 
-  // Initial Load
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setAuthLoading(true);
@@ -44,7 +43,7 @@ const App: React.FC = () => {
           setTeachers(cloudData.teachers || []);
           setClasses(cloudData.classes || []);
           setTextbooks(cloudData.textbooks || []);
-          setFixedClasses(cloudData.fixedClasses || []);
+          setLockedSlots(cloudData.lockedSlots || []);
           setSubjects(cloudData.subjects || []);
           setSchedule(cloudData.schedule || null);
           setShowOnboarding(false);
@@ -59,7 +58,6 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Persistence Hook: Auto-save changes to cloud
   useEffect(() => {
     if (user && profile && !isLoading) {
       const timeoutId = setTimeout(() => {
@@ -68,46 +66,33 @@ const App: React.FC = () => {
           teachers,
           classes,
           textbooks,
-          fixedClasses,
+          lockedSlots,
           subjects,
           schedule
         });
-      }, 2000); // Debounce saves by 2 seconds
+      }, 3000);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, profile, teachers, classes, textbooks, fixedClasses, subjects, schedule, isLoading]);
+  }, [user, profile, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading]);
 
   const handleOnboardingComplete = async (newProfile: SchoolProfile) => {
     setProfile(newProfile);
     setTeachers(newProfile.teachers);
     setClasses(newProfile.classes);
     setTextbooks(newProfile.textbooks);
-    setFixedClasses(newProfile.fixedClasses);
+    setLockedSlots(newProfile.lockedSlots);
     setSubjects(newProfile.subjects);
     setShowOnboarding(false);
     setActiveTab('home');
-    
-    // Explicit save after onboarding
-    if (user) {
-      await saveUserData(user.uid, {
-        profile: newProfile,
-        teachers: newProfile.teachers,
-        classes: newProfile.classes,
-        textbooks: newProfile.textbooks,
-        fixedClasses: newProfile.fixedClasses,
-        subjects: newProfile.subjects,
-        schedule: null
-      });
-    }
   };
 
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Synthesizing ID-mapped Master Schedule...");
+    setLoadingMsg("Designing Timetable...");
     try {
-      const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, fixedClasses, subjects };
-      const slots = await generateWeeklyMaster(teachers, fixedClasses, classes, currentProfile);
+      const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
+      const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile);
       setSchedule({ weeklySlots: slots, quarterlyPlan: schedule?.quarterlyPlan || { quarterName: '', weeks: [] } });
       setActiveTab('timetable');
     } catch (e: any) {
@@ -120,10 +105,9 @@ const App: React.FC = () => {
   const handleGenerateRoadmap = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Calculating Curriculum Roadmap...");
+    setLoadingMsg("Calculating Curriculum Pace...");
     try {
-      const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, fixedClasses, subjects };
-      const plan = await generateCurriculumRoadmap(textbooks, currentProfile);
+      const plan = await generateCurriculumRoadmap(textbooks, profile);
       setSchedule({ weeklySlots: schedule?.weeklySlots || [], quarterlyPlan: plan });
     } catch (e: any) {
       alert(e.message);
@@ -134,30 +118,10 @@ const App: React.FC = () => {
 
   const handleResetData = async () => {
     if (!user) return;
-    const confirmed = window.confirm(
-      "CRITICAL: This will permanently delete ALL institutional data, faculty rosters, and schedules from the cloud. This cannot be undone. Proceed?"
-    );
-    
-    if (confirmed) {
+    if (window.confirm("Wipe all school data? This cannot be undone.")) {
       setIsLoading(true);
-      setLoadingMsg("Purging Institutional Records...");
-      try {
-        await clearUserData(user.uid);
-        // Wipe local state
-        setProfile(null);
-        setTeachers([]);
-        setClasses([]);
-        setTextbooks([]);
-        setFixedClasses([]);
-        setSubjects([]);
-        setSchedule(null);
-        setShowOnboarding(true);
-        setActiveTab('home');
-      } catch (e) {
-        alert("Failed to purge cloud data. Please check your connection.");
-      } finally {
-        setIsLoading(false);
-      }
+      await clearUserData(user.uid);
+      window.location.reload();
     }
   };
 
@@ -177,7 +141,7 @@ const App: React.FC = () => {
           {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} />}
           {activeTab === 'setup' && (
             <ScheduleForm 
-              profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} fixedClasses={fixedClasses} setFixedClasses={setFixedClasses} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} 
+              profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} 
             />
           )}
           {activeTab === 'timetable' && schedule && (
@@ -193,18 +157,7 @@ const App: React.FC = () => {
                )}
             </div>
           )}
-          {!schedule && activeTab === 'timetable' && (
-             <div className="text-center py-40 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-               <p className="text-slate-400 font-black text-[11px] uppercase tracking-[0.3em]">No schedule generated yet</p>
-               <button onClick={() => setActiveTab('setup')} className="mt-4 text-indigo-600 font-bold uppercase text-[10px]">Return to Setup</button>
-             </div>
-          )}
-          {activeTab === 'planner' && (
-            <div className="space-y-16">
-              <ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} />
-              <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} />
-            </div>
-          )}
+          {activeTab === 'planner' && <div className="space-y-16"><ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} /><SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} /></div>}
           {activeTab === 'insights' && schedule && profile && <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />}
           {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={handleResetData} onLogout={() => signOut(auth)} />}
         </>

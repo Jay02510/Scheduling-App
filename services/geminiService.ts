@@ -1,13 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Teacher, FixedClass, ClassGroup, SchoolProfile, QuarterlyPlan, ScheduleSlot, Textbook, SchoolSchedule, SubjectConfig } from "../types";
+import { Teacher, LockedSlot, ClassGroup, SchoolProfile, QuarterlyPlan, ScheduleSlot, Textbook, SchoolSchedule, SubjectConfig } from "../types";
 
 export const parseStaffList = async (text: string): Promise<Partial<Teacher>[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `
-    Parse this raw text into a JSON array of Teacher objects. 
-    Infer "role" (homeroom, korean, or subject) based on titles.
+    Parse this teacher list into JSON. 
+    Terms to watch for: "Homeroom" (homeroom), "Specialist" (specialist), "Subject" (subject).
     Raw Text: "${text}"
-    Return JSON array with keys: name, role.
+    Return JSON array: { name, role }.
   `;
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
@@ -20,7 +20,7 @@ export const parseStaffList = async (text: string): Promise<Partial<Teacher>[]> 
           type: Type.OBJECT,
           properties: {
             name: { type: Type.STRING },
-            role: { type: Type.STRING, enum: ['homeroom', 'korean', 'subject'] }
+            role: { type: Type.STRING, enum: ['homeroom', 'specialist', 'subject'] }
           },
           required: ["name", "role"]
         }
@@ -30,6 +30,9 @@ export const parseStaffList = async (text: string): Promise<Partial<Teacher>[]> 
   return JSON.parse(response.text || '[]');
 };
 
+/**
+ * Suggests teacher-to-subject assignments for classes based on faculty roles.
+ */
 export const suggestAssignments = async (
   teachers: Teacher[],
   classes: ClassGroup[],
@@ -37,134 +40,72 @@ export const suggestAssignments = async (
 ): Promise<{ classId: string; assignments: { subjectId: string; teacherId: string }[] }[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `
-    Analyze these teachers and classes. Suggest subject assignments.
-    Rules: 
-    - Floating teachers can be assigned to multiple classes.
-    - Homeroom teachers usually get their own class's core subjects.
-    Teachers: ${JSON.stringify(teachers.map(t => ({ id: t.id, name: t.name, role: t.role, subjects: t.subjects })))}
-    Classes: ${JSON.stringify(classes.map(c => ({ id: c.id, name: c.name, grade: c.grade })))}
-    Subjects: ${JSON.stringify(subjects.map(s => ({ id: s.id, name: s.name })))}
-    Return JSON array mapping classId to an array of assignments (subjectId, teacherId).
+    Suggest teacher-to-subject assignments for these classes based on teacher roles and subject requirements.
+    Teachers: ${JSON.stringify(teachers.map(t => ({ id: t.id, name: t.name, role: t.role })))}
+    Classes: ${JSON.stringify(classes.map(c => ({ id: c.id, name: c.name })))}
+    Subjects: ${JSON.stringify(subjects.map(s => ({ id: s.id, name: s.name, freq: s.frequencyPerWeek })))}
+    
+    Return JSON array of { classId, assignments: [{ subjectId, teacherId }] }.
   `;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            classId: { type: Type.STRING },
-            assignments: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  subjectId: { type: Type.STRING },
-                  teacherId: { type: Type.STRING }
-                }
-              }
-            }
-          }
-        }
-      }
+      responseMimeType: "application/json"
     }
   });
+
   return JSON.parse(response.text || '[]');
 };
 
 export const generateWeeklyMaster = async (
   teachers: Teacher[],
-  fixedClasses: FixedClass[],
+  lockedSlots: LockedSlot[],
   classes: ClassGroup[],
   profile: SchoolProfile
 ): Promise<ScheduleSlot[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  const validSubjectIds = profile.subjects.map(s => s.id);
-  const validTeacherIds = teachers.map(t => t.id);
-  const validClassIds = classes.map(c => c.id);
-
   const inputData = {
-    totalPeriods: profile.hours.totalPeriods,
-    lunchPeriod: profile.hours.lunchAfterPeriod,
-    teachers: teachers.map(t => ({
-      id: t.id,
-      maxDaily: t.maxDailyPeriods,
-      minBreaksWeekly: t.breaksNeededPerWeek,
-      prefs: t.preferences
-    })),
+    periods: profile.hours.totalPeriods,
+    lunchAfter: profile.hours.lunchAfterPeriod,
+    teachers: teachers.map(t => ({ id: t.id, name: t.name, maxDaily: t.maxDailyPeriods })),
     classes: classes.map(c => ({
       id: c.id,
-      assignments: c.assignments.map(a => ({
+      name: c.name,
+      tasks: c.assignments.map(a => ({
         subjectId: a.subjectId,
-        frequency: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 0,
+        freq: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 0,
         teacherId: a.teacherId
-      })).filter(r => r.frequency > 0)
+      }))
     })),
-    locks: fixedClasses.map(f => ({
-      day: f.dayOfWeek,
-      period: f.period,
-      isGlobal: f.isSchoolWide,
-      classIds: f.classIds
-    }))
+    locks: lockedSlots.map(l => ({ day: l.dayOfWeek, period: l.period, global: l.isSchoolWide, classIds: l.classIds }))
   };
 
   const prompt = `
-    STRICT MASTER SCHEDULING TASK:
-    Generate a conflict-free weekly schedule for all classes and teachers.
-
-    CONSTRAINTS:
-    1. NO TEACHER CLASHES: A teacher (e.g., ID "t-1") can ONLY be assigned to ONE class in any given (Day, Period) slot.
-    2. BREAKS: Each teacher MUST have at least ${inputData.teachers[0]?.minBreaksWeekly || 5} free periods (breaks) per week where they are NOT teaching.
-    3. LUNCH: Period ${inputData.lunchPeriod} is a global lock. No assignments.
-    4. FREQUENCY: Every class MUST meet their subjects the exact number of times defined in their assignments.
-    5. FLOATING: Teachers move between classes. Ensure the transitions are logical.
-
-    Input Data: ${JSON.stringify(inputData)}
+    TASK: Generate a 5-day school timetable.
+    CRITICAL RULES:
+    1. LUNCH: Period ${inputData.lunchAfter + 1} is empty (Lunch).
+    2. NO DOUBLE BOOKING: A teacher cannot be in two places at once.
+    3. NO CLASS OVERLAP: A class can only have one subject per period.
+    4. LOCKS: Respect the "locks" provided in data.
     
-    Output Format: JSON array of ScheduleSlot { period, day, subjectId, teacherId, classId }.
+    Data: ${JSON.stringify(inputData)}
+    Return JSON array of { period, day, subjectId, teacherId, classId }.
   `;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
-      thinkingConfig: { thinkingBudget: 8000 },
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            period: { type: Type.NUMBER },
-            day: { type: Type.NUMBER },
-            subjectId: { type: Type.STRING },
-            teacherId: { type: Type.STRING },
-            classId: { type: Type.STRING }
-          },
-          required: ["period", "day", "subjectId", "teacherId", "classId"]
-        }
-      }
+      thinkingConfig: { thinkingBudget: 12000 },
+      responseMimeType: "application/json"
     }
   });
 
-  try {
-    const rawData = JSON.parse(response.text || '[]');
-    return rawData.filter((slot: any) => 
-      validSubjectIds.includes(slot.subjectId) && 
-      validTeacherIds.includes(slot.teacherId) && 
-      validClassIds.includes(slot.classId)
-    ).map((slot: any) => ({
-      ...slot,
-      id: Math.random().toString(36).substr(2, 9)
-    }));
-  } catch (e) {
-    throw new Error("Master Schedule synthesis failed. The model could not solve the constraints.");
-  }
+  const slots = JSON.parse(response.text || '[]');
+  return slots.map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
 };
 
 export const generateCurriculumRoadmap = async (
@@ -172,7 +113,7 @@ export const generateCurriculumRoadmap = async (
   profile: SchoolProfile
 ): Promise<QuarterlyPlan> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Generate a 12-week lesson roadmap for: ${JSON.stringify(textbooks)}.`;
+  const prompt = `Create a 12-week teaching plan for these books: ${JSON.stringify(textbooks)}. Breakdown by week.`;
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
@@ -190,8 +131,7 @@ export const generateCurriculumRoadmap = async (
                 weekNumber: { type: Type.INTEGER },
                 subject: { type: Type.STRING },
                 unit: { type: Type.STRING },
-                pages: { type: Type.STRING },
-                isHolidayWeek: { type: Type.BOOLEAN }
+                pages: { type: Type.STRING }
               },
               required: ["weekNumber", "subject", "unit", "pages"]
             }
@@ -210,22 +150,12 @@ export const analyzeSchedule = async (
   teachers: Teacher[]
 ): Promise<any> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Audit the schedule for teacher burnout and clashes.`;
+  const prompt = `Review this school schedule for teacher workload balance and logic. Provide a score (0-100) and 3 bullet points of feedback.`;
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          score: { type: Type.NUMBER },
-          constraintScore: { type: Type.NUMBER },
-          efficiency: { type: Type.NUMBER },
-          burnoutRisks: { type: Type.ARRAY, items: { type: Type.STRING } },
-          insights: { type: Type.ARRAY, items: { type: Type.STRING } }
-        }
-      }
+      responseMimeType: "application/json"
     }
   });
   return JSON.parse(response.text || '{}');
