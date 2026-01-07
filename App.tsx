@@ -87,9 +87,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateScheduleSlot = (updatedSlot: ScheduleSlot) => {
-    // If schedule is null, initialize it
     const currentSchedule = schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } };
-    
     const existingIdx = currentSchedule.weeklySlots.findIndex(
       s => s.day === updatedSlot.day && s.period === updatedSlot.period && s.classId === updatedSlot.classId
     );
@@ -173,7 +171,16 @@ const App: React.FC = () => {
                   <button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff View</button>
                </div>
                {timetableMode === 'school' ? (
-                 <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} onUpdateSlot={handleUpdateScheduleSlot} />
+                 <ScheduleViewer 
+                    schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} 
+                    classes={classes} 
+                    teachers={teachers} 
+                    subjects={subjects} 
+                    profile={profile} 
+                    onGenerateRoadmap={handleGenerateRoadmap} 
+                    onUpdateSlot={handleUpdateScheduleSlot}
+                    onNavigate={setActiveTab}
+                  />
                ) : (
                  <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} profile={profile} />
                )}
