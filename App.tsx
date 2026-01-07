@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
-import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolSchedule, SchoolProfile, SubjectConfig } from './types';
+import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolSchedule, SchoolProfile, SubjectConfig, ScheduleSlot } from './types';
 import { generateWeeklyMaster, generateCurriculumRoadmap } from './services/geminiService';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -86,6 +86,26 @@ const App: React.FC = () => {
     setActiveTab('home');
   };
 
+  const handleUpdateScheduleSlot = (updatedSlot: ScheduleSlot) => {
+    if (!schedule) return;
+    const existingIdx = schedule.weeklySlots.findIndex(
+      s => s.day === updatedSlot.day && s.period === updatedSlot.period && s.classId === updatedSlot.classId
+    );
+    
+    let newSlots = [...schedule.weeklySlots];
+    if (existingIdx > -1) {
+      if (!updatedSlot.subjectId) {
+        newSlots.splice(existingIdx, 1);
+      } else {
+        newSlots[existingIdx] = updatedSlot;
+      }
+    } else if (updatedSlot.subjectId) {
+      newSlots.push(updatedSlot);
+    }
+    
+    setSchedule({ ...schedule, weeklySlots: newSlots });
+  };
+
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
@@ -141,7 +161,7 @@ const App: React.FC = () => {
           {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} />}
           {activeTab === 'setup' && (
             <ScheduleForm 
-              profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} 
+              profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} schedule={schedule} 
             />
           )}
           {activeTab === 'timetable' && schedule && (
@@ -151,7 +171,7 @@ const App: React.FC = () => {
                   <button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff View</button>
                </div>
                {timetableMode === 'school' ? (
-                 <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} subjects={subjects} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} />
+                 <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} subjects={subjects} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} onUpdateSlot={handleUpdateScheduleSlot} />
                ) : (
                  <TeacherView schedule={schedule} teachers={teachers} classes={classes} subjects={subjects} profile={profile} />
                )}

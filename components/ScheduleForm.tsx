@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolProfile, SubjectConfig } from '../types';
+import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolProfile, SubjectConfig, SchoolSchedule } from '../types';
 import { TEACHER_COLORS, CLASS_COLORS } from '../constants';
 import { parseStaffList, suggestAssignments } from '../services/geminiService';
 
@@ -17,15 +17,16 @@ interface ScheduleFormProps {
   setLockedSlots: React.Dispatch<React.SetStateAction<LockedSlot[]>>;
   subjects: SubjectConfig[];
   setSubjects: (subjects: SubjectConfig[]) => void;
+  schedule: SchoolSchedule | null;
 }
 
 const ScheduleForm: React.FC<ScheduleFormProps> = ({ 
-  onGenerate, profile, setProfile, teachers, setTeachers, classes, setClasses, textbooks, setTextbooks, lockedSlots, setLockedSlots, subjects, setSubjects 
+  onGenerate, profile, setProfile, teachers, setTeachers, classes, setClasses, textbooks, setTextbooks, lockedSlots, setLockedSlots, subjects, setSubjects, schedule 
 }) => {
   const [activeTab, setActiveTab] = useState<'staff' | 'classes' | 'subjects' | 'locks'>('staff');
+  const [detailView, setDetailView] = useState<{ type: 'teacher' | 'class', id: string } | null>(null);
   const [smartPasteText, setSmartPasteText] = useState('');
   const [isProcessingPaste, setIsProcessingPaste] = useState(false);
-  const [isAutoMapping, setIsAutoMapping] = useState(false);
 
   const calculateTeacherWeeklyLoad = (teacherId: string) => {
     let total = 0;
@@ -40,6 +41,8 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     return total;
   };
 
+  const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || 'Unknown';
+
   const addNewTeacher = () => {
     const newTeacher: Teacher = { 
       id: Math.random().toString(36).substr(2, 9), 
@@ -53,6 +56,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       color: TEACHER_COLORS[teachers.length % TEACHER_COLORS.length]
     };
     setTeachers([...teachers, newTeacher]);
+    setDetailView({ type: 'teacher', id: newTeacher.id });
   };
 
   const addNewClass = () => {
@@ -65,6 +69,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       color: CLASS_COLORS[classes.length % CLASS_COLORS.length]
     };
     setClasses([...classes, newClass]);
+    setDetailView({ type: 'class', id: newClass.id });
   };
 
   const addNewSubject = () => {
@@ -103,21 +108,157 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     }
   };
 
-  const handleAutoMap = async () => {
-    setIsAutoMapping(true);
-    try {
-      const suggestions = await suggestAssignments(teachers, classes, subjects);
-      const newClasses = classes.map(c => {
-        const suggestion = suggestions.find(s => s.classId === c.id);
-        return suggestion ? { ...c, assignments: suggestion.assignments } : c;
-      });
-      setClasses(newClasses);
-    } catch (e) {
-      alert("Auto-mapping failed.");
-    } finally {
-      setIsAutoMapping(false);
+  if (detailView) {
+    if (detailView.type === 'teacher') {
+      const teacher = teachers.find(t => t.id === detailView.id);
+      if (!teacher) { setDetailView(null); return null; }
+      const load = calculateTeacherWeeklyLoad(teacher.id);
+      const teacherSlots = schedule?.weeklySlots.filter(s => s.teacherId === teacher.id) || [];
+
+      return (
+        <div className="space-y-8 animate-fadeIn">
+          <button onClick={() => setDetailView(null)} className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-indigo-600 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
+            Back to Faculty List
+          </button>
+          
+          <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-12 items-start">
+            <div className="w-full md:w-1/3 space-y-8">
+              <div className="space-y-4">
+                <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center text-white text-3xl font-black shadow-2xl" style={{ backgroundColor: teacher.color }}>
+                  {teacher.name[0]}
+                </div>
+                <div>
+                  <input className="w-full bg-transparent border-0 p-0 font-black text-3xl text-slate-900 focus:ring-0" value={teacher.name} onChange={e => setTeachers(teachers.map(t => t.id === teacher.id ? {...t, name: e.target.value} : t))} />
+                  <div className="flex gap-2 mt-2">
+                    <span className="bg-slate-900 text-white px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest">{teacher.role}</span>
+                    <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest">{teacher.employmentType}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 bg-slate-50 rounded-3xl space-y-6">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Weekly Workload</span>
+                    <span className="text-[10px] font-black text-indigo-600">{load} Periods</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 transition-all duration-1000" style={{ width: `${Math.min(100, (load/25)*100)}%` }}></div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Role Permissions</span>
+                  <select 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-[11px] font-black outline-none cursor-pointer"
+                    value={teacher.role}
+                    onChange={e => setTeachers(teachers.map(t => t.id === teacher.id ? {...t, role: e.target.value as any} : t))}
+                  >
+                    <option value="homeroom">Homeroom Teacher</option>
+                    <option value="specialist">Specialist</option>
+                    <option value="subject">Subject Teacher</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 w-full space-y-6">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Personal Timetable</h4>
+               <div className="grid grid-cols-5 gap-2">
+                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(d => (
+                   <div key={d} className="text-center text-[8px] font-black text-slate-300 uppercase py-2">{d}</div>
+                 ))}
+                 {Array.from({length: 5}).map((_, d) => (
+                   <div key={d} className="space-y-1">
+                     {Array.from({length: 8}).map((_, p) => {
+                        const slot = teacherSlots.find(s => s.day === d && s.period === p);
+                        return (
+                          <div key={p} className={`h-12 rounded-xl flex flex-col items-center justify-center p-1 border ${slot ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-transparent opacity-40'}`}>
+                            {slot && (
+                              <>
+                                <span className="text-[8px] font-black text-slate-900 truncate w-full text-center uppercase">{getSubjectName(slot.subjectId)}</span>
+                                <span className="text-[6px] font-bold text-slate-400 uppercase">{classes.find(c => c.id === slot.classId)?.name}</span>
+                              </>
+                            )}
+                          </div>
+                        );
+                     })}
+                   </div>
+                 ))}
+               </div>
+            </div>
+          </div>
+        </div>
+      );
+    } else {
+      const cls = classes.find(c => c.id === detailView.id);
+      if (!cls) { setDetailView(null); return null; }
+      const classSlots = schedule?.weeklySlots.filter(s => s.classId === cls.id) || [];
+
+      return (
+        <div className="space-y-8 animate-fadeIn">
+          <button onClick={() => setDetailView(null)} className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-indigo-600 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
+            Back to Class Registry
+          </button>
+          
+          <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-12 items-start">
+            <div className="w-full md:w-1/3 space-y-8">
+               <div className="space-y-4">
+                  <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl" style={{ backgroundColor: cls.color }}>
+                    <svg className="w-8 h-8 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg>
+                  </div>
+                  <div>
+                    <input className="w-full bg-transparent border-0 p-0 font-black text-3xl text-slate-900 focus:ring-0 uppercase" value={cls.name} onChange={e => setClasses(classes.map(c => c.id === cls.id ? {...c, name: e.target.value} : c))} />
+                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">{cls.grade} Group</p>
+                  </div>
+               </div>
+
+               <div className="space-y-6">
+                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Faculty Assignments</h5>
+                 <div className="space-y-3">
+                    {cls.assignments.map(a => (
+                      <div key={a.subjectId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                        <span className="text-[10px] font-black text-slate-900 uppercase">{getSubjectName(a.subjectId)}</span>
+                        <span className="text-[9px] font-bold text-slate-500">{teachers.find(t => t.id === a.teacherId)?.name}</span>
+                      </div>
+                    ))}
+                 </div>
+               </div>
+            </div>
+
+            <div className="flex-1 w-full space-y-6">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Group Weekly View</h4>
+               <div className="grid grid-cols-5 gap-2">
+                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(d => (
+                   <div key={d} className="text-center text-[8px] font-black text-slate-300 uppercase py-2">{d}</div>
+                 ))}
+                 {Array.from({length: 5}).map((_, d) => (
+                   <div key={d} className="space-y-1">
+                     {Array.from({length: 8}).map((_, p) => {
+                        const slot = classSlots.find(s => s.day === d && s.period === p);
+                        const teacher = teachers.find(t => t.id === slot?.teacherId);
+                        return (
+                          <div key={p} className={`h-16 rounded-xl flex flex-col items-center justify-center p-2 border ${slot ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-transparent opacity-40'}`}>
+                            {slot && (
+                              <>
+                                <span className="text-[9px] font-black text-slate-900 text-center uppercase leading-tight line-clamp-2">{getSubjectName(slot.subjectId)}</span>
+                                <div className="mt-auto h-1 w-full rounded-full" style={{ backgroundColor: teacher?.color || '#eee' }}></div>
+                              </>
+                            )}
+                          </div>
+                        );
+                     })}
+                   </div>
+                 ))}
+               </div>
+            </div>
+          </div>
+        </div>
+      );
     }
-  };
+  }
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -156,18 +297,26 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {teachers.map(t => (
-                <div key={t.id} className="p-8 bg-slate-50 rounded-[2.5rem] border border-transparent hover:border-slate-200 transition-all space-y-6 relative group">
-                  <button onClick={() => setTeachers(teachers.filter(pt => pt.id !== t.id))} className="absolute top-6 right-6 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                <div 
+                  key={t.id} 
+                  onClick={() => setDetailView({ type: 'teacher', id: t.id })}
+                  className="p-8 bg-slate-50 rounded-[2.5rem] border border-transparent hover:border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all space-y-6 relative group cursor-pointer"
+                >
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setTeachers(teachers.filter(pt => pt.id !== t.id)); }} 
+                    className="absolute top-6 right-6 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                  >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
-                  <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center text-white shadow-xl" style={{ backgroundColor: t.color }}>
-                      <span className="text-lg font-black">{t.name ? t.name[0] : '?'}</span>
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-16 h-16 rounded-[1.5rem] flex-shrink-0 flex items-center justify-center text-white shadow-xl" style={{ backgroundColor: t.color }}>
+                      <span className="text-2xl font-black">{t.name ? t.name[0] : '?'}</span>
                     </div>
-                    <div className="flex-1">
-                      <input className="bg-transparent border-0 p-0 font-black text-slate-900 text-xl w-full focus:ring-0" value={t.name} onChange={e => setTeachers(teachers.map(pt => pt.id === t.id ? {...pt, name: e.target.value} : pt))} />
+                    <div>
+                      <h4 className="font-black text-slate-900 text-lg">{t.name}</h4>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.role}</p>
                     </div>
                   </div>
                 </div>
@@ -181,15 +330,27 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
         {activeTab === 'classes' && (
           <div className="space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {classes.map(c => (
-                <div key={c.id} className="bg-slate-50 p-8 rounded-[2.5rem] border border-transparent hover:border-slate-200 transition-all space-y-6 relative group">
-                  <button onClick={() => setClasses(classes.filter(pc => pc.id !== c.id))} className="absolute top-6 right-6 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                <div 
+                  key={c.id} 
+                  onClick={() => setDetailView({ type: 'class', id: c.id })}
+                  className="bg-slate-50 p-8 rounded-[2.5rem] border border-transparent hover:border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all space-y-6 relative group cursor-pointer"
+                >
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setClasses(classes.filter(pc => pc.id !== c.id)); }} 
+                    className="absolute top-6 right-6 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                  >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
-                  <div className="flex items-center gap-5">
-                    <div className="w-10 h-10 rounded-xl shadow-lg" style={{ backgroundColor: c.color }}></div>
-                    <input className="bg-transparent border-0 p-0 font-black text-slate-800 text-xl w-full focus:ring-0 uppercase" value={c.name} onChange={e => setClasses(classes.map(pc => pc.id === c.id ? {...pc, name: e.target.value} : pc))} />
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-16 h-16 rounded-[1.5rem] shadow-lg flex items-center justify-center" style={{ backgroundColor: c.color }}>
+                      <svg className="w-8 h-8 text-slate-900/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg>
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-900 text-xl uppercase tracking-tighter">{c.name}</h4>
+                      <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{c.grade}</p>
+                    </div>
                   </div>
                 </div>
               ))}
