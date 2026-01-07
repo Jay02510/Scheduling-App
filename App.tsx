@@ -52,36 +52,39 @@ const App: React.FC = () => {
         }
       } else {
         setUser(null);
+        setProfile(null);
       }
       setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
+  // Persist data to cloud when any sub-state changes
   useEffect(() => {
     if (user && profile && !isLoading) {
+      const dataToSave = {
+        profile,
+        teachers,
+        classes,
+        textbooks,
+        lockedSlots,
+        subjects,
+        schedule
+      };
       const timeoutId = setTimeout(() => {
-        saveUserData(user.uid, {
-          profile,
-          teachers,
-          classes,
-          textbooks,
-          lockedSlots,
-          subjects,
-          schedule
-        });
-      }, 3000);
+        saveUserData(user.uid, dataToSave);
+      }, 2000);
       return () => clearTimeout(timeoutId);
     }
   }, [user, profile, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading]);
 
-  const handleOnboardingComplete = async (newProfile: SchoolProfile) => {
+  const handleOnboardingComplete = (newProfile: SchoolProfile) => {
     setProfile(newProfile);
-    setTeachers(newProfile.teachers);
-    setClasses(newProfile.classes);
-    setTextbooks(newProfile.textbooks);
-    setLockedSlots(newProfile.lockedSlots);
-    setSubjects(newProfile.subjects);
+    setTeachers(newProfile.teachers || []);
+    setClasses(newProfile.classes || []);
+    setTextbooks(newProfile.textbooks || []);
+    setLockedSlots(newProfile.lockedSlots || []);
+    setSubjects(newProfile.subjects || []);
     setShowOnboarding(false);
     setActiveTab('home');
   };
@@ -109,14 +112,15 @@ const App: React.FC = () => {
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Optimizing Timetable...");
+    setLoadingMsg("AI is solving your timetable...");
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
       const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile);
-      setSchedule({ weeklySlots: slots, quarterlyPlan: schedule?.quarterlyPlan || { quarterName: '', weeks: [] } });
+      setSchedule({ ...schedule, weeklySlots: slots, quarterlyPlan: schedule?.quarterlyPlan || { quarterName: '', weeks: [] } });
       setActiveTab('timetable');
     } catch (e: any) {
-      alert(e.message);
+      console.error(e);
+      alert("AI Generation failed. Please check your setup data.");
     } finally {
       setIsLoading(false);
     }
@@ -125,12 +129,12 @@ const App: React.FC = () => {
   const handleGenerateRoadmap = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Mapping Curriculum Pace...");
+    setLoadingMsg("Planning 12 weeks of lessons...");
     try {
       const plan = await generateCurriculumRoadmap(textbooks, profile);
-      setSchedule({ weeklySlots: schedule?.weeklySlots || [], quarterlyPlan: plan });
+      setSchedule({ ...schedule, weeklySlots: schedule?.weeklySlots || [], quarterlyPlan: plan });
     } catch (e: any) {
-      alert(e.message);
+      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -145,30 +149,58 @@ const App: React.FC = () => {
     }
   };
 
-  if (authLoading) return null;
+  if (authLoading) return (
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+    </div>
+  );
+  
   if (!user) return <Auth />;
+  if (showOnboarding) return <Onboarding onComplete={handleOnboardingComplete} />;
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center min-h-[70vh]">
-          <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-8"></div>
-          <p className="text-xs font-black text-slate-900 uppercase tracking-widest">{loadingMsg}</p>
+        <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fadeIn">
+          <div className="relative mb-10">
+            <div className="w-20 h-20 border-4 border-indigo-100 rounded-full"></div>
+            <div className="w-20 h-20 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0"></div>
+          </div>
+          <p className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em] animate-pulse">{loadingMsg}</p>
         </div>
       ) : (
         <>
-          {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
-          {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} />}
+          {activeTab === 'home' && (
+            <Dashboard 
+              teachers={teachers} 
+              classes={classes} 
+              textbooks={textbooks} 
+              onResync={() => setActiveTab('setup')} 
+            />
+          )}
           {activeTab === 'setup' && (
             <ScheduleForm 
-              profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} schedule={schedule} 
+              profile={profile} 
+              setProfile={setProfile} 
+              teachers={teachers} 
+              setTeachers={setTeachers} 
+              classes={classes} 
+              setClasses={setClasses} 
+              textbooks={textbooks} 
+              setTextbooks={setTextbooks} 
+              lockedSlots={lockedSlots} 
+              setLockedSlots={setLockedSlots} 
+              subjects={subjects} 
+              setSubjects={setSubjects} 
+              onGenerate={handleGenerateMaster} 
+              schedule={schedule} 
             />
           )}
           {activeTab === 'timetable' && (
-            <div className="space-y-6">
-               <div className="flex justify-center bg-slate-100 p-1 rounded-2xl w-fit mx-auto shadow-inner">
-                  <button onClick={() => setTimetableMode('school')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class View</button>
-                  <button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff View</button>
+            <div className="space-y-8 animate-fadeIn">
+               <div className="flex justify-center bg-slate-100 p-1.5 rounded-2xl w-fit mx-auto shadow-inner">
+                  <button onClick={() => setTimetableMode('school')} className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class Grids</button>
+                  <button onClick={() => setTimetableMode('staff')} className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff Wellness</button>
                </div>
                {timetableMode === 'school' ? (
                  <ScheduleViewer 
@@ -182,13 +214,28 @@ const App: React.FC = () => {
                     onNavigate={setActiveTab}
                   />
                ) : (
-                 <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} profile={profile} />
+                 <TeacherView 
+                   schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} 
+                   teachers={teachers} 
+                   classes={classes} 
+                   subjects={subjects} 
+                   profile={profile} 
+                 />
                )}
             </div>
           )}
-          {activeTab === 'planner' && <div className="space-y-16"><ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} /><SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} /></div>}
-          {activeTab === 'insights' && schedule && profile && <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />}
-          {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={handleResetData} onLogout={() => signOut(auth)} />}
+          {activeTab === 'planner' && (
+            <div className="space-y-16">
+              <ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} />
+              <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} />
+            </div>
+          )}
+          {activeTab === 'insights' && schedule && profile && (
+            <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />
+          )}
+          {activeTab === 'settings' && (
+            <Settings user={user} profile={profile} onReset={handleResetData} onLogout={() => signOut(auth)} />
+          )}
         </>
       )}
     </Layout>
