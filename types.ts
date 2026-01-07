@@ -51,8 +51,6 @@ export interface LockedSlot {
   color?: string;
 }
 
-export type FixedClass = LockedSlot;
-
 export interface ClassSubjectAssignment {
   subjectId: string;
   teacherId: string;
@@ -115,7 +113,6 @@ export interface SchoolProfile {
   teachers: Teacher[];
   classes: ClassGroup[];
   lockedSlots: LockedSlot[];
-  fixedClasses?: FixedClass[]; // Added to fix onboarding type errors
   specialEvents: SchoolEvent[];
   levels?: { id: string; name: string; grades: string[] }[];
   terms?: { id: string; name: string; startDate: string; endDate: string }[];
