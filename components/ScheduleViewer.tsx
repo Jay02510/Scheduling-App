@@ -13,7 +13,8 @@ interface ScheduleViewerProps {
 }
 
 const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, profile, onGenerateRoadmap, onUpdateSlot, onNavigate }) => {
-  const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
+  // Ensure we have a valid initial class selection
+  const [selectedClassId, setSelectedClassId] = useState<string>(() => classes[0]?.id || '');
   const [viewMode, setViewMode] = useState<'individual' | 'roadmap'>('individual');
   const [verificationResult, setVerificationResult] = useState<{ type: 'clean' | 'clash'; issues: string[] } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -23,8 +24,22 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   const days = ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
   const totalPeriods = profile?.hours.totalPeriods || 8;
 
-  const currentClass = classes.find(c => c.id === selectedClassId);
-  const classSlots = schedule.weeklySlots.filter(s => s.classId === selectedClassId);
+  // Safeguard: if classes are empty, we can't show a schedule
+  if (classes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fadeIn bg-white rounded-[3rem] border border-slate-100 shadow-sm">
+          <div className="w-20 h-20 bg-indigo-50 rounded-[2.5rem] flex items-center justify-center text-indigo-500 mb-8 shadow-inner">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">No Classes Found</h2>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">You need to define at least one class group in the Setup tab before building a schedule.</p>
+          <button onClick={() => onNavigate?.('setup')} className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Go to Setup</button>
+      </div>
+    );
+  }
+
+  const currentClass = classes.find(c => c.id === selectedClassId) || classes[0];
+  const classSlots = schedule.weeklySlots?.filter(s => s.classId === currentClass.id) || [];
 
   // Requirement Fulfillment Tracker
   const fulfillment = useMemo(() => {
@@ -50,7 +65,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     const issues: string[] = [];
     const teacherMap: Record<string, string[]> = {};
 
-    schedule.weeklySlots.forEach(slot => {
+    schedule.weeklySlots?.forEach(slot => {
       const key = `${slot.day}-${slot.period}-${slot.teacherId}`;
       if (!teacherMap[key]) teacherMap[key] = [];
       teacherMap[key].push(classes.find(c => c.id === slot.classId)?.name || 'Unknown Class');
@@ -78,19 +93,19 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         id: Math.random().toString(36).substr(2, 9),
         day: editingSlot.day,
         period: editingSlot.period,
-        classId: selectedClassId,
+        classId: currentClass.id,
         subjectId: '',
         teacherId: '',
         isManualOverride: true
       });
     } else {
-      const pair = currentClass?.assignments.find(a => a.subjectId === subjectId);
+      const pair = currentClass.assignments.find(a => a.subjectId === subjectId);
       if (pair) {
         onUpdateSlot({
           id: Math.random().toString(36).substr(2, 9),
           day: editingSlot.day,
           period: editingSlot.period,
-          classId: selectedClassId,
+          classId: currentClass.id,
           subjectId: subjectId,
           teacherId: pair.teacherId,
           isManualOverride: true
@@ -100,18 +115,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     setEditingSlot(null);
   };
 
-  if (!schedule || (schedule.weeklySlots.length === 0 && !editingSlot)) {
-      return (
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fadeIn">
-              <div className="w-20 h-20 bg-indigo-50 rounded-[2.5rem] flex items-center justify-center text-indigo-500 mb-8 shadow-inner">
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              </div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">Timetable Pending</h2>
-              <button onClick={() => onNavigate?.('setup')} className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Go to Setup</button>
-          </div>
-      );
-  }
-
   return (
     <div className="space-y-8 animate-fadeIn relative pb-20">
       {editingSlot && (
@@ -119,14 +122,17 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           <div className="bg-white rounded-[3rem] p-10 w-full max-w-md shadow-2xl animate-fadeIn">
             <h3 className="text-2xl font-black text-slate-900 mb-2">Edit Slot</h3>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 pb-4 border-b">
-              {days[editingSlot.day]} • Period {editingSlot.period + 1} • {currentClass?.name}
+              {days[editingSlot.day]} • Period {editingSlot.period + 1} • {currentClass.name}
             </p>
             <div className="space-y-3">
               <button onClick={() => handleApplyChange('')} className="w-full py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all border border-transparent hover:border-rose-100 mb-4">Clear Period</button>
               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1 block">Assigned Lessons</span>
-              {currentClass?.assignments.length === 0 ? (
-                <p className="p-8 bg-slate-50 rounded-2xl text-[9px] font-black text-slate-300 uppercase text-center italic">No lessons assigned in Setup.</p>
-              ) : currentClass?.assignments.map(a => (
+              {currentClass.assignments.length === 0 ? (
+                <div className="p-8 bg-slate-50 rounded-2xl text-center space-y-4">
+                  <p className="text-[9px] font-black text-slate-300 uppercase italic">No lessons assigned in Setup.</p>
+                  <button onClick={() => { setEditingSlot(null); onNavigate?.('setup'); }} className="text-[10px] font-black text-indigo-500 underline uppercase">Go Assign Faculty</button>
+                </div>
+              ) : currentClass.assignments.map(a => (
                 <button key={a.subjectId} onClick={() => handleApplyChange(a.subjectId)} className="w-full py-5 rounded-2xl bg-white border border-slate-100 shadow-sm text-slate-900 font-black text-[11px] uppercase tracking-widest hover:border-indigo-500 hover:shadow-md transition-all flex items-center justify-between px-6 group">
                   <span>{getSubjectName(a.subjectId)}</span>
                   <span className="text-[8px] text-slate-400 font-bold group-hover:text-indigo-500">{getTeacherName(a.teacherId)}</span>
@@ -216,8 +222,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
            </div>
         </div>
       ) : (
-        <div className="bg-white p-20 rounded-[3rem] text-center border border-slate-100 shadow-sm">
-           <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-10">Map detailed curriculum targets based on your textbooks.</p>
+        <div className="bg-white p-20 rounded-[3rem] text-center border border-slate-100 shadow-sm space-y-8">
+           <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Curriculum Mapping</h3>
+           <p className="text-slate-500 text-sm font-bold uppercase tracking-widest max-w-lg mx-auto leading-relaxed">Map detailed curriculum targets and page numbers based on your textbooks to ensure teaching pace matches school goals.</p>
            <button onClick={onGenerateRoadmap} className="px-10 py-5 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Build Roadmap</button>
         </div>
       )}

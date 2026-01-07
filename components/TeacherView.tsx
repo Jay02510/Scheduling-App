@@ -10,12 +10,24 @@ interface TeacherViewProps {
 }
 
 const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, subjects, profile }) => {
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string>(teachers[0]?.id || '');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>(() => teachers[0]?.id || '');
   const days = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri'];
   const totalPeriods = profile?.hours.totalPeriods || 8;
 
-  const filteredSlots = schedule.weeklySlots.filter(s => s.teacherId === selectedTeacherId);
-  const teacher = teachers.find(t => t.id === selectedTeacherId);
+  if (teachers.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-6 text-center bg-white rounded-[3rem] border border-slate-100 shadow-sm animate-fadeIn">
+          <div className="w-20 h-20 bg-indigo-50 rounded-[2.5rem] flex items-center justify-center text-indigo-500 mb-8 shadow-inner">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">No Staff Registered</h2>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">Staff schedules will appear here once teachers are added and lessons are assigned.</p>
+      </div>
+    );
+  }
+
+  const filteredSlots = schedule.weeklySlots?.filter(s => s.teacherId === selectedTeacherId) || [];
+  const teacher = teachers.find(t => t.id === selectedTeacherId) || teachers[0];
 
   const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || 'Unknown Subject';
 
@@ -75,7 +87,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                           </div>
                         </div>
                       ) : (
-                        <div className="h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#f8fafc_5px,#f8fafc_10px)]"></div>
+                        <div className="h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#f8fafc_5px,#f8fafc_10px)] opacity-20"></div>
                       )}
                     </td>
                   );
