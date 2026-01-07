@@ -23,6 +23,9 @@ const App: React.FC = () => {
   const [loadingMsg, setLoadingMsg] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [timetableMode, setTimetableMode] = useState<'school' | 'staff'>('school');
+  
+  // Navigation Context for deep linking from Dashboard
+  const [navigationFocus, setNavigationFocus] = useState<{ id: string, type: 'teacher' | 'class' } | null>(null);
 
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -59,11 +62,10 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Persist data to cloud when any sub-state changes
   useEffect(() => {
     if (user && profile && !isLoading) {
       const dataToSave = {
-        profile,
+        profile: { ...profile, teachers, classes, textbooks, lockedSlots, subjects },
         teachers,
         classes,
         textbooks,
@@ -76,7 +78,7 @@ const App: React.FC = () => {
       }, 2000);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, profile, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading]);
+  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading]);
 
   const handleOnboardingComplete = (newProfile: SchoolProfile) => {
     setProfile(newProfile);
@@ -87,6 +89,12 @@ const App: React.FC = () => {
     setSubjects(newProfile.subjects || []);
     setShowOnboarding(false);
     setActiveTab('home');
+  };
+
+  const handleEntityJump = (id: string, type: 'teacher' | 'class') => {
+    setNavigationFocus({ id, type });
+    setTimetableMode(type === 'teacher' ? 'staff' : 'school');
+    setActiveTab('timetable');
   };
 
   const handleUpdateScheduleSlot = (updatedSlot: ScheduleSlot) => {
@@ -116,11 +124,10 @@ const App: React.FC = () => {
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
       const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile);
-      setSchedule({ ...schedule, weeklySlots: slots, quarterlyPlan: schedule?.quarterlyPlan || { quarterName: '', weeks: [] } });
+      setSchedule({ ...schedule, weeklySlots: slots, quarterlyPlan: schedule?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } });
       setActiveTab('timetable');
     } catch (e: any) {
-      console.error(e);
-      alert("AI Generation failed. Please check your setup data.");
+      alert(e.message || "Optimization failed.");
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +136,7 @@ const App: React.FC = () => {
   const handleGenerateRoadmap = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Planning 12 weeks of lessons...");
+    setLoadingMsg("Planning curriculum...");
     try {
       const plan = await generateCurriculumRoadmap(textbooks, profile);
       setSchedule({ ...schedule, weeklySlots: schedule?.weeklySlots || [], quarterlyPlan: plan });
@@ -137,15 +144,6 @@ const App: React.FC = () => {
       console.error(e);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleResetData = async () => {
-    if (!user) return;
-    if (window.confirm("Permanently wipe all school data?")) {
-      setIsLoading(true);
-      await clearUserData(user.uid);
-      window.location.reload();
     }
   };
 
@@ -176,6 +174,7 @@ const App: React.FC = () => {
               classes={classes} 
               textbooks={textbooks} 
               onResync={() => setActiveTab('setup')} 
+              onJump={handleEntityJump}
             />
           )}
           {activeTab === 'setup' && (
@@ -212,6 +211,7 @@ const App: React.FC = () => {
                     onGenerateRoadmap={handleGenerateRoadmap} 
                     onUpdateSlot={handleUpdateScheduleSlot}
                     onNavigate={setActiveTab}
+                    initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined}
                   />
                ) : (
                  <TeacherView 
@@ -220,6 +220,7 @@ const App: React.FC = () => {
                    classes={classes} 
                    subjects={subjects} 
                    profile={profile} 
+                   initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined}
                  />
                )}
             </div>
@@ -234,7 +235,7 @@ const App: React.FC = () => {
             <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />
           )}
           {activeTab === 'settings' && (
-            <Settings user={user} profile={profile} onReset={handleResetData} onLogout={() => signOut(auth)} />
+            <Settings user={user} profile={profile} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />
           )}
         </>
       )}

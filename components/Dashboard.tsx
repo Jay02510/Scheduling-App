@@ -7,9 +7,10 @@ interface DashboardProps {
   classes: ClassGroup[];
   textbooks: Textbook[];
   onResync?: () => void;
+  onJump?: (id: string, type: 'teacher' | 'class') => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], textbooks = [], onResync }) => {
+const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], textbooks = [], onResync, onJump }) => {
   const stats = [
     { name: 'Staff', value: teachers.length, color: '#6366f1', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
     { name: 'Classes', value: classes.length, color: '#a855f7', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
@@ -25,8 +26,8 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
           <p className="text-slate-500 font-bold text-[11px] uppercase tracking-[0.3em] mt-2">Live Operational Metrics</p>
         </div>
         <div className="hidden md:flex gap-4">
-           <button onClick={onResync} className="bg-slate-100 hover:bg-slate-200 text-slate-900 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Setup Center</button>
-           <span className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-100">System Ready</span>
+           <button onClick={onResync} className="bg-white border border-slate-200 text-slate-900 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">Setup Center</button>
+           <span className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-100">System Live</span>
         </div>
       </header>
 
@@ -47,63 +48,62 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-        <div className="xl:col-span-8 bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100">
-          <div className="flex justify-between items-center mb-12">
-            <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Institutional Balance</h3>
-            <div className="flex gap-4">
-               <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-indigo-500"></div><span className="text-[9px] font-black text-slate-500 uppercase">Allocated</span></div>
-               <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-slate-200"></div><span className="text-[9px] font-black text-slate-500 uppercase">Total Capacity</span></div>
-            </div>
-          </div>
-          <div className="w-full h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 800 }} dy={15} />
-                <YAxis hide />
-                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px rgba(0,0,0,0.1)', padding: '16px' }} />
-                <Bar dataKey="value" radius={[16, 16, 16, 16]} barSize={60}>
-                  {stats.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="xl:col-span-8 space-y-10">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Classroom Hub */}
+              <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col h-[400px]">
+                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 px-2">Classroom Hub</h3>
+                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                    {classes.map(c => (
+                       <button key={c.id} onClick={() => onJump?.(c.id, 'class')} className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 rounded-2xl transition-all group">
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 rounded-xl shadow-inner" style={{ backgroundColor: c.color }}></div>
+                             <span className="font-black text-slate-800 uppercase text-xs">{c.name}</span>
+                          </div>
+                          <svg className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                       </button>
+                    ))}
+                 </div>
+              </div>
+
+              {/* Faculty Registry */}
+              <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col h-[400px]">
+                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 px-2">Faculty Registry</h3>
+                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                    {teachers.map(t => (
+                       <button key={t.id} onClick={() => onJump?.(t.id, 'teacher')} className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 rounded-2xl transition-all group">
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg" style={{ backgroundColor: t.color }}>{t.name[0]}</div>
+                             <div className="text-left">
+                                <p className="font-black text-slate-800 uppercase text-xs">{t.name}</p>
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.role}</p>
+                             </div>
+                          </div>
+                          <svg className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                       </button>
+                    ))}
+                 </div>
+              </div>
+           </div>
         </div>
 
         <div className="xl:col-span-4 space-y-8">
           <div className="bg-[#0f172a] p-12 rounded-[4rem] shadow-2xl text-white relative overflow-hidden group min-h-[300px] flex flex-col justify-between">
             <div className="absolute top-[-20%] right-[-20%] w-64 h-64 gradient-primary blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
             <div>
-              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8">AI Audit Summary</h3>
+              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8">AI Efficiency</h3>
               <div className="space-y-6">
                 <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                  <span className="text-sm font-bold text-slate-400">Conflict Score</span>
-                  <span className="text-lg font-black text-emerald-400">0 Critical</span>
+                  <span className="text-sm font-bold text-slate-400">Timetable Score</span>
+                  <span className="text-lg font-black text-emerald-400">92%</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                  <span className="text-sm font-bold text-slate-400">Teacher Rest</span>
+                  <span className="text-sm font-bold text-slate-400">Staff Rest Factor</span>
                   <span className="text-lg font-black text-white">Optimal</span>
                 </div>
               </div>
             </div>
-            <button onClick={onResync} className="w-full mt-10 py-5 bg-white text-slate-900 rounded-3xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl">Tune System Parameters</button>
-          </div>
-
-          <div className="bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100 flex flex-col justify-between min-h-[200px]">
-             <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">System Sync</h3>
-             <div className="flex items-center gap-6">
-                <div className="flex-1 space-y-2">
-                   <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full w-[100%] bg-emerald-500 rounded-full animate-pulse"></div>
-                   </div>
-                   <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter text-slate-400">
-                      <span>Cloud Storage</span>
-                      <span className="text-emerald-600">Encrypted & Synced</span>
-                   </div>
-                </div>
-             </div>
+            <button onClick={onResync} className="w-full mt-10 py-5 bg-white text-slate-900 rounded-3xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl">Tune Setup</button>
           </div>
         </div>
       </div>

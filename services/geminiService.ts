@@ -2,6 +2,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Teacher, LockedSlot, ClassGroup, SchoolProfile, QuarterlyPlan, ScheduleSlot, Textbook, SchoolSchedule, SubjectConfig } from "../types";
 
+const sanitizeJson = (text: string) => {
+  return text.replace(/```json/g, "").replace(/```/g, "").trim();
+};
+
 export const parseStaffList = async (text: string): Promise<Partial<Teacher>[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `
@@ -10,25 +14,30 @@ export const parseStaffList = async (text: string): Promise<Partial<Teacher>[]> 
     Raw Text: "${text}"
     Return JSON array: { name, role }.
   `;
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            name: { type: Type.STRING },
-            role: { type: Type.STRING, enum: ['homeroom', 'specialist', 'subject'] }
-          },
-          required: ["name", "role"]
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              role: { type: Type.STRING, enum: ['homeroom', 'specialist', 'subject'] }
+            },
+            required: ["name", "role"]
+          }
         }
       }
-    }
-  });
-  return JSON.parse(response.text || '[]');
+    });
+    return JSON.parse(sanitizeJson(response.text || '[]'));
+  } catch (e) {
+    console.error("Staff parsing failed", e);
+    return [];
+  }
 };
 
 export const generateWeeklyMaster = async (
@@ -39,6 +48,12 @@ export const generateWeeklyMaster = async (
 ): Promise<ScheduleSlot[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+  // Filter out any invalid assignments
+  const sanitizedClasses = classes.map(c => ({
+    ...c,
+    assignments: (c.assignments || []).filter(a => a.teacherId && a.subjectId)
+  })).filter(c => c.assignments.length > 0);
+
   const inputData = {
     periods: profile.hours.totalPeriods,
     lunchAfter: profile.hours.lunchAfterPeriod,
@@ -48,12 +63,12 @@ export const generateWeeklyMaster = async (
       maxDaily: t.maxDailyPeriods,
       minBreaks: t.breaksNeededPerWeek || 5 
     })),
-    classes: classes.map(c => ({
+    classes: sanitizedClasses.map(c => ({
       id: c.id,
       name: c.name,
       tasks: c.assignments.map(a => ({
         subjectId: a.subjectId,
-        freq: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 0,
+        freq: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 5,
         teacherId: a.teacherId
       }))
     })),
@@ -61,38 +76,56 @@ export const generateWeeklyMaster = async (
       day: l.dayOfWeek, 
       period: l.period, 
       global: l.isSchoolWide, 
-      classIds: l.classIds,
       name: l.name 
     }))
   };
 
   const prompt = `
-    TASK: SOLVE THE SCHOOL TIMETABLE PUZZLE.
+    TASK: Generate a school timetable.
     
     CONSTRAINTS:
-    1. INSTITUTIONAL LOCKS: ${JSON.stringify(inputData.locks.filter(l => l.global))} are MANDATORY for ALL classes. No subjects can be scheduled here.
+    1. INSTITUTIONAL LOCKS: ${JSON.stringify(inputData.locks.filter(l => l.global))} are BLOCKED for ALL classes.
     2. TEACHER REST: Every teacher MUST have at least their "minBreaks" distributed across the week.
     3. NO CLASHES: A teacher cannot teach two classes in the same period.
     4. SUBJECT FREQUENCY: Each class must meet its subject "freq" per week exactly.
-    5. CONTINUITY: Avoid more than 3 back-to-back periods for any teacher if possible.
+    5. CONTINUITY: Max 3 back-to-back periods for any teacher.
     
     DATA: ${JSON.stringify(inputData)}
     
-    RETURN: A clean JSON array of ALL scheduled slots for ALL classes.
-    Format: [{ period, day, subjectId, teacherId, classId }]
+    RETURN: A JSON array of scheduled slots.
   `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: prompt,
-    config: {
-      thinkingConfig: { thinkingBudget: 32768 },
-      responseMimeType: "application/json"
-    }
-  });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: {
+        thinkingConfig: { thinkingBudget: 16000 },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              period: { type: Type.INTEGER },
+              day: { type: Type.INTEGER },
+              subjectId: { type: Type.STRING },
+              teacherId: { type: Type.STRING },
+              classId: { type: Type.STRING }
+            },
+            required: ["period", "day", "subjectId", "teacherId", "classId"]
+          }
+        }
+      }
+    });
 
-  const slots = JSON.parse(response.text || '[]');
-  return slots.map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
+    const text = sanitizeJson(response.text || '[]');
+    const slots = JSON.parse(text);
+    return slots.map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
+  } catch (e) {
+    console.error("AI Generation failed", e);
+    throw new Error("Timetable optimization failed. Please check if your assignments are complete.");
+  }
 };
 
 export const generateCurriculumRoadmap = async (
@@ -100,35 +133,40 @@ export const generateCurriculumRoadmap = async (
   profile: SchoolProfile
 ): Promise<QuarterlyPlan> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Create a 12-week teaching plan for these books: ${JSON.stringify(textbooks)}. Breakdown by week. Ensure units match the grade levels provided.`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          quarterName: { type: Type.STRING },
-          weeks: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                weekNumber: { type: Type.INTEGER },
-                subject: { type: Type.STRING },
-                unit: { type: Type.STRING },
-                pages: { type: Type.STRING }
-              },
-              required: ["weekNumber", "subject", "unit", "pages"]
+  const prompt = `Create a 12-week teaching plan for these books: ${JSON.stringify(textbooks)}. Breakdown by week.`;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            quarterName: { type: Type.STRING },
+            weeks: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  weekNumber: { type: Type.INTEGER },
+                  subject: { type: Type.STRING },
+                  unit: { type: Type.STRING },
+                  pages: { type: Type.STRING }
+                },
+                required: ["weekNumber", "subject", "unit", "pages"]
+              }
             }
-          }
-        },
-        required: ["weeks"]
+          },
+          required: ["weeks"]
+        }
       }
-    }
-  });
-  return JSON.parse(response.text || '{"weeks":[]}');
+    });
+    return JSON.parse(sanitizeJson(response.text || '{"weeks":[]}'));
+  } catch (e) {
+    console.error("Roadmap generation failed", e);
+    return { quarterName: "Error", weeks: [] };
+  }
 };
 
 export const analyzeSchedule = async (
@@ -137,21 +175,15 @@ export const analyzeSchedule = async (
   teachers: Teacher[]
 ): Promise<any> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `
-    Analyze this school schedule.
-    Check:
-    1. Teacher burnout (back-to-back periods).
-    2. Subject balance (are hard subjects in the morning?).
-    3. Room/Staff usage efficiency.
-    
-    Return JSON: { score, efficiency, insights: [string], burnoutRisks: [string] }
-  `;
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json"
-    }
-  });
-  return JSON.parse(response.text || '{}');
+  const prompt = `Analyze this school schedule for burnout and efficiency. Return JSON { score, insights: [string], burnoutRisks: [string] }.`;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(sanitizeJson(response.text || '{}'));
+  } catch (e) {
+    return { score: 0, insights: ["Analysis failed"] };
+  }
 };
