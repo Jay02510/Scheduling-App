@@ -199,7 +199,12 @@ const App: React.FC = () => {
                <button onClick={() => setActiveTab('setup')} className="mt-4 text-indigo-600 font-bold uppercase text-[10px]">Return to Setup</button>
              </div>
           )}
-          {activeTab === 'planner' && <div className="space-y-16"><ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} /><SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} /></div>}
+          {activeTab === 'planner' && (
+            <div className="space-y-16">
+              <ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} />
+              <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} />
+            </div>
+          )}
           {activeTab === 'insights' && schedule && profile && <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />}
           {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={handleResetData} onLogout={() => signOut(auth)} />}
         </>

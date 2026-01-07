@@ -39,6 +39,7 @@ export interface Textbook {
   totalChapters: number;
   totalPages: number;
   currentPage?: number;
+  classId?: string; // Linked to a specific class
 }
 
 export interface Teacher {
