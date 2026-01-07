@@ -89,7 +89,7 @@ const App: React.FC = () => {
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Designing Timetable...");
+    setLoadingMsg("Optimizing Timetable...");
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
       const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile);
@@ -105,7 +105,7 @@ const App: React.FC = () => {
   const handleGenerateRoadmap = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Calculating Curriculum Pace...");
+    setLoadingMsg("Mapping Curriculum Pace...");
     try {
       const plan = await generateCurriculumRoadmap(textbooks, profile);
       setSchedule({ weeklySlots: schedule?.weeklySlots || [], quarterlyPlan: plan });
@@ -118,7 +118,7 @@ const App: React.FC = () => {
 
   const handleResetData = async () => {
     if (!user) return;
-    if (window.confirm("Wipe all school data? This cannot be undone.")) {
+    if (window.confirm("Permanently wipe all school data?")) {
       setIsLoading(true);
       await clearUserData(user.uid);
       window.location.reload();
@@ -147,7 +147,7 @@ const App: React.FC = () => {
           {activeTab === 'timetable' && schedule && (
             <div className="space-y-6">
                <div className="flex justify-center bg-slate-100 p-1 rounded-2xl w-fit mx-auto shadow-inner">
-                  <button onClick={() => setTimetableMode('school')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class Schedules</button>
+                  <button onClick={() => setTimetableMode('school')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class View</button>
                   <button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff View</button>
                </div>
                {timetableMode === 'school' ? (

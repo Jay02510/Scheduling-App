@@ -21,6 +21,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [selectedFixedId, setSelectedFixedId] = useState<string | null>(null);
 
   const [profile, setProfile] = useState<SchoolProfile>(() => {
+    // Correctly define initial subjects with textbookId and constraints as defined in the updated SubjectConfig
     const initialSubjects: SubjectConfig[] = [
       { id: 'sub-1', name: 'Mathematics', frequencyPerWeek: 5, gradeLevels: ['Grade 1'], textbookId: 'tb-1', constraints: { morningOnly: true } },
       { id: 'sub-2', name: 'English', frequencyPerWeek: 5, gradeLevels: ['Grade 1'], textbookId: 'tb-2' }
@@ -53,6 +54,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       classes: [
         { id: 'c-1', name: 'Class 1', grade: 'Grade 1', homeroomTeacherId: 't-1', koreanTeacherId: 't-2', assignments: [{ subjectId: 'sub-1', teacherId: 't-1' }, { subjectId: 'sub-2', teacherId: 't-2' }], color: CLASS_COLORS[0] } as ClassGroup
       ],
+      // Ensure lockedSlots is initialized to satisfy the SchoolProfile interface requirements
+      lockedSlots: [],
       fixedClasses: [],
       specialEvents: []
     };
@@ -120,7 +123,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       name: 'New Subject',
       frequencyPerWeek: 5,
       gradeLevels: ['Grade 1'],
-      textbookId: tbId
+      textbookId: tbId // Successfully uses updated SubjectConfig property
     };
     const newTb: Textbook = {
       id: tbId,
@@ -140,7 +143,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const toggleClassForFixed = (classId: string, fixedId: string) => {
     setProfile(prev => ({
       ...prev,
-      fixedClasses: prev.fixedClasses.map(f => {
+      fixedClasses: (prev.fixedClasses || []).map(f => {
         if (f.id !== fixedId) return f;
         const currentIds = f.classIds || [];
         const newIds = currentIds.includes(classId) 
@@ -268,7 +271,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </div>
         );
       case 3:
-        const selectedFixed = profile.fixedClasses.find(f => f.id === selectedFixedId);
+        const selectedFixed = (profile.fixedClasses || []).find(f => f.id === selectedFixedId);
         return (
           <div className="space-y-8 animate-fadeIn max-w-full">
             <div>
@@ -284,14 +287,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     <React.Fragment key={p}>
                       <div className="text-[9px] font-black text-slate-300 flex items-center justify-center">P{p+1}</div>
                       {Array.from({length: 5}).map((_, d) => {
-                        const fixed = profile.fixedClasses.find(f => f.dayOfWeek === d && f.period === p);
+                        const fixed = (profile.fixedClasses || []).find(f => f.dayOfWeek === d && f.period === p);
                         return (
                           <button
                             key={d}
                             onClick={() => {
-                              const existingIdx = profile.fixedClasses.findIndex(f => f.dayOfWeek === d && f.period === p);
+                              const existingIdx = (profile.fixedClasses || []).findIndex(f => f.dayOfWeek === d && f.period === p);
                               if (existingIdx > -1) {
-                                setSelectedFixedId(profile.fixedClasses[existingIdx].id);
+                                setSelectedFixedId(profile.fixedClasses![existingIdx].id);
                               } else {
                                 const newId = Math.random().toString(36).substr(2, 9);
                                 const newFixed: FixedClass = {
@@ -304,7 +307,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                   isSchoolWide: true, 
                                   color: BLOCK_COLORS[0].hex
                                 };
-                                setProfile({...profile, fixedClasses: [...profile.fixedClasses, newFixed]});
+                                setProfile({...profile, fixedClasses: [...(profile.fixedClasses || []), newFixed]});
                                 setSelectedFixedId(newId);
                               }
                             }}
@@ -333,7 +336,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         value={selectedFixed.name}
                         onChange={e => setProfile(prev => ({
                           ...prev,
-                          fixedClasses: prev.fixedClasses.map(f => f.id === selectedFixedId ? { ...f, name: e.target.value } : f)
+                          fixedClasses: (prev.fixedClasses || []).map(f => f.id === selectedFixedId ? { ...f, name: e.target.value } : f)
                         }))}
                       />
                     </div>
@@ -344,7 +347,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         <button 
                           onClick={() => setProfile(prev => ({
                             ...prev,
-                            fixedClasses: prev.fixedClasses.map(f => f.id === selectedFixedId ? { ...f, isSchoolWide: !f.isSchoolWide, classIds: !f.isSchoolWide ? [] : f.classIds } : f)
+                            fixedClasses: (prev.fixedClasses || []).map(f => f.id === selectedFixedId ? { ...f, isSchoolWide: !f.isSchoolWide, classIds: !f.isSchoolWide ? [] : f.classIds } : f)
                           }))}
                           className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all ${selectedFixed.isSchoolWide ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}
                         >
@@ -381,7 +384,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                              key={c.hex} 
                              onClick={() => setProfile(prev => ({
                                ...prev,
-                               fixedClasses: prev.fixedClasses.map(f => f.id === selectedFixedId ? { ...f, color: c.hex } : f)
+                               fixedClasses: (prev.fixedClasses || []).map(f => f.id === selectedFixedId ? { ...f, color: c.hex } : f)
                              }))}
                              className={`w-7 h-7 rounded-full border-2 transition-all ${selectedFixed.color === c.hex ? 'border-black scale-110' : 'border-transparent'}`}
                              style={{ backgroundColor: c.hex }}
@@ -390,7 +393,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                        </div>
                     </div>
                     <button onClick={() => {
-                        setProfile(prev => ({ ...prev, fixedClasses: prev.fixedClasses.filter(f => f.id !== selectedFixedId) }));
+                        setProfile(prev => ({ ...prev, fixedClasses: (prev.fixedClasses || []).filter(f => f.id !== selectedFixedId) }));
                         setSelectedFixedId(null);
                     }} className="w-full py-2 bg-rose-50 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest mt-2 hover:bg-rose-100 transition-colors">Delete Block</button>
                   </div>

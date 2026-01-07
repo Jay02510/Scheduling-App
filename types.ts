@@ -11,8 +11,12 @@ export interface SubjectConfig {
   name: string;
   frequencyPerWeek: number;
   gradeLevels: string[];
-  textbookId?: string; // For curriculum mapping
-  constraints?: { morningOnly?: boolean }; // For scheduling logic
+  // Support for textbook linking and scheduling constraints
+  textbookId?: string;
+  constraints?: {
+    morningOnly?: boolean;
+    [key: string]: any;
+  };
 }
 
 export interface Textbook {
@@ -29,14 +33,13 @@ export interface Textbook {
 export interface Teacher {
   id: string;
   name: string;
-  role: 'homeroom' | 'specialist' | 'subject' | 'korean'; // Added 'korean'
+  role: 'homeroom' | 'specialist' | 'subject' | 'korean';
   subjects: string[];
   maxDailyPeriods: number;
   breaksNeededPerWeek: number;
   color: string;
   assignedClasses: string[];
   employmentType: string;
-  preferences?: { prefersMornings: boolean; maxConsecutivePeriods: number }; // Added for preferences
 }
 
 export interface LockedSlot {
@@ -47,11 +50,19 @@ export interface LockedSlot {
   classIds: string[]; 
   isSchoolWide: boolean; 
   color?: string;
-  provider?: string; // Added for Onboarding
 }
 
-// FixedClass is used in some components interchangeably with LockedSlot
-export type FixedClass = LockedSlot;
+// New interface to resolve import error in Onboarding.tsx
+export interface FixedClass {
+  id: string;
+  name: string;
+  provider?: string;
+  dayOfWeek: number;
+  period: number;
+  classIds: string[]; 
+  isSchoolWide: boolean; 
+  color?: string;
+}
 
 export interface ClassSubjectAssignment {
   subjectId: string;
@@ -63,7 +74,7 @@ export interface ClassGroup {
   name: string;
   grade: string;
   homeroomTeacherId: string;
-  koreanTeacherId?: string; // Added for Korean teacher mapping
+  koreanTeacherId?: string;
   assignments: ClassSubjectAssignment[];
   color: string;
 }
@@ -75,7 +86,7 @@ export interface ScheduleSlot {
   subjectId: string;
   teacherId: string;
   classId: string;
-  topic?: string; // For syllabus tracking
+  topic?: string;
 }
 
 export interface WeeklyCurriculumTarget {
@@ -96,44 +107,28 @@ export interface SchoolSchedule {
   weeklySlots: ScheduleSlot[];
 }
 
-export interface DailyConfig {
-  day: number;
-  endTime: string;
-}
-
 export interface SchoolHours {
   startTime: string; 
   totalPeriods: number; 
   lunchAfterPeriod: number;
   periodDuration: number;
-  recessAfterPeriod?: number; // Added for Onboarding
-  homeworkAfterPeriod?: number; // Added for Onboarding
-  dailyConfigs?: DailyConfig[]; // Added for Onboarding
-}
-
-export interface Level {
-  id: string;
-  name: string;
-  grades: string[];
-}
-
-export interface Term {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
+  // Support for extended scheduling logic
+  recessAfterPeriod?: number;
+  homeworkAfterPeriod?: number;
+  dailyConfigs?: { day: number; endTime: string }[];
 }
 
 export interface SchoolProfile {
   name: string;
   hours: SchoolHours;
-  levels?: Level[]; // Added for Onboarding
-  terms?: Term[]; // Added for Onboarding
   subjects: SubjectConfig[];
   textbooks: Textbook[];
   teachers: Teacher[];
   classes: ClassGroup[];
   lockedSlots: LockedSlot[];
-  fixedClasses: FixedClass[]; // Added for Onboarding compatibility
   specialEvents: SchoolEvent[];
+  // Optional fields for enhanced onboarding data
+  levels?: { id: string; name: string; grades: string[] }[];
+  terms?: { id: string; name: string; startDate: string; endDate: string }[];
+  fixedClasses?: FixedClass[];
 }
