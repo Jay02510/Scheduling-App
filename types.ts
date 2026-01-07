@@ -11,7 +11,6 @@ export interface SubjectConfig {
   name: string;
   frequencyPerWeek: number;
   gradeLevels: string[];
-  // Support for textbook linking and scheduling constraints
   textbookId?: string;
   constraints?: {
     morningOnly?: boolean;
@@ -52,17 +51,8 @@ export interface LockedSlot {
   color?: string;
 }
 
-// New interface to resolve import error in Onboarding.tsx
-export interface FixedClass {
-  id: string;
-  name: string;
-  provider?: string;
-  dayOfWeek: number;
-  period: number;
-  classIds: string[]; 
-  isSchoolWide: boolean; 
-  color?: string;
-}
+// FixedClass is an alias for LockedSlot used in some legacy UI components
+export type FixedClass = LockedSlot;
 
 export interface ClassSubjectAssignment {
   subjectId: string;
@@ -87,6 +77,7 @@ export interface ScheduleSlot {
   teacherId: string;
   classId: string;
   topic?: string;
+  isManualOverride?: boolean; // New: track manual edits
 }
 
 export interface WeeklyCurriculumTarget {
@@ -112,7 +103,6 @@ export interface SchoolHours {
   totalPeriods: number; 
   lunchAfterPeriod: number;
   periodDuration: number;
-  // Support for extended scheduling logic
   recessAfterPeriod?: number;
   homeworkAfterPeriod?: number;
   dailyConfigs?: { day: number; endTime: string }[];
@@ -127,8 +117,6 @@ export interface SchoolProfile {
   classes: ClassGroup[];
   lockedSlots: LockedSlot[];
   specialEvents: SchoolEvent[];
-  // Optional fields for enhanced onboarding data
   levels?: { id: string; name: string; grades: string[] }[];
   terms?: { id: string; name: string; startDate: string; endDate: string }[];
-  fixedClasses?: FixedClass[];
 }

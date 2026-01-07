@@ -73,12 +73,13 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     
     if (subjectId === '') {
       onUpdateSlot({
-        id: '',
+        id: Math.random().toString(36).substr(2, 9),
         day: editingSlot.day,
         period: editingSlot.period,
         classId: selectedClassId,
         subjectId: '',
-        teacherId: ''
+        teacherId: '',
+        isManualOverride: true
       });
     } else {
       const assignment = currentClass?.assignments.find(a => a.subjectId === subjectId);
@@ -89,48 +90,68 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           period: editingSlot.period,
           classId: selectedClassId,
           subjectId: subjectId,
-          teacherId: assignment.teacherId
+          teacherId: assignment.teacherId,
+          isManualOverride: true
         });
       }
     }
     setEditingSlot(null);
   };
 
+  if (!schedule || schedule.weeklySlots.length === 0) {
+      return (
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fadeIn">
+              <div className="w-20 h-20 bg-indigo-50 rounded-[2.5rem] flex items-center justify-center text-indigo-500 mb-8 shadow-inner">
+                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">NO TIMETABLE GENERATED</h2>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">The school schedule hasn't been built yet. Return to the setup tab and click "Build Timetable" to generate it with AI.</p>
+              <button onClick={() => window.location.hash = 'setup'} className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Go to School Setup</button>
+          </div>
+      );
+  }
+
   return (
-    <div className="space-y-8 animate-fadeIn relative">
+    <div className="space-y-8 animate-fadeIn relative pb-20">
       {/* Edit Overlay */}
       {editingSlot && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl border border-slate-100 animate-fadeIn">
-            <h3 className="text-xl font-black text-slate-900 mb-2">Edit Period</h3>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">
-              Day {editingSlot.day + 1}, Period {editingSlot.period + 1} for {currentClass?.name}
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[3rem] p-10 w-full max-w-md shadow-2xl border border-slate-100 animate-fadeIn overflow-y-auto max-h-[90vh]">
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Edit Period</h3>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 pb-4 border-b border-slate-100">
+              {days[editingSlot.day]} • Period {editingSlot.period + 1} for {currentClass?.name}
             </p>
             
             <div className="space-y-3">
               <button 
                 onClick={() => handleSlotEdit('')}
-                className="w-full py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all border border-transparent hover:border-rose-100"
+                className="w-full py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all border border-transparent hover:border-rose-100 mb-4"
               >
-                Clear Slot
+                Clear Period
               </button>
-              {currentClass?.assignments.map(a => (
-                <button 
-                  key={a.subjectId}
-                  onClick={() => handleSlotEdit(a.subjectId)}
-                  className="w-full py-5 rounded-2xl bg-white border border-slate-100 shadow-sm text-slate-900 font-black text-[11px] uppercase tracking-widest hover:border-indigo-500 hover:shadow-md transition-all flex items-center justify-between px-6"
-                >
-                  <span>{getSubjectName(a.subjectId)}</span>
-                  <span className="text-[8px] text-slate-400 font-bold">{getTeacherName(a.teacherId)}</span>
-                </button>
-              ))}
+
+              <div className="space-y-2">
+                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1 block">Assigned Curriculum</span>
+                 {currentClass?.assignments.length === 0 ? (
+                     <p className="p-6 bg-slate-50 rounded-2xl text-[9px] font-black text-slate-300 uppercase text-center italic">No lessons assigned to this class yet.</p>
+                 ) : currentClass?.assignments.map(a => (
+                    <button 
+                      key={a.subjectId}
+                      onClick={() => handleSlotEdit(a.subjectId)}
+                      className="w-full py-5 rounded-2xl bg-white border border-slate-100 shadow-sm text-slate-900 font-black text-[11px] uppercase tracking-widest hover:border-indigo-500 hover:shadow-md transition-all flex items-center justify-between px-6 group"
+                    >
+                      <span>{getSubjectName(a.subjectId)}</span>
+                      <span className="text-[8px] text-slate-400 font-bold group-hover:text-indigo-500">{getTeacherName(a.teacherId)}</span>
+                    </button>
+                  ))}
+              </div>
             </div>
             
             <button 
               onClick={() => setEditingSlot(null)}
-              className="mt-8 w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest"
+              className="mt-10 w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-900 transition-colors"
             >
-              Cancel
+              Close Window
             </button>
           </div>
         </div>
@@ -138,11 +159,11 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
       <div className="flex flex-col xl:flex-row justify-between items-center gap-6 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
         <div className="flex bg-slate-100 p-1.5 rounded-2xl">
-          <button onClick={() => setViewMode('individual')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class Schedules</button>
-          <button onClick={() => setViewMode('roadmap')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'roadmap' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Lesson Roadmap</button>
+          <button onClick={() => setViewMode('individual')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Class Grids</button>
+          <button onClick={() => setViewMode('roadmap')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'roadmap' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Syllabus Map</button>
         </div>
         
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap justify-center">
           <button 
             onClick={checkClashes}
             disabled={isVerifying}
@@ -161,7 +182,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             ) : (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
             )}
-            {isVerifying ? 'Scanning...' : verificationResult ? 'Rerun Audit' : 'Verify Integrity'}
+            {isVerifying ? 'Scanning...' : verificationResult ? 'Rerun Scan' : 'Audit Data'}
           </button>
 
           <div className="w-px h-8 bg-slate-200 mx-2 hidden xl:block"></div>
@@ -175,8 +196,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       </div>
 
       {viewMode === 'individual' ? (
-        <div className="bg-white border-[3px] border-slate-900 rounded-[1rem] overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.05)]">
-          <table className="w-full border-collapse">
+        <div className="bg-white border-[3px] border-slate-900 rounded-[1.5rem] overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
+          <table className="w-full border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-slate-50 border-b-[3px] border-slate-900">
                 <th className="border-r-[3px] border-slate-900 p-6 text-[12px] font-black uppercase text-slate-800 w-32">Period</th>
@@ -191,36 +212,52 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     const lock = profile?.lockedSlots.find(f => f.dayOfWeek === dIdx && f.period === pIdx && (f.isSchoolWide || f.classIds.includes(selectedClassId)));
                     const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                     const teacher = teachers.find(t => t.id === slot?.teacherId);
+                    const isLunch = pIdx === profile?.hours.lunchAfterPeriod;
 
                     if (lock) {
                       return (
-                        <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 min-w-[180px] bg-slate-100">
+                        <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 bg-slate-100">
                           <div className="h-full flex items-center justify-center p-4 text-center">
-                            <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">{lock.name}</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lock.name}</span>
                           </div>
                         </td>
                       );
+                    }
+
+                    if (isLunch && !slot) {
+                        return (
+                          <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 bg-slate-50">
+                            <div className="h-full flex items-center justify-center p-4 text-center">
+                              <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Lunch Break</span>
+                            </div>
+                          </td>
+                        );
                     }
 
                     return (
                       <td 
                         key={dIdx} 
                         onClick={() => setEditingSlot({ day: dIdx, period: pIdx })}
-                        className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 min-w-[180px] bg-white group hover:bg-slate-50 transition-colors cursor-pointer"
+                        className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 bg-white group hover:bg-slate-50 transition-colors cursor-pointer"
                       >
-                        {slot ? (
+                        {slot && slot.subjectId ? (
                           <div className="h-full flex flex-col relative">
                             <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
                               <span className="text-[13px] font-black text-slate-900 uppercase leading-tight">{getSubjectName(slot.subjectId)}</span>
-                              <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                              {slot.isManualOverride && (
+                                <div className="absolute top-2 right-2 flex gap-1">
+                                    <span className="text-[6px] font-black bg-indigo-500 text-white px-1.5 py-0.5 rounded-full uppercase">MOD</span>
+                                </div>
+                              )}
+                              <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             </div>
                             <div className="h-12 flex items-center justify-center border-t-[3px] border-slate-900" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
-                              <span className="text-[10px] font-black uppercase text-slate-900 tracking-widest">{getTeacherName(slot.teacherId)}</span>
+                              <span className="text-[10px] font-black uppercase text-slate-900 tracking-widest truncate px-2">{getTeacherName(slot.teacherId)}</span>
                             </div>
                           </div>
                         ) : (
-                          <div className="h-full opacity-5 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] group-hover:opacity-10 transition-opacity flex items-center justify-center">
-                             <span className="text-[8px] font-black uppercase text-slate-400 opacity-0 group-hover:opacity-100">Add Slot</span>
+                          <div className="h-full opacity-5 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] group-hover:opacity-20 transition-opacity flex items-center justify-center">
+                             <span className="text-[9px] font-black uppercase text-slate-400 opacity-0 group-hover:opacity-100">+ Assign</span>
                           </div>
                         )}
                       </td>
@@ -234,31 +271,29 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       ) : (
         <div className="space-y-8">
           {schedule.quarterlyPlan.weeks.length === 0 ? (
-            <div className="bg-white p-20 rounded-[3rem] text-center space-y-4 border border-slate-100">
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">ROADMAP PENDING</h3>
-              <p className="text-slate-500 max-w-sm mx-auto text-[11px] font-bold uppercase tracking-widest">Synthesize a pacing roadmap based on textbook data</p>
-              <button onClick={onGenerateRoadmap} className="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest mt-6 shadow-2xl hover:scale-105 transition-all">Generate Roadmap</button>
+            <div className="bg-white p-20 rounded-[3rem] text-center space-y-4 border border-slate-100 shadow-sm">
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">SYLLABUS UNMAPPED</h3>
+              <p className="text-slate-500 max-w-sm mx-auto text-[11px] font-bold uppercase tracking-widest leading-loose">Synthesize a precise teaching roadmap based on institutional textbook configuration.</p>
+              <button onClick={onGenerateRoadmap} className="bg-[#0f172a] text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest mt-6 shadow-2xl hover:scale-105 transition-all">Map Curriculum Now</button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 12 }).map((_, i) => {
-                const weekNum = i + 1;
-                const targets = schedule.quarterlyPlan.weeks.filter(w => w.weekNumber === weekNum);
-                return (
-                  <div key={weekNum} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-                    <h4 className="text-2xl font-black text-slate-900">WEEK {weekNum}</h4>
-                    <div className="space-y-3">
-                      {targets.map((t, idx) => (
-                        <div key={idx} className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                          <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{t.subject}</p>
-                          <p className="font-bold text-slate-800 text-xs">{t.unit}</p>
-                          <p className="text-[10px] font-black text-slate-400 mt-2 uppercase">Target: pp. {t.pages}</p>
-                        </div>
-                      ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+              {schedule.quarterlyPlan.weeks.map((week, i) => (
+                  <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6 group hover:border-indigo-100 transition-all">
+                    <div className="flex justify-between items-start">
+                        <h4 className="text-2xl font-black text-slate-900">WEEK {week.weekNumber}</h4>
+                        {week.isHolidayWeek && <span className="bg-rose-50 text-rose-500 px-3 py-1 rounded-lg text-[8px] font-black uppercase">Holiday</span>}
+                    </div>
+                    <div className="p-5 bg-slate-50 rounded-2xl space-y-1 border border-transparent group-hover:bg-indigo-50/50 transition-colors">
+                      <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{week.subject}</p>
+                      <p className="font-bold text-slate-800 text-xs leading-relaxed">{week.unit}</p>
+                      <p className="text-[10px] font-black text-slate-400 mt-4 uppercase flex items-center gap-2">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        Target: pp. {week.pages}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+              ))}
             </div>
           )}
         </div>

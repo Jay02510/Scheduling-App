@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolProfile, SubjectConfig, SchoolSchedule } from '../types';
 import { TEACHER_COLORS, CLASS_COLORS } from '../constants';
-import { parseStaffList, suggestAssignments } from '../services/geminiService';
+import { parseStaffList } from '../services/geminiService';
 
 interface ScheduleFormProps {
   onGenerate: () => void;
@@ -149,38 +149,46 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                 </div>
                 
                 <div className="space-y-4">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Role Permissions</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Update Role</span>
                   <select 
                     className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-[11px] font-black outline-none cursor-pointer"
                     value={teacher.role}
                     onChange={e => setTeachers(teachers.map(t => t.id === teacher.id ? {...t, role: e.target.value as any} : t))}
                   >
                     <option value="homeroom">Homeroom Teacher</option>
+                    <option value="korean">Korean Teacher</option>
                     <option value="specialist">Specialist</option>
                     <option value="subject">Subject Teacher</option>
                   </select>
                 </div>
+
+                <div className="pt-4">
+                   <button onClick={() => { if(confirm("Remove this teacher?")) { setTeachers(teachers.filter(t => t.id !== teacher.id)); setDetailView(null); }}} className="w-full py-3 bg-rose-50 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Delete Staff Member</button>
+                </div>
               </div>
             </div>
 
-            <div className="flex-1 w-full space-y-6">
-               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Personal Timetable</h4>
-               <div className="grid grid-cols-5 gap-2">
+            <div className="flex-1 w-full space-y-6 overflow-x-auto">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Personal Schedule View</h4>
+               <div className="grid grid-cols-5 gap-2 min-w-[500px]">
                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(d => (
                    <div key={d} className="text-center text-[8px] font-black text-slate-300 uppercase py-2">{d}</div>
                  ))}
                  {Array.from({length: 5}).map((_, d) => (
                    <div key={d} className="space-y-1">
-                     {Array.from({length: 8}).map((_, p) => {
+                     {Array.from({length: profile?.hours.totalPeriods || 8}).map((_, p) => {
                         const slot = teacherSlots.find(s => s.day === d && s.period === p);
+                        const isLunch = p === profile?.hours.lunchAfterPeriod;
                         return (
-                          <div key={p} className={`h-12 rounded-xl flex flex-col items-center justify-center p-1 border ${slot ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-transparent opacity-40'}`}>
-                            {slot && (
+                          <div key={p} className={`h-14 rounded-xl flex flex-col items-center justify-center p-1 border ${slot ? 'bg-white border-slate-200 shadow-sm' : isLunch ? 'bg-slate-100 border-transparent' : 'bg-slate-50 border-transparent opacity-40'}`}>
+                            {slot ? (
                               <>
                                 <span className="text-[8px] font-black text-slate-900 truncate w-full text-center uppercase">{getSubjectName(slot.subjectId)}</span>
                                 <span className="text-[6px] font-bold text-slate-400 uppercase">{classes.find(c => c.id === slot.classId)?.name}</span>
                               </>
-                            )}
+                            ) : isLunch ? (
+                                <span className="text-[6px] font-black text-slate-300 uppercase">Lunch</span>
+                            ) : null}
                           </div>
                         );
                      })}
@@ -207,46 +215,61 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
             <div className="w-full md:w-1/3 space-y-8">
                <div className="space-y-4">
                   <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl" style={{ backgroundColor: cls.color }}>
-                    <svg className="w-8 h-8 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg>
+                    <svg className="w-8 h-8 text-slate-900/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg>
                   </div>
                   <div>
                     <input className="w-full bg-transparent border-0 p-0 font-black text-3xl text-slate-900 focus:ring-0 uppercase" value={cls.name} onChange={e => setClasses(classes.map(c => c.id === cls.id ? {...c, name: e.target.value} : c))} />
-                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">{cls.grade} Group</p>
+                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">{cls.grade} Academic Group</p>
                   </div>
                </div>
 
                <div className="space-y-6">
-                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Faculty Assignments</h5>
+                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Staff Allocation</h5>
                  <div className="space-y-3">
-                    {cls.assignments.map(a => (
-                      <div key={a.subjectId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                    {cls.assignments.length === 0 ? (
+                        <p className="text-[10px] font-bold text-slate-300 uppercase italic">No assignments configured.</p>
+                    ) : cls.assignments.map(a => (
+                      <div key={a.subjectId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl group relative">
                         <span className="text-[10px] font-black text-slate-900 uppercase">{getSubjectName(a.subjectId)}</span>
-                        <span className="text-[9px] font-bold text-slate-500">{teachers.find(t => t.id === a.teacherId)?.name}</span>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[9px] font-bold text-slate-500">{teachers.find(t => t.id === a.teacherId)?.name}</span>
+                           <button onClick={() => setClasses(classes.map(c => c.id === cls.id ? {...c, assignments: c.assignments.filter(as => as.subjectId !== a.subjectId)} : c))} className="text-rose-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                           </button>
+                        </div>
                       </div>
                     ))}
                  </div>
+                 <button onClick={() => setActiveTab('subjects')} className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[9px] font-black uppercase text-slate-400 hover:border-indigo-100 hover:text-indigo-500 transition-all">+ Add Assignment</button>
                </div>
+
+                <div className="pt-4">
+                   <button onClick={() => { if(confirm("Delete this entire class?")) { setClasses(classes.filter(c => c.id !== cls.id)); setDetailView(null); }}} className="w-full py-3 bg-rose-50 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Delete Class Group</button>
+                </div>
             </div>
 
-            <div className="flex-1 w-full space-y-6">
-               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Group Weekly View</h4>
-               <div className="grid grid-cols-5 gap-2">
+            <div className="flex-1 w-full space-y-6 overflow-x-auto">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Weekly Timetable View</h4>
+               <div className="grid grid-cols-5 gap-2 min-w-[500px]">
                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(d => (
                    <div key={d} className="text-center text-[8px] font-black text-slate-300 uppercase py-2">{d}</div>
                  ))}
                  {Array.from({length: 5}).map((_, d) => (
                    <div key={d} className="space-y-1">
-                     {Array.from({length: 8}).map((_, p) => {
+                     {Array.from({length: profile?.hours.totalPeriods || 8}).map((_, p) => {
                         const slot = classSlots.find(s => s.day === d && s.period === p);
                         const teacher = teachers.find(t => t.id === slot?.teacherId);
+                        const isLunch = p === profile?.hours.lunchAfterPeriod;
                         return (
-                          <div key={p} className={`h-16 rounded-xl flex flex-col items-center justify-center p-2 border ${slot ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-transparent opacity-40'}`}>
-                            {slot && (
+                          <div key={p} className={`h-16 rounded-xl flex flex-col items-center justify-center p-2 border ${slot ? 'bg-white border-slate-200 shadow-sm' : isLunch ? 'bg-slate-100 border-transparent' : 'bg-slate-50 border-transparent opacity-40'}`}>
+                            {slot ? (
                               <>
                                 <span className="text-[9px] font-black text-slate-900 text-center uppercase leading-tight line-clamp-2">{getSubjectName(slot.subjectId)}</span>
                                 <div className="mt-auto h-1 w-full rounded-full" style={{ backgroundColor: teacher?.color || '#eee' }}></div>
                               </>
-                            )}
+                            ) : isLunch ? (
+                                <span className="text-[7px] font-black text-slate-300 uppercase">Lunch</span>
+                            ) : null}
                           </div>
                         );
                      })}
@@ -264,8 +287,8 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     <div className="space-y-8 animate-fadeIn">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm gap-6">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">School Setup</h2>
-          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest mt-1">Manage Faculty & Curriculum</p>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">School Management</h2>
+          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest mt-1">Configure Faculty & Institutional Parameters</p>
         </div>
         <button onClick={onGenerate} className="w-full md:w-auto gradient-primary text-white px-10 py-5 rounded-2xl shadow-xl font-black text-[11px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -275,8 +298,8 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
       <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] w-fit shadow-inner overflow-x-auto max-w-full">
         {(['staff', 'classes', 'subjects', 'locks'] as const).map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} className={`px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>
-            {t === 'locks' ? 'Locked Times' : t}
+          <button key={t} onClick={() => setActiveTab(t)} className={`px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+            {t === 'locks' ? 'Global Blocks' : t === 'staff' ? 'Faculty' : t}
           </button>
         ))}
       </div>
@@ -304,12 +327,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                   onClick={() => setDetailView({ type: 'teacher', id: t.id })}
                   className="p-8 bg-slate-50 rounded-[2.5rem] border border-transparent hover:border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all space-y-6 relative group cursor-pointer"
                 >
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setTeachers(teachers.filter(pt => pt.id !== t.id)); }} 
-                    className="absolute top-6 right-6 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
                   <div className="flex flex-col items-center text-center space-y-4">
                     <div className="w-16 h-16 rounded-[1.5rem] flex-shrink-0 flex items-center justify-center text-white shadow-xl" style={{ backgroundColor: t.color }}>
                       <span className="text-2xl font-black">{t.name ? t.name[0] : '?'}</span>
@@ -321,8 +338,9 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                   </div>
                 </div>
               ))}
-              <button onClick={addNewTeacher} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] hover:border-indigo-100 hover:text-indigo-400 transition-all">
-                + New Teacher
+              <button onClick={addNewTeacher} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] hover:border-indigo-100 hover:text-indigo-400 transition-all flex flex-col items-center justify-center gap-2">
+                <span className="text-2xl">+</span>
+                <span>New Teacher</span>
               </button>
             </div>
           </div>
@@ -337,12 +355,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                   onClick={() => setDetailView({ type: 'class', id: c.id })}
                   className="bg-slate-50 p-8 rounded-[2.5rem] border border-transparent hover:border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all space-y-6 relative group cursor-pointer"
                 >
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setClasses(classes.filter(pc => pc.id !== c.id)); }} 
-                    className="absolute top-6 right-6 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
                   <div className="flex flex-col items-center text-center space-y-4">
                     <div className="w-16 h-16 rounded-[1.5rem] shadow-lg flex items-center justify-center" style={{ backgroundColor: c.color }}>
                       <svg className="w-8 h-8 text-slate-900/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg>
@@ -354,8 +366,9 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                   </div>
                 </div>
               ))}
-              <button onClick={addNewClass} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] hover:border-indigo-100 hover:text-indigo-400 transition-all">
-                + New Class
+              <button onClick={addNewClass} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] hover:border-indigo-100 hover:text-indigo-400 transition-all flex flex-col items-center justify-center gap-2">
+                <span className="text-2xl">+</span>
+                <span>New Class</span>
               </button>
             </div>
           </div>
@@ -371,13 +384,14 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                   </button>
                   <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-bold outline-none" value={s.name} onChange={e => setSubjects(subjects.map(ps => ps.id === s.id ? {...ps, name: e.target.value} : ps))} />
                   <div className="flex items-center justify-between px-2">
-                    <span className="text-[9px] font-black text-slate-400 uppercase">Frequency:</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase">Weekly:</span>
                     <input type="number" className="w-12 bg-transparent text-right font-black text-indigo-600" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(ps => ps.id === s.id ? {...ps, frequencyPerWeek: parseInt(e.target.value) || 0} : ps))} />
                   </div>
                 </div>
               ))}
-              <button onClick={addNewSubject} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] hover:border-indigo-100 hover:text-indigo-400 transition-all">
-                + New Subject
+              <button onClick={addNewSubject} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] hover:border-indigo-100 hover:text-indigo-400 transition-all flex flex-col items-center justify-center gap-2">
+                <span className="text-2xl">+</span>
+                <span>New Subject</span>
               </button>
             </div>
           </div>
@@ -386,12 +400,29 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         {activeTab === 'locks' && (
           <div className="space-y-10">
              <div className="bg-indigo-50 p-8 rounded-[2.5rem] border border-indigo-100 text-center">
-                <p className="text-indigo-900 font-black text-[11px] uppercase tracking-widest mb-2">School Lunch & Assembly Controls</p>
-                <p className="text-indigo-400 text-[9px] font-bold uppercase tracking-tight">Configure school-wide locked periods.</p>
+                <p className="text-indigo-900 font-black text-[11px] uppercase tracking-widest mb-2">School Blocks & Recess Controls</p>
+                <p className="text-indigo-400 text-[9px] font-bold uppercase tracking-tight">Manage school-wide mandatory breaks or events.</p>
              </div>
              <div className="py-20 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
-                <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Locked Slot Management</p>
-                <button onClick={() => setLockedSlots([])} className="mt-4 text-[9px] font-black uppercase text-indigo-500 underline">Reset All Global Locks</button>
+                <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Locked Slot Configuration</p>
+                {lockedSlots.length > 0 ? (
+                    <div className="mt-8 space-y-4 max-w-md mx-auto">
+                        {lockedSlots.map(l => (
+                            <div key={l.id} className="p-4 bg-white rounded-2xl flex items-center justify-between border border-slate-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: l.color }}></div>
+                                    <span className="text-[10px] font-black uppercase text-slate-700">{l.name}</span>
+                                </div>
+                                <button onClick={() => setLockedSlots(lockedSlots.filter(ls => ls.id !== l.id))} className="text-rose-300 hover:text-rose-500">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="mt-2 text-[8px] font-bold text-slate-300 uppercase">No custom locks defined yet.</p>
+                )}
+                <button onClick={() => setLockedSlots([])} className="mt-8 text-[9px] font-black uppercase text-indigo-500 underline">Clear All Locks</button>
              </div>
           </div>
         )}

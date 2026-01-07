@@ -58,7 +58,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       lockedSlots: [],
       fixedClasses: [],
       specialEvents: []
-    };
+    } as any;
   });
 
   const nextStep = () => {
@@ -297,10 +297,10 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                 setSelectedFixedId(profile.fixedClasses![existingIdx].id);
                               } else {
                                 const newId = Math.random().toString(36).substr(2, 9);
+                                // Remove non-existent 'provider' property from LockedSlot object literal.
                                 const newFixed: FixedClass = {
                                   id: newId, 
                                   name: 'Locked Slot', 
-                                  provider: 'School', 
                                   dayOfWeek: d, 
                                   period: p, 
                                   classIds: [], 
