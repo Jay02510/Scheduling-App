@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SchoolSchedule, Teacher, ClassGroup, SchoolProfile, SubjectConfig } from '../types';
 
 interface TeacherViewProps {
@@ -10,26 +10,34 @@ interface TeacherViewProps {
 }
 
 const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, subjects, profile }) => {
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string>(() => teachers[0]?.id || '');
-  const days = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri'];
-  const totalPeriods = profile?.hours.totalPeriods || 8;
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
+  
+  // Sync selected teacher when teachers list loads
+  useEffect(() => {
+    if (!selectedTeacherId && teachers && teachers.length > 0) {
+      setSelectedTeacherId(teachers[0].id);
+    }
+  }, [teachers, selectedTeacherId]);
 
-  if (teachers.length === 0) {
+  const days = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri'];
+  const totalPeriods = profile?.hours?.totalPeriods || 8;
+
+  if (!teachers || teachers.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-6 text-center bg-white rounded-[3rem] border border-slate-100 shadow-sm animate-fadeIn">
           <div className="w-20 h-20 bg-indigo-50 rounded-[2.5rem] flex items-center justify-center text-indigo-500 mb-8 shadow-inner">
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
           </div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">No Staff Registered</h2>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">Staff schedules will appear here once teachers are added and lessons are assigned.</p>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">Staff schedules will appear here once teachers are added and lessons are assigned in the Setup tab.</p>
       </div>
     );
   }
 
-  const filteredSlots = schedule.weeklySlots?.filter(s => s.teacherId === selectedTeacherId) || [];
-  const teacher = teachers.find(t => t.id === selectedTeacherId) || teachers[0];
+  const currentTeacher = teachers.find(t => t.id === selectedTeacherId) || teachers[0];
+  const filteredSlots = (schedule?.weeklySlots || []).filter(s => s.teacherId === currentTeacher.id);
 
-  const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || 'Unknown Subject';
+  const getSubjectName = (id: string) => (subjects || []).find(s => s.id === id)?.name || 'Unknown Subject';
 
   return (
     <div className="space-y-10 animate-fadeIn max-w-full overflow-hidden pb-12">
@@ -50,7 +58,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
           <thead>
             <tr className="bg-white border-b-2 border-slate-900">
               <th className="border-r-2 border-slate-900 p-5 text-[12px] font-black uppercase text-slate-800 w-24 bg-slate-50">
-                {teacher?.name || 'Staff'}
+                {currentTeacher?.name || 'Staff'}
               </th>
               {days.map(day => (
                 <th key={day} className="border-r-2 last:border-r-0 border-slate-900 p-5 text-[11px] font-black uppercase text-slate-800">
@@ -67,7 +75,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                 </td>
                 {Array.from({ length: 5 }).map((_, dIdx) => {
                   const slot = filteredSlots.find(s => s.day === dIdx && s.period === pIdx);
-                  const classInfo = slot ? classes.find(c => c.id === slot.classId) : null;
+                  const classInfo = slot ? (classes || []).find(c => c.id === slot.classId) : null;
                   
                   return (
                     <td key={dIdx} className="border-r-2 last:border-r-0 border-slate-900 p-0 relative h-28 min-w-[160px] bg-white group hover:bg-slate-50/50 transition-colors">
@@ -81,7 +89,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                           </div>
                           <div 
                             className="h-10 flex items-center justify-center border-t-2 border-slate-900 transition-all"
-                            style={{ backgroundColor: teacher?.color || '#cbd5e1' }}
+                            style={{ backgroundColor: currentTeacher?.color || '#cbd5e1' }}
                           >
                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{classInfo?.name || 'No Group'}</span>
                           </div>
@@ -99,7 +107,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
       </div>
 
       <div className="flex flex-col items-center gap-2 pt-6">
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Faculty Status: {teacher?.role || 'Unspecified'}</p>
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Faculty Status: {currentTeacher?.role || 'Unspecified'}</p>
         <div className="w-12 h-1 rounded-full bg-slate-200"></div>
       </div>
     </div>

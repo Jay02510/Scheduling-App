@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, SubjectConfig, ScheduleSlot } from '../types';
 
 interface ScheduleViewerProps {
@@ -13,39 +13,45 @@ interface ScheduleViewerProps {
 }
 
 const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, profile, onGenerateRoadmap, onUpdateSlot, onNavigate }) => {
-  // Ensure we have a valid initial class selection
-  const [selectedClassId, setSelectedClassId] = useState<string>(() => classes[0]?.id || '');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [viewMode, setViewMode] = useState<'individual' | 'roadmap'>('individual');
   const [verificationResult, setVerificationResult] = useState<{ type: 'clean' | 'clash'; issues: string[] } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  
   const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
 
-  const days = ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
-  const totalPeriods = profile?.hours.totalPeriods || 8;
+  // Sync selected class when classes list loads
+  useEffect(() => {
+    if (!selectedClassId && classes && classes.length > 0) {
+      setSelectedClassId(classes[0].id);
+    }
+  }, [classes, selectedClassId]);
 
-  // Safeguard: if classes are empty, we can't show a schedule
-  if (classes.length === 0) {
+  const days = ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
+  const totalPeriods = profile?.hours?.totalPeriods || 8;
+
+  // Safeguard: if classes are empty or undefined, show setup prompt
+  if (!classes || classes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fadeIn bg-white rounded-[3rem] border border-slate-100 shadow-sm">
           <div className="w-20 h-20 bg-indigo-50 rounded-[2.5rem] flex items-center justify-center text-indigo-500 mb-8 shadow-inner">
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">No Classes Found</h2>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">You need to define at least one class group in the Setup tab before building a schedule.</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">No Classes Registered</h2>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">Define your class groups in the Setup tab to start building your timetable.</p>
           <button onClick={() => onNavigate?.('setup')} className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Go to Setup</button>
       </div>
     );
   }
 
+  // Derive current class safely
   const currentClass = classes.find(c => c.id === selectedClassId) || classes[0];
-  const classSlots = schedule.weeklySlots?.filter(s => s.classId === currentClass.id) || [];
+  const classSlots = (schedule?.weeklySlots || []).filter(s => s.classId === currentClass.id);
 
-  // Requirement Fulfillment Tracker
+  // Requirement Fulfillment Tracker (Safe Calculation)
   const fulfillment = useMemo(() => {
-    if (!currentClass) return [];
+    if (!currentClass || !currentClass.assignments) return [];
     return currentClass.assignments.map(a => {
-      const subject = subjects.find(s => s.id === a.subjectId);
+      const subject = (subjects || []).find(s => s.id === a.subjectId);
       const scheduledCount = classSlots.filter(s => s.subjectId === a.subjectId).length;
       const target = subject?.frequencyPerWeek || 0;
       return {
@@ -57,15 +63,15 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     });
   }, [currentClass, classSlots, subjects]);
 
-  const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || 'Unknown';
-  const getTeacherName = (id: string) => teachers.find(t => t.id === id)?.name || 'Unknown';
+  const getSubjectName = (id: string) => (subjects || []).find(s => s.id === id)?.name || 'Unknown';
+  const getTeacherName = (id: string) => (teachers || []).find(t => t.id === id)?.name || 'Unknown';
 
   const checkClashes = () => {
     setIsVerifying(true);
     const issues: string[] = [];
     const teacherMap: Record<string, string[]> = {};
 
-    schedule.weeklySlots?.forEach(slot => {
+    (schedule?.weeklySlots || []).forEach(slot => {
       const key = `${slot.day}-${slot.period}-${slot.teacherId}`;
       if (!teacherMap[key]) teacherMap[key] = [];
       teacherMap[key].push(classes.find(c => c.id === slot.classId)?.name || 'Unknown Class');
@@ -86,7 +92,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   };
 
   const handleApplyChange = (subjectId: string) => {
-    if (!editingSlot || !onUpdateSlot) return;
+    if (!editingSlot || !onUpdateSlot || !currentClass) return;
     
     if (subjectId === '') {
       onUpdateSlot({
@@ -127,7 +133,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             <div className="space-y-3">
               <button onClick={() => handleApplyChange('')} className="w-full py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all border border-transparent hover:border-rose-100 mb-4">Clear Period</button>
               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1 block">Assigned Lessons</span>
-              {currentClass.assignments.length === 0 ? (
+              {!currentClass.assignments || currentClass.assignments.length === 0 ? (
                 <div className="p-8 bg-slate-50 rounded-2xl text-center space-y-4">
                   <p className="text-[9px] font-black text-slate-300 uppercase italic">No lessons assigned in Setup.</p>
                   <button onClick={() => { setEditingSlot(null); onNavigate?.('setup'); }} className="text-[10px] font-black text-indigo-500 underline uppercase">Go Assign Faculty</button>
@@ -177,9 +183,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
                       <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-5xl bg-slate-50">{pIdx + 1}</td>
                       {Array.from({ length: 5 }).map((_, dIdx) => {
-                        const lock = profile?.lockedSlots.find(f => f.dayOfWeek === dIdx && f.period === pIdx && (f.isSchoolWide || f.classIds.includes(selectedClassId)));
+                        const lock = (profile?.lockedSlots || []).find(f => f.dayOfWeek === dIdx && f.period === pIdx && (f.isSchoolWide || f.classIds?.includes(selectedClassId)));
                         const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
-                        const teacher = teachers.find(t => t.id === slot?.teacherId);
+                        const teacher = (teachers || []).find(t => t.id === slot?.teacherId);
                         if (lock) return <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 bg-slate-100"><div className="h-full flex items-center justify-center p-4 text-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lock.name}</span></div></td>;
                         return (
                           <td key={dIdx} onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 bg-white group hover:bg-slate-50 transition-colors cursor-pointer">
