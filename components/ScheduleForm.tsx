@@ -39,10 +39,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
   const calculateTeacherWeeklyLoad = (teacherId: string) => {
     let total = 0;
-    classes.forEach(c => {
-      c.assignments.forEach(a => {
+    (classes || []).forEach(c => {
+      (c.assignments || []).forEach(a => {
         if (a.teacherId === teacherId) {
-          const sub = subjects.find(s => s.id === a.subjectId);
+          const sub = (subjects || []).find(s => s.id === a.subjectId);
           if (sub) total += sub.frequencyPerWeek;
         }
       });
@@ -56,7 +56,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     if (!assignmentSub || !assignmentTea) return;
     setClasses(classes.map(c => {
       if (c.id === classId) {
-        const otherAssignments = c.assignments.filter(a => a.subjectId !== assignmentSub);
+        const otherAssignments = (c.assignments || []).filter(a => a.subjectId !== assignmentSub);
         return {
           ...c,
           assignments: [...otherAssignments, { subjectId: assignmentSub, teacherId: assignmentTea }]
@@ -88,10 +88,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     setIsProcessingPaste(true);
     try {
       const parsed = await parseStaffList(smartPasteText);
-      const newTeachers: Teacher[] = parsed.map((p, index) => ({
+      const newTeachers: Teacher[] = (parsed || []).map((p, index) => ({
         id: Math.random().toString(36).substr(2, 9),
         name: p.name || 'New Teacher',
-        role: (p.role as 'homeroom' | 'specialist' | 'subject' | 'korean') || 'subject',
+        role: (p.role as any) || 'subject',
         subjects: [],
         maxDailyPeriods: 8,
         breaksNeededPerWeek: 5,
@@ -153,7 +153,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       const teacher = teachers.find(t => t.id === detailView.id);
       if (!teacher) { setDetailView(null); return null; }
       const load = calculateTeacherWeeklyLoad(teacher.id);
-      const teacherSlots = schedule?.weeklySlots.filter(s => s.teacherId === teacher.id) || [];
+      const teacherSlots = (schedule?.weeklySlots || []).filter(s => s.teacherId === teacher.id);
 
       return (
         <div className="space-y-8 animate-fadeIn">
@@ -216,7 +216,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     } else {
       const cls = classes.find(c => c.id === detailView.id);
       if (!cls) { setDetailView(null); return null; }
-      const classSlots = schedule?.weeklySlots.filter(s => s.classId === cls.id) || [];
+      const classSlots = (schedule?.weeklySlots || []).filter(s => s.classId === cls.id);
 
       return (
         <div className="space-y-8 animate-fadeIn">
@@ -238,13 +238,13 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                <div className="space-y-6">
                  <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Course Load</h5>
                  <div className="space-y-3">
-                    {cls.assignments.map(a => (
+                    {(cls.assignments || []).map(a => (
                       <div key={a.subjectId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl group relative">
                         <div className="flex flex-col">
                           <span className="text-[10px] font-black text-slate-900 uppercase">{getSubjectName(a.subjectId)}</span>
                           <span className="text-[8px] font-bold text-slate-400">{teachers.find(t => t.id === a.teacherId)?.name}</span>
                         </div>
-                        <button onClick={() => setClasses(classes.map(c => c.id === cls.id ? {...c, assignments: c.assignments.filter(as => as.subjectId !== a.subjectId)} : c))} className="text-rose-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => setClasses(classes.map(c => c.id === cls.id ? {...c, assignments: (c.assignments || []).filter(as => as.subjectId !== a.subjectId)} : c))} className="text-rose-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                       </div>
@@ -254,11 +254,11 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                     <div className="p-5 bg-[#0f172a] rounded-[2rem] space-y-4 animate-fadeIn">
                        <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black text-white outline-none" value={assignmentSub} onChange={e => setAssignmentSub(e.target.value)}>
                          <option value="" className="text-slate-900">Choose Subject</option>
-                         {subjects.map(s => <option key={s.id} value={s.id} className="text-slate-900">{s.name}</option>)}
+                         {(subjects || []).map(s => <option key={s.id} value={s.id} className="text-slate-900">{s.name}</option>)}
                        </select>
                        <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black text-white outline-none" value={assignmentTea} onChange={e => setAssignmentTea(e.target.value)}>
                          <option value="" className="text-slate-900">Choose Teacher</option>
-                         {teachers.map(t => <option key={t.id} value={t.id} className="text-slate-900">{t.name}</option>)}
+                         {(teachers || []).map(t => <option key={t.id} value={t.id} className="text-slate-900">{t.name}</option>)}
                        </select>
                        <div className="flex gap-2">
                           <button onClick={() => setShowAddAssignment(false)} className="flex-1 py-3 text-[9px] font-black text-slate-400 uppercase">Cancel</button>
@@ -321,7 +321,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {teachers.map(t => (
+              {(teachers || []).map(t => (
                 <div key={t.id} onClick={() => setDetailView({ type: 'teacher', id: t.id })} className="p-8 bg-slate-50 rounded-[2.5rem] border border-transparent hover:border-slate-200 transition-all group cursor-pointer">
                   <div className="flex flex-col items-center text-center space-y-4">
                     <div className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-white shadow-xl" style={{ backgroundColor: t.color }}>{t.name[0]}</div>
@@ -336,7 +336,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
         {activeTab === 'classes' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes.map(c => (
+            {(classes || []).map(c => (
               <div key={c.id} onClick={() => setDetailView({ type: 'class', id: c.id })} className="bg-slate-50 p-8 rounded-[2.5rem] hover:shadow-xl transition-all cursor-pointer">
                 <h4 className="font-black text-slate-900 text-xl uppercase text-center">{c.name}</h4>
               </div>
@@ -346,17 +346,22 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         )}
 
         {activeTab === 'subjects' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {subjects.map(s => (
-              <div key={s.id} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex flex-col gap-4">
-                <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-bold outline-none" value={s.name} onChange={e => setSubjects(subjects.map(ps => ps.id === s.id ? {...ps, name: e.target.value} : ps))} />
-                <div className="flex items-center justify-between px-2">
-                  <span className="text-[9px] font-black text-slate-400 uppercase">Frequency:</span>
-                  <input type="number" className="w-12 bg-transparent text-right font-black text-indigo-600 outline-none" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(ps => ps.id === s.id ? {...ps, frequencyPerWeek: parseInt(e.target.value) || 0} : ps))} />
+          <div className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 mb-6">
+               <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Global Library: Subjects added here are available to all classes.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(subjects || []).map(s => (
+                <div key={s.id} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex flex-col gap-4">
+                  <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-bold outline-none" value={s.name} onChange={e => setSubjects(subjects.map(ps => ps.id === s.id ? {...ps, name: e.target.value} : ps))} />
+                  <div className="flex items-center justify-between px-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase">Freq (p/w):</span>
+                    <input type="number" className="w-12 bg-transparent text-right font-black text-indigo-600 outline-none" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(ps => ps.id === s.id ? {...ps, frequencyPerWeek: parseInt(e.target.value) || 0} : ps))} />
+                  </div>
                 </div>
-              </div>
-            ))}
-            <button onClick={addNewSubject} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase">+ New Subject</button>
+              ))}
+              <button onClick={addNewSubject} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase">+ New Global Subject</button>
+            </div>
           </div>
         )}
 
@@ -379,7 +384,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                 </div>
              )}
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {lockedSlots.map(l => (
+                {(lockedSlots || []).map(l => (
                     <div key={l.id} className="p-6 bg-slate-50 rounded-[2rem] flex items-center justify-between group">
                         <span className="text-[11px] font-black uppercase text-slate-900">{l.name} - Period {l.period + 1}</span>
                         <button onClick={() => setLockedSlots(lockedSlots.filter(ls => ls.id !== l.id))} className="text-rose-200 hover:text-rose-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg></button>
