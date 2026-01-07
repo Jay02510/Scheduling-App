@@ -87,12 +87,14 @@ const App: React.FC = () => {
   };
 
   const handleUpdateScheduleSlot = (updatedSlot: ScheduleSlot) => {
-    if (!schedule) return;
-    const existingIdx = schedule.weeklySlots.findIndex(
+    // If schedule is null, initialize it
+    const currentSchedule = schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } };
+    
+    const existingIdx = currentSchedule.weeklySlots.findIndex(
       s => s.day === updatedSlot.day && s.period === updatedSlot.period && s.classId === updatedSlot.classId
     );
     
-    let newSlots = [...schedule.weeklySlots];
+    let newSlots = [...currentSchedule.weeklySlots];
     if (existingIdx > -1) {
       if (!updatedSlot.subjectId) {
         newSlots.splice(existingIdx, 1);
@@ -103,7 +105,7 @@ const App: React.FC = () => {
       newSlots.push(updatedSlot);
     }
     
-    setSchedule({ ...schedule, weeklySlots: newSlots });
+    setSchedule({ ...currentSchedule, weeklySlots: newSlots });
   };
 
   const handleGenerateMaster = async () => {
@@ -164,16 +166,16 @@ const App: React.FC = () => {
               profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} schedule={schedule} 
             />
           )}
-          {activeTab === 'timetable' && schedule && (
+          {activeTab === 'timetable' && (
             <div className="space-y-6">
                <div className="flex justify-center bg-slate-100 p-1 rounded-2xl w-fit mx-auto shadow-inner">
                   <button onClick={() => setTimetableMode('school')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class View</button>
                   <button onClick={() => setTimetableMode('staff')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff View</button>
                </div>
                {timetableMode === 'school' ? (
-                 <ScheduleViewer schedule={schedule} classes={classes} teachers={teachers} subjects={subjects} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} onUpdateSlot={handleUpdateScheduleSlot} />
+                 <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} profile={profile} onGenerateRoadmap={handleGenerateRoadmap} onUpdateSlot={handleUpdateScheduleSlot} />
                ) : (
-                 <TeacherView schedule={schedule} teachers={teachers} classes={classes} subjects={subjects} profile={profile} />
+                 <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} profile={profile} />
                )}
             </div>
           )}

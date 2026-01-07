@@ -98,15 +98,20 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     setEditingSlot(null);
   };
 
-  if (!schedule || schedule.weeklySlots.length === 0) {
+  // If we have no schedule data, show the builder CTA
+  if (!schedule || (schedule.weeklySlots.length === 0 && !editingSlot)) {
       return (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fadeIn">
               <div className="w-20 h-20 bg-indigo-50 rounded-[2.5rem] flex items-center justify-center text-indigo-500 mb-8 shadow-inner">
                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">NO TIMETABLE GENERATED</h2>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">The school schedule hasn't been built yet. Return to the setup tab and click "Build Timetable" to generate it with AI.</p>
-              <button onClick={() => window.location.hash = 'setup'} className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Go to School Setup</button>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mb-8 leading-loose">The school schedule hasn't been built yet. Return to the setup tab and click "Build Timetable" to generate it with AI or start manual editing.</p>
+              
+              <div className="flex flex-wrap gap-4 justify-center">
+                <button onClick={() => window.location.hash = 'setup'} className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Go to School Setup</button>
+                <button onClick={() => setSelectedClassId(classes[0]?.id || '')} className="bg-white text-indigo-600 border border-indigo-200 px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-sm hover:bg-indigo-50 transition-all">Manual Setup</button>
+              </div>
           </div>
       );
   }
@@ -131,9 +136,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
               </button>
 
               <div className="space-y-2">
-                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1 block">Assigned Curriculum</span>
+                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1 block">Assigned Staff</span>
                  {currentClass?.assignments.length === 0 ? (
-                     <p className="p-6 bg-slate-50 rounded-2xl text-[9px] font-black text-slate-300 uppercase text-center italic">No lessons assigned to this class yet.</p>
+                     <p className="p-6 bg-slate-50 rounded-2xl text-[9px] font-black text-slate-300 uppercase text-center italic">No lessons assigned to this class in setup.</p>
                  ) : currentClass?.assignments.map(a => (
                     <button 
                       key={a.subjectId}
@@ -246,7 +251,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                               <span className="text-[13px] font-black text-slate-900 uppercase leading-tight">{getSubjectName(slot.subjectId)}</span>
                               {slot.isManualOverride && (
                                 <div className="absolute top-2 right-2 flex gap-1">
-                                    <span className="text-[6px] font-black bg-indigo-500 text-white px-1.5 py-0.5 rounded-full uppercase">MOD</span>
+                                    <span className="text-[6px] font-black bg-indigo-500 text-white px-1.5 py-0.5 rounded-full uppercase">USER</span>
                                 </div>
                               )}
                               <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -257,7 +262,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                           </div>
                         ) : (
                           <div className="h-full opacity-5 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] group-hover:opacity-20 transition-opacity flex items-center justify-center">
-                             <span className="text-[9px] font-black uppercase text-slate-400 opacity-0 group-hover:opacity-100">+ Assign</span>
+                             <span className="text-[9px] font-black uppercase text-slate-400 opacity-0 group-hover:opacity-100">+ Click to Edit</span>
                           </div>
                         )}
                       </td>

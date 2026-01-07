@@ -51,7 +51,6 @@ export interface LockedSlot {
   color?: string;
 }
 
-// FixedClass is an alias for LockedSlot used in some legacy UI components
 export type FixedClass = LockedSlot;
 
 export interface ClassSubjectAssignment {
@@ -77,7 +76,7 @@ export interface ScheduleSlot {
   teacherId: string;
   classId: string;
   topic?: string;
-  isManualOverride?: boolean; // New: track manual edits
+  isManualOverride?: boolean;
 }
 
 export interface WeeklyCurriculumTarget {
@@ -116,6 +115,7 @@ export interface SchoolProfile {
   teachers: Teacher[];
   classes: ClassGroup[];
   lockedSlots: LockedSlot[];
+  fixedClasses?: FixedClass[]; // Added to fix onboarding type errors
   specialEvents: SchoolEvent[];
   levels?: { id: string; name: string; grades: string[] }[];
   terms?: { id: string; name: string; startDate: string; endDate: string }[];
