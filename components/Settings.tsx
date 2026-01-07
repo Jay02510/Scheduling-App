@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SchoolProfile } from '../types';
 
@@ -27,7 +26,7 @@ const Settings: React.FC<SettingsProps> = ({ user, profile, onReset, onLogout })
               </div>
               <div>
                 <p className="font-black text-slate-900 text-lg truncate max-w-[200px]">{user.email}</p>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Admin</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Admin Access</p>
               </div>
             </div>
           </div>
@@ -42,7 +41,7 @@ const Settings: React.FC<SettingsProps> = ({ user, profile, onReset, onLogout })
         <div className="bg-white p-10 rounded-[2.5rem] border-2 border-rose-50 shadow-sm space-y-8 flex flex-col justify-between">
           <div>
             <h3 className="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-4">Danger Zone</h3>
-            <h3 className="text-xl font-black text-slate-900 tracking-tight">Reset Everything</h3>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">Reset School Records</h3>
             <p className="text-slate-500 text-xs font-medium mt-2 leading-relaxed">
               This will delete all staff, classes, books, and schedules. This cannot be undone.
             </p>
@@ -51,7 +50,7 @@ const Settings: React.FC<SettingsProps> = ({ user, profile, onReset, onLogout })
             onClick={onReset} 
             className="w-full py-5 rounded-2xl bg-rose-50 text-rose-500 font-black text-[10px] uppercase tracking-[0.2em] border border-rose-100 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
           >
-            Delete All Data
+            Clear All Data
           </button>
         </div>
       </div>

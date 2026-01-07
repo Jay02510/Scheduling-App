@@ -27,8 +27,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     ];
     
     const initialTextbooks: Textbook[] = [
-      { id: 'tb-1', title: 'Curriculum: Mathematics G1', subject: 'Mathematics', gradeLevel: 'Grade 1', totalChapters: 12, totalPages: 120 },
-      { id: 'tb-2', title: 'Curriculum: English G1', subject: 'English', gradeLevel: 'Grade 1', totalChapters: 10, totalPages: 100 }
+      { id: 'tb-1', title: 'Mathematics G1', subject: 'Mathematics', gradeLevel: 'Grade 1', totalChapters: 12, totalPages: 120 },
+      { id: 'tb-2', title: 'English G1', subject: 'English', gradeLevel: 'Grade 1', totalChapters: 10, totalPages: 100 }
     ];
 
     return {
@@ -47,11 +47,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       subjects: initialSubjects,
       textbooks: initialTextbooks,
       teachers: [
-        { id: 't-1', name: 'Lead Teacher A', role: 'homeroom', subjects: ['Mathematics'], maxDailyPeriods: 8, assignedClasses: [], employmentType: 'full-time', breaksNeededPerWeek: 5, color: TEACHER_COLORS[0] },
-        { id: 't-2', name: 'Korean Teacher B', role: 'korean', subjects: ['English'], maxDailyPeriods: 8, assignedClasses: [], employmentType: 'full-time', breaksNeededPerWeek: 5, color: TEACHER_COLORS[1] }
+        { id: 't-1', name: 'Teacher A', role: 'homeroom', subjects: ['Mathematics'], maxDailyPeriods: 8, assignedClasses: [], employmentType: 'Full-Time', breaksNeededPerWeek: 5, color: TEACHER_COLORS[0] } as Teacher,
+        { id: 't-2', name: 'Teacher B', role: 'korean', subjects: ['English'], maxDailyPeriods: 8, assignedClasses: [], employmentType: 'Full-Time', breaksNeededPerWeek: 5, color: TEACHER_COLORS[1] } as Teacher
       ],
       classes: [
-        { id: 'c-1', name: 'Class 1', grade: 'Grade 1', homeroomTeacherId: 't-1', koreanTeacherId: 't-2', assignments: [{ subjectId: 'sub-1', teacherId: 't-1' }, { subjectId: 'sub-2', teacherId: 't-2' }], color: CLASS_COLORS[0] }
+        { id: 'c-1', name: 'Class 1', grade: 'Grade 1', homeroomTeacherId: 't-1', koreanTeacherId: 't-2', assignments: [{ subjectId: 'sub-1', teacherId: 't-1' }, { subjectId: 'sub-2', teacherId: 't-2' }], color: CLASS_COLORS[0] } as ClassGroup
       ],
       fixedClasses: [],
       specialEvents: []
@@ -80,20 +80,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       color: CLASS_COLORS[profile.classes.length % CLASS_COLORS.length]
     };
 
-    const newTextbook: Textbook = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: `Curriculum Guide for ${className}`,
-      subject: 'General',
-      gradeLevel: 'Grade 1',
-      totalChapters: 12,
-      totalPages: 120,
-      currentPage: 0
-    };
-
     setProfile({ 
       ...profile, 
-      classes: [...profile.classes, newClass],
-      textbooks: [...profile.textbooks, newTextbook]
+      classes: [...profile.classes, newClass]
     });
   };
 
@@ -105,7 +94,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       subjects: [],
       maxDailyPeriods: profile.hours.totalPeriods,
       assignedClasses: [],
-      employmentType: 'full-time',
+      employmentType: 'Full-Time',
       breaksNeededPerWeek: 5,
       color: TEACHER_COLORS[profile.teachers.length % TEACHER_COLORS.length]
     };
@@ -114,26 +103,15 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   const addSubject = () => {
     const subId = Math.random().toString(36).substr(2, 9);
-    const tbId = Math.random().toString(36).substr(2, 9);
     const newSub: SubjectConfig = {
       id: subId,
       name: 'New Subject',
       frequencyPerWeek: 5,
-      gradeLevels: ['Grade 1'],
-      textbookId: tbId
-    };
-    const newTb: Textbook = {
-      id: tbId,
-      title: 'New Textbook Resource',
-      subject: 'New Subject',
-      gradeLevel: 'Grade 1',
-      totalChapters: 10,
-      totalPages: 100
+      gradeLevels: ['Grade 1']
     };
     setProfile({
       ...profile,
-      subjects: [...profile.subjects, newSub],
-      textbooks: [...profile.textbooks, newTb]
+      subjects: [...profile.subjects, newSub]
     });
   };
 
@@ -191,23 +169,23 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div className="space-y-8 animate-fadeIn max-w-full">
             <div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 1: School Identity</h2>
-              <p className="text-slate-500 mt-1 text-sm">Define your institution's profile.</p>
+              <p className="text-slate-500 mt-1 text-sm">Tell us about your school.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <label className="col-span-full">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Institution Name</span>
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">School Name</span>
                 <input
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-bold text-slate-900"
-                  placeholder="e.g. Academy of Sciences"
+                  placeholder="e.g. Maple Leaf Elementary"
                   value={profile.name}
                   onChange={e => setProfile({...profile, name: e.target.value})}
                 />
               </label>
               <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Academic Periods</span>
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Daily Schedule</span>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs font-bold text-slate-600">Total per day:</span>
+                  <span className="text-xs font-bold text-slate-600">Total Classes per day:</span>
                   <input
                     type="number"
                     className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-black text-indigo-600 text-center outline-none"
@@ -217,9 +195,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 </div>
               </div>
               <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-                <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest block">Institutional Break</span>
+                <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest block">Lunch Time</span>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs font-bold text-slate-600">After Period:</span>
+                  <span className="text-xs font-bold text-slate-600">After Class:</span>
                   <input type="number" className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-black text-indigo-600 text-center outline-none" value={profile.hours.lunchAfterPeriod} onChange={e => setProfile({...profile, hours: {...profile.hours, lunchAfterPeriod: parseInt(e.target.value) || 0}})} />
                 </div>
               </div>
@@ -230,8 +208,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         return (
           <div className="space-y-8 animate-fadeIn max-w-full">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Class Registry</h2>
-              <p className="text-slate-500 mt-1 text-sm">Create class groups. Textbooks are automatically generated.</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Classes</h2>
+              <p className="text-slate-500 mt-1 text-sm">Add your class groups (e.g., Grade 1A, Grade 2B).</p>
             </div>
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {profile.classes.map((c, i) => (
@@ -262,7 +240,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 onClick={addClass}
                 className="w-full py-6 border-2 border-dashed border-indigo-200 rounded-2xl text-indigo-400 font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50/50 transition-all flex flex-col items-center gap-1"
               >
-                <span>+ Create Class Group</span>
+                <span>+ Add Class Group</span>
               </button>
             </div>
           </div>
@@ -272,8 +250,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         return (
           <div className="space-y-8 animate-fadeIn max-w-full">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 3: Blocked Slots</h2>
-              <p className="text-slate-500 mt-1 text-sm">Lock times for all groups or specific classes.</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 3: School-wide Locks</h2>
+              <p className="text-slate-500 mt-1 text-sm">Block specific times for things like Assemblies or School-wide breaks.</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm overflow-x-auto">
@@ -282,7 +260,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   {['M','T','W','T','F'].map(d => <div key={d} className="text-center text-[9px] font-black text-slate-400 uppercase">{d}</div>)}
                   {Array.from({length: profile.hours.totalPeriods}).map((_, p) => (
                     <React.Fragment key={p}>
-                      <div className="text-[9px] font-black text-slate-300 flex items-center justify-center">P{p+1}</div>
+                      <div className="text-[9px] font-black text-slate-300 flex items-center justify-center">L{p+1}</div>
                       {Array.from({length: 5}).map((_, d) => {
                         const fixed = profile.fixedClasses.find(f => f.dayOfWeek === d && f.period === p);
                         return (
@@ -294,9 +272,17 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                 setSelectedFixedId(profile.fixedClasses[existingIdx].id);
                               } else {
                                 const newId = Math.random().toString(36).substr(2, 9);
-                                setProfile({...profile, fixedClasses: [...profile.fixedClasses, {
-                                  id: newId, name: 'Locked Slot', provider: 'School', dayOfWeek: d, period: p, classIds: [], isSchoolWide: true, color: BLOCK_COLORS[0].hex
-                                }]});
+                                const newFixed: FixedClass = {
+                                  id: newId, 
+                                  name: 'Blocked', 
+                                  provider: 'School', 
+                                  dayOfWeek: d, 
+                                  period: p, 
+                                  classIds: [], 
+                                  isSchoolWide: true, 
+                                  color: BLOCK_COLORS[0].hex
+                                };
+                                setProfile({...profile, fixedClasses: [...profile.fixedClasses, newFixed]});
                                 setSelectedFixedId(newId);
                               }
                             }}
@@ -319,7 +305,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 {selectedFixed ? (
                   <div className="bg-white p-6 rounded-3xl border border-indigo-100 shadow-md space-y-5 animate-fadeIn">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Lock Name</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Lock Reason</span>
                       <input 
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 font-bold text-slate-900 outline-none"
                         value={selectedFixed.name}
@@ -332,7 +318,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Target Classes</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Affects Who?</span>
                         <button 
                           onClick={() => setProfile(prev => ({
                             ...prev,
@@ -340,7 +326,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           }))}
                           className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all ${selectedFixed.isSchoolWide ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}
                         >
-                          {selectedFixed.isSchoolWide ? 'All Classes' : 'Specific Only'}
+                          {selectedFixed.isSchoolWide ? 'Entire School' : 'Specific Classes'}
                         </button>
                       </div>
 
@@ -358,15 +344,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                               </button>
                             );
                           })}
-                          {(!selectedFixed.classIds || selectedFixed.classIds.length === 0) && (
-                            <p className="text-[8px] font-bold text-rose-400 uppercase w-full text-center">Select at least one class</p>
-                          )}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Block Color</span>
+                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Color</span>
                        <div className="flex flex-wrap gap-2">
                          {BLOCK_COLORS.map(c => (
                            <button 
@@ -384,11 +367,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     <button onClick={() => {
                         setProfile(prev => ({ ...prev, fixedClasses: prev.fixedClasses.filter(f => f.id !== selectedFixedId) }));
                         setSelectedFixedId(null);
-                    }} className="w-full py-2 bg-rose-50 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest mt-2 hover:bg-rose-100 transition-colors">Delete Block</button>
+                    }} className="w-full py-2 bg-rose-50 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest mt-2 hover:bg-rose-100 transition-colors">Delete Lock</button>
                   </div>
                 ) : (
                   <div className="h-40 flex items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-100 text-slate-300 text-center p-6">
-                      <p className="text-[9px] font-black uppercase tracking-widest">Select a grid slot to add a block</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest">Select a grid slot to add a lock</p>
                   </div>
                 )}
               </div>
@@ -399,8 +382,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         return (
           <div className="space-y-8 animate-fadeIn max-w-full">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 4: Faculty Mapping</h2>
-              <p className="text-slate-500 mt-1 text-sm">Assign leads per class. Unique colors help identification.</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 4: Teachers</h2>
+              <p className="text-slate-500 mt-1 text-sm">Add your staff members. Colors help identify them in the schedule.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
               {profile.teachers.map((t, i) => {
@@ -415,15 +398,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       <div className="flex-1">
                         <input
                           className="w-full bg-transparent border-0 p-0 font-black text-slate-800 outline-none focus:ring-0 placeholder:text-slate-200"
-                          placeholder="Staff Name"
+                          placeholder="Teacher Name"
                           value={t.name}
                           onChange={e => setProfile({...profile, teachers: profile.teachers.map(tr => tr.id === t.id ? { ...tr, name: e.target.value } : tr)})}
                         />
                         <div className="flex items-center gap-1.5 mt-1">
-                          <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
-                            t.role === 'homeroom' ? 'bg-indigo-50 text-indigo-500' : 
-                            t.role === 'korean' ? 'bg-rose-50 text-rose-500' : 'bg-slate-50 text-slate-500'
-                          }`}>
+                          <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-slate-50 text-slate-500`}>
                             {t.role}
                           </span>
                         </div>
@@ -434,26 +414,26 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Primary Role</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Primary Job</span>
                         <select 
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-[10px] font-bold outline-none cursor-pointer"
                           value={t.role}
                           onChange={(e) => setProfile({...profile, teachers: profile.teachers.map(tr => tr.id === t.id ? { ...tr, role: e.target.value as any } : tr)})}
                         >
-                          <option value="homeroom">Homeroom Lead</option>
-                          <option value="korean">Korean Lead</option>
-                          <option value="subject">Specialist</option>
+                          <option value="homeroom">Homeroom Teacher</option>
+                          <option value="korean">Specialist Teacher</option>
+                          <option value="subject">Subject Teacher</option>
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Homeroom:</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Leads:</span>
                         <select 
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-[10px] font-bold outline-none cursor-pointer"
                           value={t.role === 'korean' ? (koreanClass?.id || '') : (homeroomClass?.id || '')}
                           disabled={t.role === 'subject'}
                           onChange={(e) => setLeadTeacher(t.id, e.target.value, t.role === 'korean' ? 'korean' : 'homeroom')}
                         >
-                          <option value="">None</option>
+                          <option value="">No Class</option>
                           {profile.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </div>
@@ -462,7 +442,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 );
               })}
               <button onClick={addTeacher} className="p-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-widest hover:border-indigo-100 hover:text-indigo-400 transition-all flex flex-col items-center justify-center gap-3">
-                + Add Staff
+                + Add Teacher
               </button>
             </div>
           </div>
@@ -474,7 +454,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 5: Lesson Allocation</h2>
-                <p className="text-slate-500 mt-1 text-sm">Assign curricula for each group independently.</p>
+                <p className="text-slate-500 mt-1 text-sm">Connect your teachers to specific subjects for each class.</p>
               </div>
               <button 
                 onClick={addSubject}
@@ -523,7 +503,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         </div>
 
                         <div className="w-full md:w-1/4 flex items-center gap-2">
-                          <span className="text-[9px] font-black text-slate-400 uppercase">Weekly:</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase">Times/Week:</span>
                           <input
                             type="number"
                             className="w-12 bg-slate-50 border border-slate-100 p-1 text-center font-black text-indigo-600 text-[10px] rounded-lg"
@@ -532,17 +512,17 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           />
                         </div>
 
-                        <div className="w-full md:w-2/4 flex flex-col gap-2">
+                        <div className="w-full md:w-2/4 flex items-center gap-2">
                           <select
-                            className={`w-full border-0 rounded-xl px-4 py-3 text-[11px] font-black outline-none appearance-none cursor-pointer transition-colors ${isActive ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}
+                            className={`flex-1 border-0 rounded-xl px-4 py-3 text-[11px] font-black outline-none appearance-none cursor-pointer transition-colors ${isActive ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}
                             value={assignment?.teacherId || ''}
                             disabled={!isActive}
                             onChange={(e) => handleAssignmentChange(currentClass.id, sub.id, e.target.value)}
                           >
-                            <option value="">No Lead Assigned</option>
+                            <option value="">No Teacher Assigned</option>
                             {profile.teachers.map(t => (
                               <option key={t.id} value={t.id}>
-                                {t.name} ({t.role.toUpperCase()})
+                                {t.name}
                               </option>
                             ))}
                           </select>
@@ -569,7 +549,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </div>
           <div className="space-y-10 relative z-10 flex flex-col h-full">
             <div>
-              <h1 className="text-xl font-black leading-tight tracking-tighter uppercase">EduPlanner<br/><span className="text-indigo-400">Builder</span></h1>
+              <h1 className="text-xl font-black leading-tight tracking-tighter uppercase">EduPlanner<br/><span className="text-indigo-400">Setup</span></h1>
             </div>
             <div className="space-y-5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
               {[1, 2, 3, 4, 5].map(s => {
@@ -581,7 +561,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         {isPast ? '✓' : s}
                       </div>
                       <span className={`text-[9px] font-black uppercase tracking-widest ${isCurrent ? 'text-white' : 'text-slate-500'}`}>
-                          {s === 1 ? 'School' : s === 2 ? 'Classes' : s === 3 ? 'Blocks' : s === 4 ? 'Faculty' : 'Lesson Plan'}
+                          {s === 1 ? 'School' : s === 2 ? 'Classes' : s === 3 ? 'Locks' : s === 4 ? 'Teachers' : 'Lesson Plan'}
                       </span>
                     </div>
                 );
@@ -603,7 +583,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               onClick={step === 5 ? () => onComplete(profile) : nextStep}
               className="w-full sm:w-auto px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl gradient-primary text-white transition-all hover:scale-105 active:scale-95 ml-auto"
             >
-              {step === 5 ? 'Finalize Institution' : 'Proceed →'}
+              {step === 5 ? 'Finish Setup' : 'Proceed →'}
             </button>
           </div>
         </div>
