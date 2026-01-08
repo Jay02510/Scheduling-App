@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, SubjectConfig, ScheduleSlot, Textbook } from '../types';
 
@@ -78,11 +79,11 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       <header className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
           <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">Homeroom Portal</h2>
-          <p className="text-slate-500 font-bold text-[11px] uppercase tracking-[0.3em] mt-2">Schedule & Class Resources</p>
+          <p className="text-slate-500 font-bold text-[11px] uppercase tracking-[0.3em] mt-2">Class Rhythm & Support Shelves</p>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-2 rounded-[2rem] border border-slate-200">
           {classes.map(c => (
-            <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-xl translate-y-[-2px]' : 'bg-white text-slate-400 border border-slate-100'}`}>{c.name}</button>
+            <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-6 py-3 rounded-[1.4rem] text-[10px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
           ))}
         </div>
       </header>
@@ -111,8 +112,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                   if (lock) return (
                     <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-900 text-white align-middle relative overflow-hidden">
                       <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(255,255,255,0.05)_10px,rgba(255,255,255,0.05)_11px)]"></div>
-                      <div className="relative h-full flex items-center justify-center p-6 text-center">
+                      <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
                         <span className="text-[14px] font-black uppercase tracking-[0.2em]">{lock.name}</span>
+                        <span className="text-[8px] font-bold opacity-40 uppercase mt-2 tracking-widest italic">Institutional Hold</span>
                       </div>
                     </td>
                   );

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
@@ -115,7 +116,7 @@ const App: React.FC = () => {
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Engine is optimizing your rhythm...");
+    setLoadingMsg("Optimization Engine is balancing institutional rhythms...");
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
       const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile);
