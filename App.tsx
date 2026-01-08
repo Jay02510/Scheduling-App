@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
@@ -9,7 +8,6 @@ import Dashboard from './components/Dashboard';
 import ScheduleForm from './components/ScheduleForm';
 import ScheduleViewer from './components/ScheduleViewer';
 import TeacherView from './components/TeacherView';
-import MasterRhythm from './components/MasterRhythm';
 import Onboarding from './components/Onboarding';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import Settings from './components/Settings';
@@ -160,8 +158,23 @@ const App: React.FC = () => {
               onJump={handleEntityJump}
             />
           )}
-          {activeTab === 'master' && (
-            <MasterRhythm profile={profile} />
+          {activeTab === 'setup' && (
+            <ScheduleForm 
+              profile={profile} 
+              setProfile={setProfile} 
+              teachers={teachers} 
+              setTeachers={setTeachers} 
+              classes={classes} 
+              setClasses={setClasses} 
+              textbooks={textbooks} 
+              setTextbooks={setTextbooks} 
+              lockedSlots={lockedSlots} 
+              setLockedSlots={setLockedSlots} 
+              subjects={subjects} 
+              setSubjects={setSubjects} 
+              onGenerate={handleGenerateMaster} 
+              schedule={schedule} 
+            />
           )}
           {activeTab === 'homerooms' && (
             <ScheduleViewer 
@@ -186,27 +199,6 @@ const App: React.FC = () => {
               profile={profile} 
               initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined}
             />
-          )}
-          {activeTab === 'setup' && (
-            <ScheduleForm 
-              profile={profile} 
-              setProfile={setProfile} 
-              teachers={teachers} 
-              setTeachers={setTeachers} 
-              classes={classes} 
-              setClasses={setClasses} 
-              textbooks={textbooks} 
-              setTextbooks={setTextbooks} 
-              lockedSlots={lockedSlots} 
-              setLockedSlots={setLockedSlots} 
-              subjects={subjects} 
-              setSubjects={setSubjects} 
-              onGenerate={handleGenerateMaster} 
-              schedule={schedule} 
-            />
-          )}
-          {activeTab === 'insights' && schedule && profile && (
-            <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />
           )}
           {activeTab === 'settings' && (
             <Settings user={user} profile={profile} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />

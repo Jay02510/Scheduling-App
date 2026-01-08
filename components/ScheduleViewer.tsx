@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, SubjectConfig, ScheduleSlot, Textbook } from '../types';
 
@@ -101,14 +100,19 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
               <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
                 <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50 h-[140px]">{pIdx + 1}</td>
                 {Array.from({ length: 5 }).map((_, dIdx) => {
-                  const lock = (profile?.lockedSlots || []).find(f => f.dayOfWeek === dIdx && f.period === pIdx && f.isSchoolWide);
+                  const lock = (profile?.lockedSlots || []).find(f => 
+                    f.dayOfWeek === dIdx && 
+                    f.period === pIdx && 
+                    (f.isSchoolWide || f.classIds.includes(currentClass.id))
+                  );
                   const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                   const teacher = teachers.find(t => t.id === slot?.teacherId);
 
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-100 align-middle">
-                      <div className="h-full flex items-center justify-center opacity-40 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#000_10px,#000_11px)]">
-                        <span className="text-[11px] font-black uppercase text-slate-900 bg-white px-5 py-3 rounded-2xl shadow-xl border-2 border-slate-900 tracking-[0.2em]">{lock.name}</span>
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-900 text-white align-middle relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(255,255,255,0.05)_10px,rgba(255,255,255,0.05)_11px)]"></div>
+                      <div className="relative h-full flex items-center justify-center p-6 text-center">
+                        <span className="text-[14px] font-black uppercase tracking-[0.2em]">{lock.name}</span>
                       </div>
                     </td>
                   );
@@ -135,27 +139,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </tbody>
         </table>
       </div>
-
-      <section className="space-y-6">
-        <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Assigned Class Resources</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classTextbooks.length > 0 ? classTextbooks.map(book => (
-            <div key={book.id} className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex items-center gap-6">
-              <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg shrink-0">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-              </div>
-              <div className="overflow-hidden">
-                <h4 className="font-black text-slate-900 text-lg leading-tight uppercase truncate">{book.title}</h4>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{book.subject} • Unit {Math.floor((book.currentPage || 0) / 10) + 1}</p>
-              </div>
-            </div>
-          )) : (
-            <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem]">
-              <p className="text-slate-300 font-black text-[10px] uppercase tracking-widest">No Textbooks assigned to this homeroom yet.</p>
-            </div>
-          )}
-        </div>
-      </section>
     </div>
   );
 };
