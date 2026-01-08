@@ -25,10 +25,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'classes' | 'staff' | 'subjects' | 'global'>('classes');
   const [detailView, setDetailView] = useState<{ type: 'teacher' | 'class' | 'lock', id: string } | null>(null);
-  
-  const [assignmentSub, setAssignmentSub] = useState('');
-  const [assignmentTea, setAssignmentTea] = useState('');
-  const [showAddAssignment, setShowAddAssignment] = useState(false);
 
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown Subject';
   const getTeacherName = (id: string) => teachers?.find(t => t.id === id)?.name || 'Unknown Faculty';
@@ -88,6 +84,20 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
   const updateLock = (id: string, updates: Partial<LockedSlot>) => {
     setLockedSlots(lockedSlots.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
+
+  const handleSubjectTeacherAssignment = (classId: string, subjectId: string, teacherId: string) => {
+    setClasses(classes.map(c => {
+      if (c.id === classId) {
+        const otherAssignments = (c.assignments || []).filter(a => a.subjectId !== subjectId);
+        if (!teacherId) return { ...c, assignments: otherAssignments };
+        return {
+          ...c,
+          assignments: [...otherAssignments, { subjectId, teacherId }]
+        };
+      }
+      return c;
+    }));
   };
 
   if (detailView?.type === 'class') {
@@ -244,16 +254,49 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         )}
 
         {activeTab === 'subjects' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 p-4">
             {subjects && subjects.length > 0 ? subjects.map(s => (
-               <div key={s.id} className="p-10 bg-slate-50 rounded-[3.5rem] space-y-6 shadow-sm border border-transparent hover:border-indigo-100 transition-all">
-                  <div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Subject Name</span>
-                    <input className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 font-black text-slate-900 uppercase text-xs focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none shadow-sm" value={s.name} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, name: e.target.value} : sub))} />
+               <div key={s.id} className="p-10 bg-slate-50 rounded-[3.5rem] shadow-sm border border-transparent hover:border-indigo-100 transition-all space-y-8">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex-1 w-full">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Curriculum Identity</span>
+                      <input className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 font-black text-slate-900 uppercase text-xs focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none shadow-sm" value={s.name} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, name: e.target.value} : sub))} />
+                    </div>
+                    <div className="shrink-0">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Weekly Periods</span>
+                      <input type="number" className="w-20 bg-white border border-slate-200 rounded-2xl px-4 py-4 text-center font-black text-indigo-600 outline-none text-lg shadow-sm" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: parseInt(e.target.value) || 1} : sub))} />
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between px-2 pt-4 border-t border-slate-200/50">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Load: Periods / Week</span>
-                    <input type="number" className="w-14 bg-white border border-slate-100 rounded-xl px-2 py-2 text-center font-black text-indigo-600 outline-none text-lg shadow-inner" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: parseInt(e.target.value) || 1} : sub))} />
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                      <h5 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Faculty Assignment Ledger</h5>
+                      <span className="text-[8px] font-black text-slate-400 uppercase">Map Subject to Groups</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {classes.map(c => {
+                        const currentAssignment = (c.assignments || []).find(a => a.subjectId === s.id);
+                        return (
+                          <div key={c.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }}></div>
+                              <span className="text-[9px] font-black text-slate-900 uppercase">{c.name}</span>
+                            </div>
+                            <select 
+                              className="w-full bg-slate-50 border-none rounded-xl px-3 py-2 text-[10px] font-bold text-slate-700 focus:ring-indigo-500"
+                              value={currentAssignment?.teacherId || ''}
+                              onChange={(e) => handleSubjectTeacherAssignment(c.id, s.id, e.target.value)}
+                            >
+                              <option value="">Unassigned</option>
+                              {teachers.map(t => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                </div>
             )) : (
