@@ -28,6 +28,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'classes' | 'staff' | 'subjects' | 'global' | 'rhythm' | 'tuning'>('classes');
   const [detailView, setDetailView] = useState<{ type: 'teacher' | 'class' | 'lock', id: string } | null>(null);
+  const [expandedSubjectId, setExpandedSubjectId] = useState<string | null>(null);
   
   const [draggedLock, setDraggedLock] = useState<{ day: number, period: number } | null>(null);
   const [isAltPressed, setIsAltPressed] = useState(false);
@@ -71,9 +72,32 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     setDetailView({ type: 'class', id: newId });
   };
 
-  const handleAddNewSubject = () => {
+  const handleAddNewSubjectGlobal = () => {
     const newId = `sub-${Math.random().toString(36).substr(2, 5)}`;
     setSubjects([...subjects, { id: newId, name: 'New Lesson Block', frequencyPerWeek: 5, gradeLevels: ['G1'] }]);
+    setExpandedSubjectId(newId);
+  };
+
+  const addSubjectToClass = (classId: string) => {
+    const name = prompt("Subject Name (e.g., Mathematics, Robotics):");
+    if (!name) return;
+
+    // Check if subject exists globally
+    let subject = subjects.find(s => s.name.toLowerCase() === name.toLowerCase());
+    if (!subject) {
+      const newId = `sub-${Math.random().toString(36).substr(2, 5)}`;
+      subject = { id: newId, name, frequencyPerWeek: 5, gradeLevels: ['G1'] };
+      setSubjects([...subjects, subject]);
+    }
+
+    setClasses(classes.map(c => {
+      if (c.id === classId) {
+        // Only add if not already assigned
+        if (c.assignments.find(a => a.subjectId === subject!.id)) return c;
+        return { ...c, assignments: [...c.assignments, { subjectId: subject!.id, teacherId: '' }] };
+      }
+      return c;
+    }));
   };
 
   const openLockConfig = (day: number, period: number) => {
@@ -132,7 +156,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
             <div className="grid grid-cols-2 gap-8">
               <div className="space-y-3">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Assigned Role</span>
-                <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 font-black text-slate-900 text-[11px] uppercase tracking-widest" value={t.role} onChange={e => setTeachers(teachers.map(tea => tea.id === t.id ? {...tea, role: e.target.value as any} : tea))}>
+                <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 font-black text-slate-900 text-[11px] uppercase tracking-widest outline-none" value={t.role} onChange={e => setTeachers(teachers.map(tea => tea.id === t.id ? {...tea, role: e.target.value as any} : tea))}>
                   <option value="homeroom">Homeroom Lead</option>
                   <option value="specialist">Specialist</option>
                   <option value="subject">Subject Teacher</option>
@@ -141,7 +165,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
               </div>
               <div className="space-y-3">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Max Daily Periods</span>
-                <input type="number" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 font-black text-indigo-600 text-lg" value={t.maxDailyPeriods} onChange={e => setTeachers(teachers.map(tea => tea.id === t.id ? {...tea, maxDailyPeriods: parseInt(e.target.value) || 8} : tea))} />
+                <input type="number" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 font-black text-indigo-600 text-lg outline-none" value={t.maxDailyPeriods} onChange={e => setTeachers(teachers.map(tea => tea.id === t.id ? {...tea, maxDailyPeriods: parseInt(e.target.value) || 8} : tea))} />
               </div>
             </div>
 
@@ -149,7 +173,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Contract Constraints</span>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold">Guaranteed Weekly Rest Slots</span>
-                <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-xl px-4 py-2 font-black text-indigo-400 text-center" value={t.breaksNeededPerWeek} onChange={e => setTeachers(teachers.map(tea => tea.id === t.id ? {...tea, breaksNeededPerWeek: parseInt(e.target.value) || 5} : tea))} />
+                <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-xl px-4 py-2 font-black text-indigo-400 text-center outline-none" value={t.breaksNeededPerWeek} onChange={e => setTeachers(teachers.map(tea => tea.id === t.id ? {...tea, breaksNeededPerWeek: parseInt(e.target.value) || 5} : tea))} />
               </div>
             </div>
 
@@ -165,25 +189,57 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       return (
         <div className="space-y-6 animate-fadeIn">
           <button onClick={() => setDetailView(null)} className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 hover:text-indigo-500 transition-colors">← Back to Classes</button>
-          <div className="bg-white p-10 rounded-[3rem] border shadow-2xl max-w-2xl mx-auto space-y-10">
-            <div>
-              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-2">Group Name</span>
-              <input className="text-4xl font-black text-slate-900 bg-transparent border-0 p-0 focus:ring-0 w-full uppercase tracking-tighter" value={cls.name} onChange={e => setClasses(classes.map(c => c.id === cls.id ? {...c, name: e.target.value} : c))} />
+          <div className="bg-white p-10 rounded-[3rem] border shadow-2xl max-w-3xl mx-auto space-y-10">
+            <div className="flex justify-between items-center border-b pb-8">
+               <div>
+                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-2">Group Name</span>
+                  <input className="text-4xl font-black text-slate-900 bg-transparent border-0 p-0 focus:ring-0 w-full uppercase tracking-tighter" value={cls.name} onChange={e => setClasses(classes.map(c => c.id === cls.id ? {...c, name: e.target.value} : c))} />
+               </div>
+               <div className="flex items-center gap-4">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lead:</span>
+                  <select className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none" value={cls.homeroomTeacherId} onChange={e => setClasses(classes.map(c => c.id === cls.id ? {...c, homeroomTeacherId: e.target.value} : c))}>
+                    <option value="">Unassigned</option>
+                    {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+               </div>
             </div>
 
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Active Assignments</h4>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject Curriculum</h4>
+                <button onClick={() => addSubjectToClass(cls.id)} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-100 transition-all">+ Add Subject</button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                 {cls.assignments.length > 0 ? cls.assignments.map(a => (
-                  <div key={a.subjectId} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                    <span className="text-xs font-black uppercase text-slate-700 tracking-tight">{getSubjectName(a.subjectId)}</span>
-                    <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest px-4 py-1.5 bg-indigo-50 rounded-lg">{getTeacherName(a.teacherId)}</span>
+                  <div key={a.subjectId} className="p-6 bg-slate-50 rounded-[1.8rem] border border-slate-100 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <span className="text-xs font-black uppercase text-slate-900 tracking-tight">{getSubjectName(a.subjectId)}</span>
+                      <button onClick={() => {
+                        setClasses(classes.map(c => c.id === cls.id ? { ...c, assignments: c.assignments.filter(as => as.subjectId !== a.subjectId) } : c));
+                      }} className="text-slate-300 hover:text-rose-500 transition-colors">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block ml-1">Assigned Staff</span>
+                       <select className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2 font-black text-indigo-500 text-[10px] uppercase outline-none" value={a.teacherId} onChange={e => {
+                         setClasses(classes.map(c => c.id === cls.id ? { ...c, assignments: c.assignments.map(as => as.subjectId === a.subjectId ? { ...as, teacherId: e.target.value } : as) } : c));
+                       }}>
+                         <option value="">Vacant</option>
+                         {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                       </select>
+                    </div>
                   </div>
-                )) : <div className="py-10 text-center text-[10px] font-black text-slate-300 uppercase italic">No active assignments</div>}
+                )) : (
+                  <div className="col-span-full py-16 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-100">
+                    <p className="text-[10px] font-black text-slate-300 uppercase italic">No curriculum mapped to this group</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <button onClick={() => { setClasses(classes.filter(c => c.id !== cls.id)); setDetailView(null); }} className="w-full py-5 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-widest">Delete Class Group</button>
+            <button onClick={() => { setClasses(classes.filter(c => c.id !== cls.id)); setDetailView(null); }} className="w-full py-5 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-rose-100">Delete Class Group</button>
           </div>
         </div>
       );
@@ -263,11 +319,14 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         {activeTab === 'classes' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
             {classes.map(c => (
-              <div key={c.id} onClick={() => setDetailView({ type: 'class', id: c.id })} className="p-8 bg-slate-50 rounded-[2rem] cursor-pointer hover:shadow-xl transition-all border-l-[10px] group" style={{ borderLeftColor: c.color }}>
+              <div key={c.id} onClick={() => setDetailView({ type: 'class', id: c.id })} className="p-8 bg-slate-50 rounded-[2rem] cursor-pointer hover:shadow-xl transition-all border-l-[10px] group border-transparent hover:border-slate-100" style={{ borderLeftColor: c.color }}>
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="font-black text-slate-900 text-xl uppercase tracking-tighter">{c.name}</h4>
                     <p className="text-[9px] font-black text-slate-400 uppercase mt-1">Homeroom Lead: {getTeacherName(c.homeroomTeacherId)}</p>
+                    <div className="mt-4 flex gap-2">
+                       <span className="text-[7px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md uppercase tracking-widest">{c.assignments.length} Subjects</span>
+                    </div>
                   </div>
                   <svg className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
                 </div>
@@ -292,32 +351,49 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
         {activeTab === 'subjects' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
-            {subjects.map(s => (
-              <div key={s.id} className="p-6 bg-slate-50 rounded-[2rem] space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                  <input className="bg-white border rounded-xl px-4 py-2 w-full font-black text-slate-900 uppercase text-xs" value={s.name} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, name: e.target.value} : sub))} />
-                  <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border">
-                    <button onClick={() => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: Math.max(1, sub.frequencyPerWeek-1)} : sub))} className="font-black text-slate-300 hover:text-indigo-600">-</button>
-                    <span className="text-xs font-black text-indigo-600 w-4 text-center">{s.frequencyPerWeek}</span>
-                    <button onClick={() => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: sub.frequencyPerWeek+1} : sub))} className="font-black text-slate-300 hover:text-indigo-600">+</button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {classes.map(c => (
-                    <div key={c.id} className="bg-white p-3 rounded-xl border flex flex-col gap-1">
-                      <span className="text-[7px] font-black text-slate-400 uppercase">{c.name}</span>
-                      <select className="bg-transparent text-[9px] font-bold text-slate-800 outline-none" value={c.assignments.find(a => a.subjectId === s.id)?.teacherId || ''} onChange={e => {
-                        setClasses(classes.map(cl => cl.id === c.id ? {...cl, assignments: [...cl.assignments.filter(a => a.subjectId !== s.id), { subjectId: s.id, teacherId: e.target.value }]} : cl));
-                      }}>
-                        <option value="">Unassigned</option>
-                        {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                      </select>
+            {subjects.map(s => {
+              const isExpanded = expandedSubjectId === s.id;
+              return (
+                <div key={s.id} className="p-6 bg-slate-50 rounded-[2rem] border border-transparent hover:border-slate-200 transition-all overflow-hidden flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <input className="bg-white border rounded-xl px-4 py-2.5 w-full font-black text-slate-900 uppercase text-xs outline-none" value={s.name} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, name: e.target.value} : sub))} />
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border">
+                      <button onClick={() => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: Math.max(1, sub.frequencyPerWeek-1)} : sub))} className="font-black text-slate-300 hover:text-indigo-600">-</button>
+                      <span className="text-xs font-black text-indigo-600 w-4 text-center">{s.frequencyPerWeek}</span>
+                      <button onClick={() => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: sub.frequencyPerWeek+1} : sub))} className="font-black text-slate-300 hover:text-indigo-600">+</button>
                     </div>
-                  ))}
+                  </div>
+                  
+                  <button 
+                    onClick={() => setExpandedSubjectId(isExpanded ? null : s.id)} 
+                    className={`w-full py-3 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${isExpanded ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50'}`}
+                  >
+                    <span>{isExpanded ? 'Collapse Faculty Mapping' : 'Manage Faculty Assignments'}</span>
+                    <svg className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
+                      {classes.map(c => (
+                        <div key={c.id} className="bg-white p-4 rounded-[1.2rem] border border-slate-100 flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.color }}></div>
+                             <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">{c.name}</span>
+                          </div>
+                          <select className="w-full bg-slate-50 border border-transparent rounded-lg px-3 py-1.5 font-bold text-slate-900 text-[10px] outline-none hover:border-slate-200 transition-all" value={c.assignments.find(a => a.subjectId === s.id)?.teacherId || ''} onChange={e => {
+                            setClasses(classes.map(cl => cl.id === c.id ? {...cl, assignments: [...cl.assignments.filter(a => a.subjectId !== s.id), { subjectId: s.id, teacherId: e.target.value }]} : cl));
+                          }}>
+                            <option value="">Vacant</option>
+                            {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
-            <button onClick={handleAddNewSubject} className="p-6 border-2 border-dashed border-slate-200 rounded-[2rem] text-slate-300 font-black text-[10px] uppercase tracking-widest hover:border-indigo-300 transition-all">+ New Lesson Block</button>
+              );
+            })}
+            <button onClick={handleAddNewSubjectGlobal} className="p-6 border-2 border-dashed border-slate-200 rounded-[2rem] text-slate-300 font-black text-[10px] uppercase tracking-widest hover:border-indigo-300 transition-all">+ New Lesson Block</button>
           </div>
         )}
 
