@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolProfile, SubjectConfig, SchoolSchedule } from '../types';
 import { TEACHER_COLORS, CLASS_COLORS } from '../constants';
@@ -166,12 +167,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                       </label>
                     ))}
                   </div>
-                  {lock.classIds.length === 0 && (
-                    <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex items-center gap-3 text-rose-500">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Warning: No classes selected. Engagement will be empty.</span>
-                    </div>
-                  )}
                </div>
              )}
           </div>
@@ -250,23 +245,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           </div>
         )}
 
-        {activeTab === 'subjects' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-4">
-            {subjects.map(s => (
-               <div key={s.id} className="p-10 bg-slate-50 rounded-[3.5rem] space-y-6 shadow-sm border border-transparent hover:border-indigo-100 transition-all">
-                  <div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Subject Name</span>
-                    <input className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 font-black text-slate-900 uppercase text-xs focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none shadow-sm" value={s.name} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, name: e.target.value} : sub))} />
-                  </div>
-                  <div className="flex items-center justify-between px-2 pt-4 border-t border-slate-200/50">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Load: Periods / Week</span>
-                    <input type="number" className="w-14 bg-white border border-slate-100 rounded-xl px-2 py-2 text-center font-black text-indigo-600 outline-none text-lg shadow-inner" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: parseInt(e.target.value) || 1} : sub))} />
-                  </div>
-               </div>
-            ))}
-          </div>
-        )}
-
         {activeTab === 'global' && (
           <div className="space-y-12 animate-fadeIn p-4">
             <div className="bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800 shadow-2xl relative overflow-hidden group">
@@ -275,8 +253,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                 Institutional Engagements Architecture
               </p>
               <p className="text-slate-400 text-[10px] font-medium mt-2 max-w-2xl relative z-10">
-                Define slots where standard lessons cannot be scheduled (e.g. Gym, Swimming, Lunch, Assemblies). 
-                Click any cell to toggle an engagement and choose which class groups are affected.
+                Click cells to toggle engagements. Color-coded pills show which class groups are affected.
               </p>
             </div>
 
@@ -302,31 +279,29 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                               onClick={() => openLockConfig(dIdx, pIdx)} 
                               className={`group w-full h-full rounded-[2.5rem] border-[4px] flex flex-col items-center justify-center p-6 transition-all relative overflow-hidden ${
                                 lock 
-                                ? 'bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03] z-10' 
+                                ? 'bg-white border-slate-900 shadow-2xl scale-[1.03] z-10' 
                                 : 'bg-white border-slate-100 text-slate-300 hover:border-indigo-200 hover:shadow-xl hover:scale-[1.02]'
                               }`}
                             >
                               {lock ? (
                                 <>
-                                  <div className="absolute top-0 left-0 w-full h-1 gradient-primary opacity-50"></div>
-                                  <span className="text-[15px] font-black uppercase text-center tracking-tighter leading-none group-hover:scale-110 transition-transform">{lock.name}</span>
+                                  <div className="absolute top-0 left-0 w-full h-1 gradient-primary opacity-20"></div>
+                                  <span className="text-[15px] font-black uppercase text-center tracking-tighter leading-none text-slate-900 group-hover:scale-110 transition-transform">{lock.name}</span>
                                   {lock.isSchoolWide ? (
-                                    <div className="mt-4 px-3 py-1 bg-white/10 rounded-full border border-white/10">
-                                      <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Global Hold</span>
+                                    <div className="mt-4 px-3 py-1 bg-slate-900 rounded-full">
+                                      <span className="text-[8px] font-black text-white uppercase tracking-widest">Global Hold</span>
                                     </div>
                                   ) : (
                                     <div className="flex flex-wrap justify-center gap-1.5 mt-5">
-                                      {lock.classIds.slice(0, 3).map(cid => (
+                                      {lock.classIds.map(cid => (
                                         <div 
                                           key={cid} 
-                                          className="w-4 h-4 rounded-full border border-white/20 shadow-sm shrink-0" 
-                                          title={getClassName(cid)}
+                                          className="px-2 py-1 rounded-full text-[7px] font-black text-white uppercase shadow-sm" 
                                           style={{ backgroundColor: getClassColor(cid) }}
-                                        />
+                                        >
+                                          {getClassName(cid)}
+                                        </div>
                                       ))}
-                                      {lock.classIds.length > 3 && (
-                                        <div className="text-[8px] font-black text-slate-400 flex items-center h-4">+{lock.classIds.length - 3}</div>
-                                      )}
                                       {lock.classIds.length === 0 && (
                                         <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest animate-pulse">Assign Group</span>
                                       )}
@@ -338,7 +313,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                                   <div className="w-8 h-8 rounded-full border-2 border-slate-100 flex items-center justify-center group-hover:bg-indigo-50 group-hover:border-indigo-200 transition-all">
                                     <svg className="w-3 h-3 text-slate-300 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M12 4v16m8-8H4" /></svg>
                                   </div>
-                                  <span className="text-[9px] font-black uppercase tracking-[0.2em]">Add Engagement</span>
+                                  <span className="text-[9px] font-black uppercase tracking-[0.2em]">Add Block</span>
                                 </div>
                               )}
                             </button>

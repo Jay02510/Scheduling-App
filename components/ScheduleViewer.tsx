@@ -79,7 +79,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       <header className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
           <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">Homeroom Portal</h2>
-          <p className="text-slate-500 font-bold text-[11px] uppercase tracking-[0.3em] mt-2">Class Rhythm & Support Shelves</p>
+          <p className="text-slate-500 font-bold text-[11px] uppercase tracking-[0.3em] mt-2">Class Rhythm & Resources</p>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-2 rounded-[2rem] border border-slate-200">
           {classes.map(c => (
@@ -104,17 +104,16 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                   const lock = (profile?.lockedSlots || []).find(f => 
                     f.dayOfWeek === dIdx && 
                     f.period === pIdx && 
-                    (f.isSchoolWide || f.classIds.includes(currentClass.id))
+                    (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
                   );
                   const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                   const teacher = teachers.find(t => t.id === slot?.teacherId);
 
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-900 text-white align-middle relative overflow-hidden">
-                      <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(255,255,255,0.05)_10px,rgba(255,255,255,0.05)_11px)]"></div>
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-50 align-middle relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(0,0,0,0.02)_10px,rgba(0,0,0,0.02)_11px)]"></div>
                       <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
-                        <span className="text-[14px] font-black uppercase tracking-[0.2em]">{lock.name}</span>
-                        <span className="text-[8px] font-bold opacity-40 uppercase mt-2 tracking-widest italic">Institutional Hold</span>
+                        <span className="text-[16px] font-black uppercase tracking-tighter text-slate-900">{lock.name}</span>
                       </div>
                     </td>
                   );
