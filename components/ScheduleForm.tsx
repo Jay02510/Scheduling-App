@@ -102,7 +102,15 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     setNewSubjectName('');
   };
 
-  // Fixed openLockConfig to use day and period arguments and removed erroneous lines.
+  const updateSubjectFrequency = (subjectId: string, delta: number) => {
+    setSubjects(subjects.map(s => {
+      if (s.id === subjectId) {
+        return { ...s, frequencyPerWeek: Math.max(1, s.frequencyPerWeek + delta) };
+      }
+      return s;
+    }));
+  };
+
   const openLockConfig = (day: number, period: number) => {
     const lockAtSpecificSlot = lockedSlots.find(l => l.dayOfWeek === day && l.period === period);
 
@@ -224,30 +232,47 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-                {cls.assignments.length > 0 ? cls.assignments.map(a => (
-                  <div key={a.subjectId} className="p-6 bg-white rounded-[1.8rem] border border-slate-100 shadow-sm space-y-4 hover:border-indigo-100 transition-colors group">
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black uppercase text-slate-900 tracking-tight">{getSubjectName(a.subjectId)}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">Frequency: {subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 5}x / week</span>
+                {cls.assignments.length > 0 ? cls.assignments.map(a => {
+                  const subject = subjects.find(s => s.id === a.subjectId);
+                  return (
+                    <div key={a.subjectId} className="p-6 bg-white rounded-[1.8rem] border border-slate-100 shadow-sm space-y-4 hover:border-indigo-100 transition-colors group">
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-black uppercase text-slate-900 tracking-tight">{subject?.name || 'Unknown'}</span>
+                          <div className="flex items-center gap-3 mt-1.5">
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Freq:</span>
+                            <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); updateSubjectFrequency(a.subjectId, -1); }}
+                                className="w-4 h-4 flex items-center justify-center font-black text-slate-400 hover:text-indigo-600 transition-colors"
+                              >-</button>
+                              <span className="text-[10px] font-black text-indigo-600 w-3 text-center">{subject?.frequencyPerWeek || 5}</span>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); updateSubjectFrequency(a.subjectId, 1); }}
+                                className="w-4 h-4 flex items-center justify-center font-black text-slate-400 hover:text-indigo-600 transition-colors"
+                              >+</button>
+                            </div>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">per week</span>
+                          </div>
+                        </div>
+                        <button onClick={() => {
+                          setClasses(classes.map(c => c.id === cls.id ? { ...c, assignments: c.assignments.filter(as => as.subjectId !== a.subjectId) } : c));
+                        }} className="text-slate-300 hover:text-rose-500 transition-colors p-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
                       </div>
-                      <button onClick={() => {
-                        setClasses(classes.map(c => c.id === cls.id ? { ...c, assignments: c.assignments.filter(as => as.subjectId !== a.subjectId) } : c));
-                      }} className="text-slate-300 hover:text-rose-500 transition-colors p-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
+                      <div className="space-y-1.5">
+                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block ml-1">Mapping Staff</span>
+                         <select className="w-full bg-slate-50 border border-transparent rounded-xl px-4 py-2 font-black text-indigo-500 text-[10px] uppercase outline-none hover:border-indigo-200 transition-all" value={a.teacherId} onChange={e => {
+                           setClasses(classes.map(c => c.id === cls.id ? { ...c, assignments: c.assignments.map(as => as.subjectId === a.subjectId ? { ...as, teacherId: e.target.value } : as) } : c));
+                         }}>
+                           <option value="">Unassigned</option>
+                           {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                         </select>
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block ml-1">Mapping Staff</span>
-                       <select className="w-full bg-slate-50 border border-transparent rounded-xl px-4 py-2 font-black text-indigo-500 text-[10px] uppercase outline-none hover:border-indigo-200 transition-all" value={a.teacherId} onChange={e => {
-                         setClasses(classes.map(c => c.id === cls.id ? { ...c, assignments: c.assignments.map(as => as.subjectId === a.subjectId ? { ...as, teacherId: e.target.value } : as) } : c));
-                       }}>
-                         <option value="">Unassigned</option>
-                         {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                       </select>
-                    </div>
-                  </div>
-                )) : (
+                  );
+                }) : (
                   <div className="col-span-full py-16 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-100">
                     <p className="text-[10px] font-black text-slate-300 uppercase italic">Start by adding subjects to this group's curriculum</p>
                   </div>
@@ -341,7 +366,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                     <h4 className="font-black text-slate-900 text-xl uppercase tracking-tighter">{c.name}</h4>
                     <p className="text-[9px] font-black text-slate-400 uppercase mt-1">Lead: {getTeacherName(c.homeroomTeacherId)}</p>
                     <div className="mt-4 flex gap-2">
-                       <span className="text-[7px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md uppercase tracking-widest">{c.assignments.length} Subject Blocks</span>
+                       <span className="text-[7px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md uppercase tracking-widest">{(c.assignments || []).length} Subject Blocks</span>
                     </div>
                   </div>
                   <svg className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
@@ -374,9 +399,9 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                   <div className="flex items-center justify-between gap-4">
                     <input className="bg-white border rounded-xl px-4 py-2.5 w-full font-black text-slate-900 uppercase text-xs outline-none focus:border-indigo-200 transition-all" value={s.name} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, name: e.target.value} : sub))} />
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border">
-                      <button onClick={() => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: Math.max(1, sub.frequencyPerWeek-1)} : sub))} className="font-black text-slate-300 hover:text-indigo-600 transition-colors">-</button>
+                      <button onClick={() => updateSubjectFrequency(s.id, -1)} className="font-black text-slate-300 hover:text-indigo-600 transition-colors">-</button>
                       <span className="text-xs font-black text-indigo-600 w-4 text-center">{s.frequencyPerWeek}</span>
-                      <button onClick={() => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: sub.frequencyPerWeek+1} : sub))} className="font-black text-slate-300 hover:text-indigo-600 transition-colors">+</button>
+                      <button onClick={() => updateSubjectFrequency(s.id, 1)} className="font-black text-slate-300 hover:text-indigo-600 transition-colors">+</button>
                     </div>
                     <button onClick={() => setSubjects(subjects.filter(sub => sub.id !== s.id))} className="p-2 text-slate-200 hover:text-rose-500 transition-colors">
                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -394,7 +419,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                   {isExpanded && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
                       {classes.map(c => {
-                        const assignment = c.assignments.find(a => a.subjectId === s.id);
+                        const assignment = (c.assignments || []).find(a => a.subjectId === s.id);
                         return (
                           <div key={c.id} className={`bg-white p-4 rounded-[1.2rem] border flex flex-col gap-2 transition-all ${assignment ? 'border-indigo-100 shadow-sm' : 'border-slate-50 opacity-60 hover:opacity-100'}`}>
                             <div className="flex items-center gap-2">
@@ -405,7 +430,8 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                               const newAssignment = { subjectId: s.id, teacherId: e.target.value };
                               setClasses(classes.map(cl => {
                                 if (cl.id !== c.id) return cl;
-                                const filtered = cl.assignments.filter(a => a.subjectId !== s.id);
+                                const currentAssignments = cl.assignments || [];
+                                const filtered = currentAssignments.filter(a => a.subjectId !== s.id);
                                 return { ...cl, assignments: [...filtered, newAssignment] };
                               }));
                             }}>
