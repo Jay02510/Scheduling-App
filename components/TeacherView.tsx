@@ -12,6 +12,13 @@ interface TeacherViewProps {
   initialTeacherId?: string;
 }
 
+const formatTime = (timeStr: string, minutesToAdd: number) => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes + minutesToAdd, 0);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
 const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, subjects, lockedSlots, profile, initialTeacherId }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   
@@ -25,6 +32,8 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
 
   const days = ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
   const totalPeriods = profile?.hours?.totalPeriods || 8;
+  const startTime = profile?.hours?.startTime || '08:30';
+  const duration = profile?.hours?.periodDuration || 45;
 
   if (!teachers || teachers.length === 0) return null;
 
@@ -33,7 +42,6 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
 
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
 
-  // Identify all classes assigned to this teacher across all subjects
   const assignedClasses = classes.filter(c => 
     c.homeroomTeacherId === currentTeacher.id || 
     (c.assignments || []).some(a => a.teacherId === currentTeacher.id)
@@ -91,53 +99,61 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
         <table className="w-full border-collapse table-fixed min-w-[800px]">
           <thead>
             <tr className="bg-slate-50 border-b-[3px] border-slate-900">
-              <th className="border-r-[3px] border-slate-900 p-6 text-[12px] font-black uppercase w-24">P</th>
+              <th className="border-r-[3px] border-slate-900 p-6 text-[12px] font-black uppercase w-32">Slot</th>
               {days.map(day => <th key={day} className="border-r-[3px] last:border-r-0 border-slate-900 p-6 text-[11px] font-black uppercase tracking-widest">{day}</th>)}
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: totalPeriods }).map((_, pIdx) => (
-              <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
-                <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50 h-[140px]">{pIdx + 1}</td>
-                {Array.from({ length: 5 }).map((_, dIdx) => {
-                  const slot = filteredSlots.find(s => s.day === dIdx && s.period === pIdx);
-                  const classInfo = slot ? (classes || []).find(c => c.id === slot.classId) : null;
-                  
-                  const lock = (lockedSlots || []).find(f => 
-                    f.dayOfWeek === dIdx && 
-                    f.period === pIdx && 
-                    (f.isSchoolWide || (classInfo && f.classIds?.includes(classInfo.id)))
-                  );
+            {Array.from({ length: totalPeriods }).map((_, pIdx) => {
+              const pStart = formatTime(startTime, pIdx * duration);
+              const pEnd = formatTime(startTime, (pIdx + 1) * duration);
 
-                  if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-vivid-blocked align-middle relative overflow-hidden">
-                      <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
-                        <span className="text-[12px] font-black uppercase tracking-tight text-white leading-none drop-shadow-lg">{lock.name}</span>
-                      </div>
-                    </td>
-                  );
+              return (
+                <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
+                  <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 bg-slate-50 h-[140px]">
+                    <div className="text-3xl tracking-tighter leading-none mb-2">{pIdx + 1}</div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">{pStart} — {pEnd}</div>
+                  </td>
+                  {Array.from({ length: 5 }).map((_, dIdx) => {
+                    const slot = filteredSlots.find(s => s.day === dIdx && s.period === pIdx);
+                    const classInfo = slot ? (classes || []).find(c => c.id === slot.classId) : null;
+                    
+                    const lock = (lockedSlots || []).find(f => 
+                      f.dayOfWeek === dIdx && 
+                      f.period === pIdx && 
+                      (f.isSchoolWide || (classInfo && f.classIds?.includes(classInfo.id)))
+                    );
 
-                  return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-white group hover:bg-slate-50/50 transition-colors align-top">
-                      {slot ? (
-                        <div className="h-full flex flex-col">
-                          <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
-                            <span className="text-[14px] font-black leading-tight text-slate-900 uppercase tracking-tight line-clamp-2 group-hover:scale-105 transition-transform duration-300">{getSubjectName(slot.subjectId)}</span>
-                          </div>
-                          <div className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0" style={{ backgroundColor: currentTeacher?.color || '#cbd5e1' }}>
-                            <span className="text-[11px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{classInfo?.name}</span>
-                          </div>
+                    if (lock) return (
+                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-vivid-blocked align-middle relative overflow-hidden">
+                        <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
+                          <span className="text-[12px] font-black uppercase tracking-tight text-white leading-none drop-shadow-lg">{lock.name}</span>
                         </div>
-                      ) : (
-                        <div className="h-full flex items-center justify-center opacity-[0.03] select-none">
-                          <span className="text-[10px] font-black uppercase tracking-widest">REST</span>
-                        </div>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                      </td>
+                    );
+
+                    return (
+                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-white group hover:bg-slate-50/50 transition-colors align-top">
+                        {slot ? (
+                          <div className="h-full flex flex-col">
+                            <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+                              <span className="text-[14px] font-black leading-tight text-slate-900 uppercase tracking-tight line-clamp-2 group-hover:scale-105 transition-transform duration-300">{getSubjectName(slot.subjectId)}</span>
+                            </div>
+                            <div className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0" style={{ backgroundColor: currentTeacher?.color || '#cbd5e1' }}>
+                              <span className="text-[11px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{classInfo?.name}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full flex items-center justify-center opacity-[0.03] select-none">
+                            <span className="text-[10px] font-black uppercase tracking-widest">REST</span>
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

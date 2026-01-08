@@ -21,9 +21,9 @@ interface ScheduleFormProps {
 }
 
 const ScheduleForm: React.FC<ScheduleFormProps> = ({ 
-  onGenerate, profile, teachers, setTeachers, classes, setClasses, textbooks, subjects, setSubjects, lockedSlots, setLockedSlots, schedule 
+  onGenerate, profile, setProfile, teachers, setTeachers, classes, setClasses, textbooks, subjects, setSubjects, lockedSlots, setLockedSlots, schedule 
 }) => {
-  const [activeTab, setActiveTab] = useState<'classes' | 'staff' | 'subjects' | 'global'>('classes');
+  const [activeTab, setActiveTab] = useState<'classes' | 'staff' | 'subjects' | 'global' | 'rhythm'>('classes');
   const [detailView, setDetailView] = useState<{ type: 'teacher' | 'class' | 'lock', id: string } | null>(null);
 
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown Subject';
@@ -66,7 +66,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     const newId = `sub-${Math.random().toString(36).substr(2, 5)}`;
     const newSub: SubjectConfig = {
       id: newId,
-      name: 'New Subject Block',
+      name: 'New Lesson Block',
       frequencyPerWeek: 5,
       gradeLevels: ['G1']
     };
@@ -213,20 +213,76 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         </button>
       </div>
 
-      <div className="flex bg-slate-200/50 p-2 rounded-[2.8rem] w-fit shadow-inner mx-auto md:mx-0">
+      <div className="flex bg-slate-200/50 p-2 rounded-[2.8rem] w-fit shadow-inner mx-auto md:mx-0 overflow-x-auto max-w-full">
         {[
           { id: 'classes', label: 'Classes' },
           { id: 'staff', label: 'Faculty' },
           { id: 'subjects', label: 'Subjects' },
-          { id: 'global', label: 'Master Engagements' }
+          { id: 'global', label: 'Master Engagements' },
+          { id: 'rhythm', label: 'Daily Rhythm' }
         ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id as any)} className={`px-12 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.15em] transition-all ${activeTab === t.id ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-slate-700 hover:bg-white/30'}`}>
+          <button key={t.id} onClick={() => setActiveTab(t.id as any)} className={`px-10 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.15em] transition-all whitespace-nowrap ${activeTab === t.id ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-slate-700 hover:bg-white/30'}`}>
             {t.label}
           </button>
         ))}
       </div>
 
       <div className="bg-white p-4 md:p-12 rounded-[4.5rem] shadow-2xl border border-slate-50 min-h-[600px] relative">
+        {activeTab === 'rhythm' && profile && (
+          <div className="max-w-2xl mx-auto space-y-12 animate-fadeIn p-4">
+             <div className="space-y-4">
+               <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Timeline Parameters</h3>
+               <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest leading-relaxed">Adjust the fundamental heartbeat of your school day. Changes here affect all grid views instantly.</p>
+             </div>
+             
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="p-10 bg-slate-50 rounded-[3rem] space-y-4">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Institutional Start</span>
+                  <input 
+                    type="time" 
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-5 font-black text-2xl text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10" 
+                    value={profile.hours.startTime} 
+                    onChange={e => setProfile({...profile, hours: {...profile.hours, startTime: e.target.value}})} 
+                  />
+                </div>
+
+                <div className="p-10 bg-slate-50 rounded-[3rem] space-y-4">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Period Duration (Min)</span>
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="number" 
+                      className="flex-1 bg-white border border-slate-200 rounded-2xl px-6 py-5 font-black text-3xl text-indigo-600 outline-none focus:ring-4 focus:ring-indigo-500/10" 
+                      value={profile.hours.periodDuration} 
+                      onChange={e => setProfile({...profile, hours: {...profile.hours, periodDuration: parseInt(e.target.value) || 45}})} 
+                    />
+                    <div className="flex flex-col gap-2">
+                       <button onClick={() => setProfile({...profile, hours: {...profile.hours, periodDuration: profile.hours.periodDuration + 5}})} className="p-3 bg-white rounded-xl shadow-sm hover:bg-slate-50 text-slate-400 font-bold">+</button>
+                       <button onClick={() => setProfile({...profile, hours: {...profile.hours, periodDuration: Math.max(5, profile.hours.periodDuration - 5)}})} className="p-3 bg-white rounded-xl shadow-sm hover:bg-slate-50 text-slate-400 font-bold">-</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-span-full p-10 bg-slate-900 rounded-[3rem] space-y-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Daily Period Sequence</span>
+                    <span className="px-4 py-1.5 bg-indigo-500 text-white rounded-full font-black text-[10px]">{profile.hours.totalPeriods} Slots</span>
+                  </div>
+                  <div className="flex gap-3">
+                    {Array.from({length: 12}).map((_, i) => (
+                      <button 
+                        key={i} 
+                        onClick={() => setProfile({...profile, hours: {...profile.hours, totalPeriods: i + 1}})}
+                        className={`flex-1 h-14 rounded-2xl font-black text-sm transition-all ${profile.hours.totalPeriods === i + 1 ? 'bg-white text-slate-900 shadow-xl scale-110' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+             </div>
+          </div>
+        )}
+
         {activeTab === 'classes' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 p-4">
             {classes.map(c => (
@@ -270,19 +326,23 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                <div key={s.id} className="p-10 bg-slate-50 rounded-[3.5rem] shadow-sm border border-transparent hover:border-indigo-100 transition-all space-y-8 relative group">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex-1 w-full">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Curriculum Identity</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Subject Title</span>
                       <input className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 font-black text-slate-900 uppercase text-xs focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none shadow-sm" value={s.name} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, name: e.target.value} : sub))} />
                     </div>
                     <div className="shrink-0">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Weekly Periods</span>
-                      <input type="number" className="w-20 bg-white border border-slate-200 rounded-2xl px-4 py-4 text-center font-black text-indigo-600 outline-none text-lg shadow-sm" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: parseInt(e.target.value) || 1} : sub))} />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2 text-center">Periods/Week</span>
+                      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-3 py-3 shadow-sm">
+                        <button onClick={() => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: Math.max(1, sub.frequencyPerWeek - 1)} : sub))} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors">-</button>
+                        <span className="w-10 text-center font-black text-indigo-600 text-lg">{s.frequencyPerWeek}</span>
+                        <button onClick={() => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: sub.frequencyPerWeek + 1} : sub))} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors">+</button>
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                      <h5 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Faculty Assignment Ledger</h5>
-                      <span className="text-[8px] font-black text-slate-400 uppercase">Map Subject to Groups</span>
+                      <h5 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Faculty Assignments</h5>
+                      <span className="text-[8px] font-black text-slate-400 uppercase">Per Class Group</span>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -312,14 +372,14 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                </div>
             )) : (
               <div className="col-span-full py-20 text-center border-4 border-dashed border-slate-100 rounded-[3.5rem]">
-                <p className="text-slate-300 font-black text-[12px] uppercase tracking-widest">No Subjects defined in Institution Profile</p>
+                <p className="text-slate-300 font-black text-[12px] uppercase tracking-widest">Register Institutional Subjects</p>
               </div>
             )}
             <button onClick={handleAddNewSubject} className="p-12 border-4 border-dashed border-slate-100 rounded-[3.5rem] text-slate-300 font-black text-[12px] uppercase tracking-widest hover:border-indigo-100 hover:text-indigo-400 hover:bg-indigo-50/30 transition-all flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
               <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
               </div>
-              Register New Subject Block
+              Add New Lesson Category
             </button>
           </div>
         )}

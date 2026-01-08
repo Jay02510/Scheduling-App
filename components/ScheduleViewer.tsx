@@ -17,6 +17,13 @@ interface ScheduleViewerProps {
   initialClassId?: string;
 }
 
+const formatTime = (timeStr: string, minutesToAdd: number) => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes + minutesToAdd, 0);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
 const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onNavigate, onJump, initialClassId }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
@@ -31,6 +38,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
   const days = ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
   const totalPeriods = profile?.hours?.totalPeriods || 8;
+  const startTime = profile?.hours?.startTime || '08:30';
+  const duration = profile?.hours?.periodDuration || 45;
 
   const currentClass = classes.find(c => c.id === selectedClassId) || classes[0];
   if (!currentClass) return null;
@@ -92,54 +101,62 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         <table className="w-full border-collapse table-fixed min-w-[1100px]">
           <thead>
             <tr className="bg-slate-50 border-b-[3px] border-slate-900">
-              <th className="border-r-[3px] border-slate-900 p-8 text-[12px] font-black uppercase w-32">Slot</th>
+              <th className="border-r-[3px] border-slate-900 p-8 text-[12px] font-black uppercase w-48">Period</th>
               {days.map(d => <th key={d} className="border-r-[3px] last:border-r-0 border-slate-900 p-8 text-[12px] font-black uppercase tracking-widest">{d}</th>)}
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: totalPeriods }).map((_, pIdx) => (
-              <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
-                <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50 h-[140px]">{pIdx + 1}</td>
-                {Array.from({ length: 5 }).map((_, dIdx) => {
-                  const lock = (lockedSlots || []).find(f => 
-                    f.dayOfWeek === dIdx && 
-                    f.period === pIdx && 
-                    (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
-                  );
-                  const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
-                  const teacher = teachers.find(t => t.id === slot?.teacherId);
+            {Array.from({ length: totalPeriods }).map((_, pIdx) => {
+              const pStart = formatTime(startTime, pIdx * duration);
+              const pEnd = formatTime(startTime, (pIdx + 1) * duration);
+              
+              return (
+                <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
+                  <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 bg-slate-50 h-[140px]">
+                    <div className="text-3xl tracking-tighter leading-none mb-2">{pIdx + 1}</div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">{pStart} — {pEnd}</div>
+                  </td>
+                  {Array.from({ length: 5 }).map((_, dIdx) => {
+                    const lock = (lockedSlots || []).find(f => 
+                      f.dayOfWeek === dIdx && 
+                      f.period === pIdx && 
+                      (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
+                    );
+                    const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
+                    const teacher = teachers.find(t => t.id === slot?.teacherId);
 
-                  if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-vivid-blocked">
-                      <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
-                        <span className="text-[14px] font-black uppercase tracking-[0.2em] text-white leading-none drop-shadow-lg">{lock.name}</span>
-                      </div>
-                    </td>
-                  );
-
-                  return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-white group hover:bg-slate-50 transition-colors relative align-top">
-                      {slot ? (
-                        <div className="h-full flex flex-col">
-                          <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-hidden focus:outline-none">
-                            <span className="text-[16px] font-black text-slate-900 uppercase leading-tight line-clamp-2 group-hover:scale-105 transition-transform duration-300">{getSubjectName(slot.subjectId)}</span>
-                          </button>
-                          <button 
-                            onClick={() => onJump?.(slot.teacherId, 'teacher')}
-                            className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0 hover:brightness-90 active:scale-95 transition-all" 
-                            style={{ backgroundColor: teacher?.color || '#cbd5e1' }}
-                          >
-                            <span className="text-[11px] font-black uppercase text-slate-900 truncate px-6 tracking-tight">{teacher?.name}</span>
-                          </button>
+                    if (lock) return (
+                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-vivid-blocked">
+                        <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
+                          <span className="text-[14px] font-black uppercase tracking-[0.2em] text-white leading-none drop-shadow-lg">{lock.name}</span>
                         </div>
-                      ) : (
-                        <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="h-full cursor-pointer bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5"></div>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                      </td>
+                    );
+
+                    return (
+                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-white group hover:bg-slate-50 transition-colors relative align-top">
+                        {slot ? (
+                          <div className="h-full flex flex-col">
+                            <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-hidden focus:outline-none">
+                              <span className="text-[16px] font-black text-slate-900 uppercase leading-tight line-clamp-2 group-hover:scale-105 transition-transform duration-300">{getSubjectName(slot.subjectId)}</span>
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); if(onJump) onJump(slot.teacherId, 'teacher'); }}
+                              className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0 hover:brightness-90 active:scale-95 transition-all" 
+                              style={{ backgroundColor: teacher?.color || '#cbd5e1' }}
+                            >
+                              <span className="text-[11px] font-black uppercase text-slate-900 truncate px-6 tracking-tight">{teacher?.name}</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="h-full cursor-pointer bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5"></div>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -21,6 +21,7 @@ export const generateWeeklyMaster = async (
 
   const inputData = {
     periods: profile.hours.totalPeriods,
+    days: [0, 1, 2, 3, 4], // Explicitly defining 5 days
     teachers: teachers.map(t => ({ 
       id: t.id, 
       name: t.name, 
@@ -50,13 +51,12 @@ export const generateWeeklyMaster = async (
     
     CONSTRAINTS:
     1. INSTITUTIONAL LOCKS: 
-       - Global locks (global: true) are forbidden for ALL classes. 
-       - Class-specific locks (classIds) are forbidden for those specific classes.
+       - Global locks are forbidden for ALL classes. 
        - NEVER assign a subject to a locked (day, period).
     2. NO TEACHER CLASHES: A teacher ID can only appear ONCE per (day, period) across the entire institution.
-    3. TEACHER REST: Every teacher MUST have their "minBreaks" distributed.
-    4. SUBJECT FREQUENCY: Each class must meet its subject "freq" per week exactly.
-    5. CONTINUITY: Max 3 back-to-back periods for any teacher.
+    3. FIVE-DAY UTILIZATION: You MUST distribute lessons across ALL 5 DAYS (0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri). Do not leave Fridays empty.
+    4. TEACHER REST: Every teacher MUST have their "minBreaks" distributed across the week.
+    5. SUBJECT FREQUENCY: Each class must meet its subject "freq" per week exactly.
     
     DATA: ${JSON.stringify(inputData)}
     
@@ -92,20 +92,18 @@ export const generateWeeklyMaster = async (
     const slots: ScheduleSlot[] = JSON.parse(text);
 
     // --- VALIDATION LAYER ---
-    const teacherSchedule = new Map<string, Set<string>>(); // "day-period" -> Set of teacherIds
+    const teacherSchedule = new Map<string, Set<string>>();
 
     for (const slot of slots) {
-      // Check for Teacher Clashes
       const key = `${slot.day}-${slot.period}`;
       if (!teacherSchedule.has(key)) teacherSchedule.set(key, new Set());
       const teachersAtTime = teacherSchedule.get(key)!;
       
       if (teachersAtTime.has(slot.teacherId)) {
-        throw new Error(`CRITICAL: Teacher Clash detected at Period ${slot.period + 1}, Day ${slot.day + 1}. A teacher is double-booked.`);
+        throw new Error(`CRITICAL: Teacher Clash at P${slot.period + 1}, Day ${slot.day + 1}. Double-booking detected.`);
       }
       teachersAtTime.add(slot.teacherId);
 
-      // Check for Lock Violations
       const lockAtSlot = lockedSlots.find(l => 
         l.dayOfWeek === slot.day && 
         l.period === slot.period && 
@@ -113,7 +111,7 @@ export const generateWeeklyMaster = async (
       );
 
       if (lockAtSlot) {
-        throw new Error(`CRITICAL: Lock violation at Period ${slot.period + 1}, Day ${slot.day + 1} for ${slot.classId}. AI attempted to override an Institutional Lock (${lockAtSlot.name}).`);
+        throw new Error(`CRITICAL: Lock violation at P${slot.period + 1}, Day ${slot.day + 1} for ${slot.classId}. AI attempted override.`);
       }
     }
 
