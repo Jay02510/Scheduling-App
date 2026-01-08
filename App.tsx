@@ -118,6 +118,27 @@ const App: React.FC = () => {
     setSchedule({ ...currentSchedule, weeklySlots: newSlots });
   };
 
+  const handleMoveScheduleSlot = (source: { day: number, period: number }, target: { day: number, period: number }, classId: string) => {
+    if (!schedule) return;
+    
+    const newSlots = [...schedule.weeklySlots];
+    const sourceIdx = newSlots.findIndex(s => s.classId === classId && s.day === source.day && s.period === source.period);
+    const targetIdx = newSlots.findIndex(s => s.classId === classId && s.day === target.day && s.period === target.period);
+
+    if (sourceIdx > -1) {
+      // If there's an existing item in target, we swap them
+      if (targetIdx > -1) {
+        const temp = { ...newSlots[sourceIdx], day: target.day, period: target.period };
+        newSlots[sourceIdx] = { ...newSlots[targetIdx], day: source.day, period: source.period };
+        newSlots[targetIdx] = temp;
+      } else {
+        // Just move to empty slot
+        newSlots[sourceIdx] = { ...newSlots[sourceIdx], day: target.day, period: target.period };
+      }
+      setSchedule({ ...schedule, weeklySlots: newSlots });
+    }
+  };
+
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
@@ -254,6 +275,7 @@ const App: React.FC = () => {
               profile={profile} 
               onGenerateRoadmap={() => {}} 
               onUpdateSlot={handleUpdateScheduleSlot}
+              onMoveSlot={handleMoveScheduleSlot}
               onNavigate={setActiveTab}
               onJump={handleEntityJump}
               initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined}

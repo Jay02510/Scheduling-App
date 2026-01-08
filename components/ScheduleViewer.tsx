@@ -12,6 +12,7 @@ interface ScheduleViewerProps {
   profile: SchoolProfile | null;
   onGenerateRoadmap: () => void;
   onUpdateSlot?: (slot: ScheduleSlot) => void;
+  onMoveSlot?: (source: { day: number, period: number }, target: { day: number, period: number }, classId: string) => void;
   onNavigate?: (tab: string) => void;
   onJump?: (id: string, type: 'teacher' | 'class') => void;
   initialClassId?: string;
@@ -24,9 +25,11 @@ const formatTime = (timeStr: string, minutesToAdd: number) => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
-const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onNavigate, onJump, initialClassId }) => {
+const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onMoveSlot, onNavigate, onJump, initialClassId }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
+  const [draggedItem, setDraggedItem] = useState<{ day: number, period: number } | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ day: number, period: number } | null>(null);
 
   useEffect(() => {
     if (initialClassId) {
@@ -46,8 +49,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
   const classSlots = (schedule?.weeklySlots || []).filter(s => s.classId === currentClass.id);
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
-  const getTeacherName = (id: string) => teachers?.find(t => t.id === id)?.name || 'Unknown';
-
+  
   const handleApplyChange = (subjectId: string) => {
     if (!editingSlot || !onUpdateSlot || !currentClass) return;
     const assignment = currentClass.assignments.find(a => a.subjectId === subjectId);
@@ -63,6 +65,29 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     setEditingSlot(null);
   };
 
+  const handleDragStart = (day: number, period: number) => {
+    setDraggedItem({ day, period });
+  };
+
+  const handleDragOver = (e: React.DragEvent, day: number, period: number) => {
+    e.preventDefault();
+    const isLocked = (lockedSlots || []).some(f => 
+      f.dayOfWeek === day && f.period === period && (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
+    );
+    if (!isLocked) {
+      setDropTarget({ day, period });
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, day: number, period: number) => {
+    e.preventDefault();
+    if (draggedItem && onMoveSlot) {
+      onMoveSlot(draggedItem, { day, period }, currentClass.id);
+    }
+    setDraggedItem(null);
+    setDropTarget(null);
+  };
+
   return (
     <div className="space-y-12 animate-fadeIn max-w-full">
       {editingSlot && (
@@ -75,7 +100,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                 {currentClass.assignments.map(a => (
                   <button key={a.subjectId} onClick={() => handleApplyChange(a.subjectId)} className="w-full py-5 rounded-2xl bg-white border-2 border-slate-100 text-slate-900 font-black text-[12px] uppercase flex items-center justify-between px-6 hover:border-slate-900 transition-all">
                     <span>{getSubjectName(a.subjectId)}</span>
-                    <span className="text-[10px] text-slate-400">{getTeacherName(a.teacherId)}</span>
+                    <span className="text-[10px] text-slate-400">{teachers.find(t => t.id === a.teacherId)?.name}</span>
                   </button>
                 ))}
               </div>
@@ -124,6 +149,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     );
                     const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                     const teacher = teachers.find(t => t.id === slot?.teacherId);
+                    const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
+                    const isDragging = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
 
                     if (lock) return (
                       <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-vivid-blocked">
@@ -134,22 +161,34 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     );
 
                     return (
-                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-white group hover:bg-slate-50 transition-colors relative align-top">
+                      <td 
+                        key={dIdx} 
+                        className={`border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] transition-all relative align-top ${isTarget ? 'bg-indigo-50 ring-4 ring-indigo-500 ring-inset z-10' : 'bg-white group hover:bg-slate-50'}`}
+                        onDragOver={(e) => handleDragOver(e, dIdx, pIdx)}
+                        onDrop={(e) => handleDrop(e, dIdx, pIdx)}
+                      >
                         {slot ? (
-                          <div className="h-full flex flex-col">
-                            <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-hidden focus:outline-none">
-                              <span className="text-[16px] font-black text-slate-900 uppercase leading-tight line-clamp-2 group-hover:scale-105 transition-transform duration-300">{getSubjectName(slot.subjectId)}</span>
+                          <div 
+                            className={`h-full flex flex-col cursor-grab active:cursor-grabbing transition-all ${isDragging ? 'opacity-30 scale-95' : ''}`}
+                            draggable="true"
+                            onDragStart={() => handleDragStart(dIdx, pIdx)}
+                          >
+                            <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-hidden focus:outline-none pointer-events-none">
+                              <span className="text-[16px] font-black text-slate-900 uppercase leading-tight line-clamp-2">{getSubjectName(slot.subjectId)}</span>
                             </button>
                             <button 
                               onClick={(e) => { e.stopPropagation(); if(onJump) onJump(slot.teacherId, 'teacher'); }}
-                              className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0 hover:brightness-90 active:scale-95 transition-all" 
+                              className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0 hover:brightness-90 transition-all pointer-events-auto" 
                               style={{ backgroundColor: teacher?.color || '#cbd5e1' }}
                             >
                               <span className="text-[11px] font-black uppercase text-slate-900 truncate px-6 tracking-tight">{teacher?.name}</span>
                             </button>
                           </div>
                         ) : (
-                          <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="h-full cursor-pointer bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5"></div>
+                          <div 
+                            onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} 
+                            className="h-full cursor-pointer bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5"
+                          ></div>
                         )}
                       </td>
                     );
@@ -159,6 +198,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             })}
           </tbody>
         </table>
+      </div>
+      <div className="flex justify-center">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] animate-pulse">DRAG LESSONS TO REARRANGE SCHEDULE</p>
       </div>
     </div>
   );
