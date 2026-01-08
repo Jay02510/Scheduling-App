@@ -12,7 +12,8 @@ interface ScheduleViewerProps {
   profile: SchoolProfile | null;
   onGenerateRoadmap: () => void;
   onUpdateSlot?: (slot: ScheduleSlot) => void;
-  onMoveSlot?: (source: { day: number, period: number }, target: { day: number, period: number }, classId: string) => void;
+  onMoveSlot?: (source: { day: number, period: number }, target: { day: number, period: number }, classId: string, isCopy: boolean) => void;
+  onFillSlots?: (source: { day: number, period: number }, range: { startDay: number, endDay: number, startPeriod: number, endPeriod: number }, classId: string) => void;
   onNavigate?: (tab: string) => void;
   onJump?: (id: string, type: 'teacher' | 'class') => void;
   initialClassId?: string;
@@ -25,18 +26,29 @@ const formatTime = (timeStr: string, minutesToAdd: number) => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
-const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onMoveSlot, onNavigate, onJump, initialClassId }) => {
+const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onMoveSlot, onFillSlots, onNavigate, onJump, initialClassId }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
+  
+  // Interaction states
   const [draggedItem, setDraggedItem] = useState<{ day: number, period: number } | null>(null);
+  const [isAltPressed, setIsAltPressed] = useState(false);
   const [dropTarget, setDropTarget] = useState<{ day: number, period: number } | null>(null);
+  
+  // Fill states
+  const [fillSource, setFillSource] = useState<{ day: number, period: number } | null>(null);
+  const [fillTarget, setFillTarget] = useState<{ day: number, period: number } | null>(null);
 
   useEffect(() => {
-    if (initialClassId) {
-      setSelectedClassId(initialClassId);
-    } else if (!selectedClassId && classes && classes.length > 0) {
-      setSelectedClassId(classes[0].id);
-    }
+    const handleKey = (e: KeyboardEvent) => setIsAltPressed(e.altKey);
+    window.addEventListener('keydown', handleKey);
+    window.addEventListener('keyup', handleKey);
+    if (initialClassId) setSelectedClassId(initialClassId);
+    else if (!selectedClassId && classes?.length > 0) setSelectedClassId(classes[0].id);
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      window.removeEventListener('keyup', handleKey);
+    };
   }, [classes, initialClassId]);
 
   const days = ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
@@ -74,22 +86,60 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     const isLocked = (lockedSlots || []).some(f => 
       f.dayOfWeek === day && f.period === period && (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
     );
-    if (!isLocked) {
-      setDropTarget({ day, period });
-    }
+    if (!isLocked) setDropTarget({ day, period });
   };
 
   const handleDrop = (e: React.DragEvent, day: number, period: number) => {
     e.preventDefault();
     if (draggedItem && onMoveSlot) {
-      onMoveSlot(draggedItem, { day, period }, currentClass.id);
+      onMoveSlot(draggedItem, { day, period }, currentClass.id, isAltPressed);
     }
     setDraggedItem(null);
     setDropTarget(null);
   };
 
+  // Fill Handle Handlers
+  const onFillStart = (e: React.MouseEvent, day: number, period: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setFillSource({ day, period });
+    setFillTarget({ day, period });
+  };
+
+  const onFillMove = (day: number, period: number) => {
+    if (fillSource) setFillTarget({ day, period });
+  };
+
+  const onFillEnd = () => {
+    if (fillSource && fillTarget && onFillSlots) {
+      // Logic: Only fill in one direction (whichever drag is further)
+      const diffDay = Math.abs(fillTarget.day - fillSource.day);
+      const diffPeriod = Math.abs(fillTarget.period - fillSource.period);
+      
+      let range;
+      if (diffDay >= diffPeriod) {
+        range = {
+          startDay: Math.min(fillSource.day, fillTarget.day),
+          endDay: Math.max(fillSource.day, fillTarget.day),
+          startPeriod: fillSource.period,
+          endPeriod: fillSource.period
+        };
+      } else {
+        range = {
+          startDay: fillSource.day,
+          endDay: fillSource.day,
+          startPeriod: Math.min(fillSource.period, fillTarget.period),
+          endPeriod: Math.max(fillSource.period, fillTarget.period)
+        };
+      }
+      onFillSlots(fillSource, range, currentClass.id);
+    }
+    setFillSource(null);
+    setFillTarget(null);
+  };
+
   return (
-    <div className="space-y-12 animate-fadeIn max-w-full">
+    <div className="space-y-12 animate-fadeIn max-w-full" onMouseUp={onFillEnd}>
       {editingSlot && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-[3rem] p-12 w-full max-w-md shadow-2xl animate-fadeIn">
@@ -134,7 +184,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             {Array.from({ length: totalPeriods }).map((_, pIdx) => {
               const pStart = formatTime(startTime, pIdx * duration);
               const pEnd = formatTime(startTime, (pIdx + 1) * duration);
-              
               return (
                 <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
                   <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 bg-slate-50 h-[140px]">
@@ -142,15 +191,18 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">{pStart} — {pEnd}</div>
                   </td>
                   {Array.from({ length: 5 }).map((_, dIdx) => {
-                    const lock = (lockedSlots || []).find(f => 
-                      f.dayOfWeek === dIdx && 
-                      f.period === pIdx && 
-                      (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
-                    );
+                    const lock = (lockedSlots || []).find(f => f.dayOfWeek === dIdx && f.period === pIdx && (f.isSchoolWide || f.classIds.includes(currentClass.id)));
                     const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                     const teacher = teachers.find(t => t.id === slot?.teacherId);
+                    
                     const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
                     const isDragging = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
+                    
+                    // Fill Logic
+                    const isInFillRange = fillSource && fillTarget && (
+                      (dIdx === fillSource.day && pIdx >= Math.min(fillSource.period, fillTarget.period) && pIdx <= Math.max(fillSource.period, fillTarget.period)) ||
+                      (pIdx === fillSource.period && dIdx >= Math.min(fillSource.day, fillTarget.day) && dIdx <= Math.max(fillSource.day, fillTarget.day))
+                    );
 
                     if (lock) return (
                       <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-vivid-blocked">
@@ -163,13 +215,17 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     return (
                       <td 
                         key={dIdx} 
-                        className={`border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] transition-all relative align-top ${isTarget ? 'bg-indigo-50 ring-4 ring-indigo-500 ring-inset z-10' : 'bg-white group hover:bg-slate-50'}`}
+                        onMouseEnter={() => onFillMove(dIdx, pIdx)}
                         onDragOver={(e) => handleDragOver(e, dIdx, pIdx)}
                         onDrop={(e) => handleDrop(e, dIdx, pIdx)}
+                        className={`border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] transition-all relative align-top ${
+                          isTarget ? 'bg-indigo-50 ring-4 ring-indigo-500 ring-inset z-10' : 
+                          isInFillRange ? 'bg-blue-50/50 ring-2 ring-blue-500 ring-inset z-20' : 'bg-white group hover:bg-slate-50'
+                        }`}
                       >
                         {slot ? (
                           <div 
-                            className={`h-full flex flex-col cursor-grab active:cursor-grabbing transition-all ${isDragging ? 'opacity-30 scale-95' : ''}`}
+                            className={`h-full flex flex-col relative ${isDragging ? 'opacity-30 scale-95' : ''} ${isAltPressed ? 'cursor-copy' : 'cursor-grab active:cursor-grabbing'}`}
                             draggable="true"
                             onDragStart={() => handleDragStart(dIdx, pIdx)}
                           >
@@ -183,13 +239,21 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                             >
                               <span className="text-[11px] font-black uppercase text-slate-900 truncate px-6 tracking-tight">{teacher?.name}</span>
                             </button>
+
+                            {/* Fill Handle */}
+                            <div 
+                              onMouseDown={(e) => onFillStart(e, dIdx, pIdx)}
+                              className="absolute bottom-1 right-1 w-3 h-3 bg-blue-600 border border-white cursor-crosshair z-30 hover:scale-125 transition-transform"
+                              title="Drag to replicate"
+                            ></div>
                           </div>
                         ) : (
                           <div 
                             onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} 
-                            className="h-full cursor-pointer bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5"
+                            className={`h-full cursor-pointer ${isInFillRange ? 'bg-blue-400/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5'}`}
                           ></div>
                         )}
+                        {isInFillRange && <div className="absolute inset-0 border-2 border-dashed border-blue-500 animate-pulse-soft pointer-events-none"></div>}
                       </td>
                     );
                   })}
@@ -199,8 +263,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </tbody>
         </table>
       </div>
-      <div className="flex justify-center">
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] animate-pulse">DRAG LESSONS TO REARRANGE SCHEDULE</p>
+      <div className="flex justify-center gap-8">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em]">DRAG TO SWAP • ALT+DRAG TO COPY</p>
+        <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.4em]">DRAG BLUE HANDLE TO FILL RANGE</p>
       </div>
     </div>
   );
