@@ -21,7 +21,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
     }
   }, [teachers, initialTeacherId]);
 
-  const days = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri'];
+  const days = ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
   const totalPeriods = profile?.hours?.totalPeriods || 8;
 
   if (!teachers || teachers.length === 0) {
@@ -62,8 +62,8 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
 
           <div className="space-y-6 relative z-10">
             <div className="flex flex-col gap-2">
-              <div className="flex justify-between text-[10px] font-black uppercase">
-                <span>Wellness (Breaks)</span>
+              <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                <span>Wellness Breaks</span>
                 <span className={actualBreaks >= breakTarget ? "text-emerald-400" : "text-rose-400"}>
                   {actualBreaks} / {breakTarget}
                 </span>
@@ -75,9 +75,9 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                 ></div>
               </div>
             </div>
-            <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+            <div className="p-5 bg-white/5 rounded-2xl border border-white/10 text-center">
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-1">Weekly Load</p>
-              <p className="text-2xl font-black">{totalLessons} <span className="text-xs text-slate-500">PERIODS</span></p>
+              <p className="text-3xl font-black">{totalLessons} <span className="text-xs text-slate-500">PERIODS</span></p>
             </div>
           </div>
         </div>
@@ -96,8 +96,8 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
         </div>
       </div>
 
-      <div className="xl:col-span-3 bg-white border-[3px] border-slate-900 rounded-[2rem] overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
-        <table className="w-full border-collapse">
+      <div className="xl:col-span-3 bg-white border-[3px] border-slate-900 rounded-[2.5rem] overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
+        <table className="w-full border-collapse table-fixed min-w-[800px]">
           <thead>
             <tr className="bg-slate-50 border-b-[3px] border-slate-900">
               <th className="border-r-[3px] border-slate-900 p-6 text-[12px] font-black uppercase text-slate-800 w-24">P</th>
@@ -107,29 +107,29 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
           <tbody>
             {Array.from({ length: totalPeriods }).map((_, pIdx) => (
               <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
-                <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50">{pIdx + 1}</td>
+                <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50 h-[140px]">{pIdx + 1}</td>
                 {Array.from({ length: 5 }).map((_, dIdx) => {
                   const lock = (profile?.lockedSlots || []).find(f => f.dayOfWeek === dIdx && f.period === pIdx && f.isSchoolWide);
                   const slot = filteredSlots.find(s => s.day === dIdx && s.period === pIdx);
                   const classInfo = slot ? (classes || []).find(c => c.id === slot.classId) : null;
                   
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-32 bg-slate-100">
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-100 align-middle">
                       <div className="h-full flex items-center justify-center opacity-40 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#000_10px,#000_11px)]">
-                        <span className="text-[9px] font-black uppercase text-slate-500 bg-white px-2 py-1 rounded-md tracking-widest shadow-sm">{lock.name}</span>
+                        <span className="text-[9px] font-black uppercase text-slate-500 bg-white px-3 py-1.5 rounded-lg tracking-widest shadow-sm">{lock.name}</span>
                       </div>
                     </td>
                   );
 
                   return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-32 min-w-[150px] bg-white group hover:bg-slate-50/50 transition-colors">
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] min-w-[150px] bg-white group hover:bg-slate-50/50 transition-colors align-top">
                       {slot ? (
                         <div className="h-full flex flex-col">
-                          <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-                            <span className="text-[12px] font-black leading-tight text-slate-900 uppercase tracking-tight">{getSubjectName(slot.subjectId)}</span>
+                          <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+                            <span className="text-[13px] font-black leading-tight text-slate-900 uppercase tracking-tight line-clamp-2">{getSubjectName(slot.subjectId)}</span>
                           </div>
-                          <div className="h-10 flex items-center justify-center border-t-[3px] border-slate-900" style={{ backgroundColor: currentTeacher?.color || '#cbd5e1' }}>
-                            <span className="text-[10px] font-black uppercase text-slate-900 truncate px-2">{classInfo?.name}</span>
+                          <div className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0" style={{ backgroundColor: currentTeacher?.color || '#cbd5e1' }}>
+                            <span className="text-[11px] font-black uppercase text-slate-900 truncate px-4">{classInfo?.name}</span>
                           </div>
                         </div>
                       ) : (

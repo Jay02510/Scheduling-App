@@ -91,19 +91,19 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
           <div className="bg-[#0f172a] p-12 rounded-[4rem] shadow-2xl text-white relative overflow-hidden group min-h-[300px] flex flex-col justify-between">
             <div className="absolute top-[-20%] right-[-20%] w-64 h-64 gradient-primary blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
             <div>
-              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8">AI Efficiency</h3>
+              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8">Pro Optimization Engine</h3>
               <div className="space-y-6">
                 <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                  <span className="text-sm font-bold text-slate-400">Timetable Score</span>
+                  <span className="text-sm font-bold text-slate-400">System Load</span>
                   <span className="text-lg font-black text-emerald-400">92%</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                  <span className="text-sm font-bold text-slate-400">Staff Rest Factor</span>
+                  <span className="text-sm font-bold text-slate-400">Staff Rhythm</span>
                   <span className="text-lg font-black text-white">Optimal</span>
                 </div>
               </div>
             </div>
-            <button onClick={onResync} className="w-full mt-10 py-5 bg-white text-slate-900 rounded-3xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl">Tune Setup</button>
+            <button onClick={onResync} className="w-full mt-10 py-5 bg-white text-slate-900 rounded-3xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl">Calibrate System</button>
           </div>
         </div>
       </div>

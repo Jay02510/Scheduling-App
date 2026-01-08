@@ -120,7 +120,7 @@ const App: React.FC = () => {
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("AI is solving your timetable...");
+    setLoadingMsg("Engine is optimizing your rhythm...");
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
       const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile);
@@ -136,7 +136,7 @@ const App: React.FC = () => {
   const handleGenerateRoadmap = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Planning curriculum...");
+    setLoadingMsg("Pro Engine is planning curriculum...");
     try {
       const plan = await generateCurriculumRoadmap(textbooks, profile);
       setSchedule({ ...schedule, weeklySlots: schedule?.weeklySlots || [], quarterlyPlan: plan });
@@ -164,7 +164,7 @@ const App: React.FC = () => {
             <div className="w-20 h-20 border-4 border-indigo-100 rounded-full"></div>
             <div className="w-20 h-20 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0"></div>
           </div>
-          <p className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em] animate-pulse">{loadingMsg}</p>
+          <p className="text-[11px] font-black text-slate-900 uppercase tracking-[0.4em] animate-pulse">{loadingMsg}</p>
         </div>
       ) : (
         <>

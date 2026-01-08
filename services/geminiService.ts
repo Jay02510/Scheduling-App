@@ -81,7 +81,7 @@ export const generateWeeklyMaster = async (
   };
 
   const prompt = `
-    TASK: Generate a school timetable.
+    TASK: You are a Pro Optimization Engine for school timetables.
     
     CONSTRAINTS:
     1. INSTITUTIONAL LOCKS: ${JSON.stringify(inputData.locks.filter(l => l.global))} are BLOCKED for ALL classes.
@@ -123,7 +123,7 @@ export const generateWeeklyMaster = async (
     const slots = JSON.parse(text);
     return slots.map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
   } catch (e) {
-    console.error("AI Generation failed", e);
+    console.error("Optimization Engine failed", e);
     throw new Error("Timetable optimization failed. Please check if your assignments are complete.");
   }
 };
@@ -133,7 +133,7 @@ export const generateCurriculumRoadmap = async (
   profile: SchoolProfile
 ): Promise<QuarterlyPlan> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Create a 12-week teaching plan for these books: ${JSON.stringify(textbooks)}. Breakdown by week.`;
+  const prompt = `Act as a Pro Optimization Engine. Create a 12-week teaching plan for these books: ${JSON.stringify(textbooks)}. Breakdown by week.`;
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -164,7 +164,7 @@ export const generateCurriculumRoadmap = async (
     });
     return JSON.parse(sanitizeJson(response.text || '{"weeks":[]}'));
   } catch (e) {
-    console.error("Roadmap generation failed", e);
+    console.error("Roadmap optimization failed", e);
     return { quarterName: "Error", weeks: [] };
   }
 };
@@ -175,7 +175,7 @@ export const analyzeSchedule = async (
   teachers: Teacher[]
 ): Promise<any> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Analyze this school schedule for burnout and efficiency. Return JSON { score, insights: [string], burnoutRisks: [string] }.`;
+  const prompt = `Act as a Pro Optimization Engine. Analyze this school schedule for burnout and efficiency. Return JSON { score, insights: [string], burnoutRisks: [string] }.`;
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',

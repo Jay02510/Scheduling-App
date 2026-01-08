@@ -62,7 +62,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn max-w-full">
       {editingSlot && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-[3rem] p-10 w-full max-w-md shadow-2xl animate-fadeIn">
@@ -89,43 +89,45 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         </div>
       </div>
 
-      <div className="bg-white border-[3px] border-slate-900 rounded-[2rem] overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
-        <table className="w-full border-collapse min-w-[800px]">
+      <div className="bg-white border-[3px] border-slate-900 rounded-[2.5rem] overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
+        <table className="w-full border-collapse table-fixed min-w-[1100px]">
           <thead>
             <tr className="bg-slate-50 border-b-[3px] border-slate-900">
-              <th className="border-r-[3px] border-slate-900 p-6 text-[12px] font-black uppercase w-24">P</th>
-              {days.map(d => <th key={d} className="border-r-[3px] last:border-r-0 border-slate-900 p-6 text-[11px] font-black uppercase tracking-widest">{d}</th>)}
+              <th className="border-r-[3px] border-slate-900 p-6 text-[12px] font-black uppercase w-28">Period</th>
+              {days.map(d => <th key={d} className="border-r-[3px] last:border-r-0 border-slate-900 p-6 text-[11px] font-black uppercase tracking-widest w-[200px]">{d}</th>)}
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: totalPeriods }).map((_, pIdx) => (
               <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
-                <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50">{pIdx + 1}</td>
+                <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50 h-[140px]">{pIdx + 1}</td>
                 {Array.from({ length: 5 }).map((_, dIdx) => {
                   const lock = (profile?.lockedSlots || []).find(f => f.dayOfWeek === dIdx && f.period === pIdx && f.isSchoolWide);
                   const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                   const teacher = teachers.find(t => t.id === slot?.teacherId);
 
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 bg-slate-100">
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-100 align-middle">
                       <div className="h-full flex items-center justify-center opacity-40 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#000_10px,#000_11px)]">
-                        <span className="text-[9px] font-black uppercase text-slate-900 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-slate-900 tracking-widest">{lock.name}</span>
+                        <span className="text-[10px] font-black uppercase text-slate-900 bg-white px-4 py-2 rounded-xl shadow-lg border-2 border-slate-900 tracking-[0.2em]">{lock.name}</span>
                       </div>
                     </td>
                   );
 
                   return (
-                    <td key={dIdx} onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-36 bg-white group hover:bg-slate-50 transition-colors cursor-pointer relative">
+                    <td key={dIdx} onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-white group hover:bg-slate-50 transition-colors cursor-pointer relative align-top">
                       {slot ? (
                         <div className="h-full flex flex-col">
-                          <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-                            <span className="text-[14px] font-black text-slate-900 uppercase leading-tight group-hover:scale-105 transition-transform">{getSubjectName(slot.subjectId)}</span>
+                          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+                            <span className="text-[15px] font-black text-slate-900 uppercase leading-tight line-clamp-2 group-hover:scale-105 transition-transform duration-300">{getSubjectName(slot.subjectId)}</span>
                           </div>
-                          <div className="h-10 flex items-center justify-center border-t-[3px] border-slate-900" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
-                            <span className="text-[9px] font-black uppercase text-slate-900 truncate px-2 tracking-tighter">{teacher?.name}</span>
+                          <div className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
+                            <span className="text-[10px] font-black uppercase text-slate-900 truncate px-4 tracking-tight">{teacher?.name}</span>
                           </div>
                         </div>
-                      ) : <div className="h-full opacity-5 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)]"></div>}
+                      ) : (
+                        <div className="h-full opacity-5 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)]"></div>
+                      )}
                     </td>
                   );
                 })}
