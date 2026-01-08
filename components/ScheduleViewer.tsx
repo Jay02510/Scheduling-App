@@ -34,10 +34,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   if (!currentClass) return null;
 
   const classSlots = (schedule?.weeklySlots || []).filter(s => s.classId === currentClass.id);
-  const classTextbooks = textbooks.filter(t => t.classId === currentClass.id);
-
-  const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || 'Unknown';
-  const getTeacherName = (id: string) => teachers.find(t => t.id === id)?.name || 'Unknown';
+  const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
+  const getTeacherName = (id: string) => teachers?.find(t => t.id === id)?.name || 'Unknown';
 
   const handleApplyChange = (subjectId: string) => {
     if (!editingSlot || !onUpdateSlot || !currentClass) return;
@@ -110,8 +108,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                   const teacher = teachers.find(t => t.id === slot?.teacherId);
 
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-50 align-middle relative overflow-hidden">
-                      <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(0,0,0,0.02)_10px,rgba(0,0,0,0.02)_11px)]"></div>
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-slate-50/50">
+                      <div className="absolute inset-0 border-2 border-dashed border-slate-200 m-2 rounded-2xl"></div>
                       <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
                         <span className="text-[16px] font-black uppercase tracking-tighter text-slate-900">{lock.name}</span>
                       </div>

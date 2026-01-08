@@ -30,10 +30,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
   const [assignmentTea, setAssignmentTea] = useState('');
   const [showAddAssignment, setShowAddAssignment] = useState(false);
 
-  const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || 'Unknown';
-  const getTeacherName = (id: string) => teachers.find(t => t.id === id)?.name || 'Unknown';
-  const getClassColor = (id: string) => classes.find(c => c.id === id)?.color || '#cbd5e1';
-  const getClassName = (id: string) => classes.find(c => c.id === id)?.name || 'Unknown';
+  const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown Subject';
+  const getTeacherName = (id: string) => teachers?.find(t => t.id === id)?.name || 'Unknown Faculty';
+  const getClassColor = (id: string) => classes?.find(c => c.id === id)?.color || '#cbd5e1';
+  const getClassName = (id: string) => classes?.find(c => c.id === id)?.name || 'Unknown Group';
 
   const handleAddNewTeacher = () => {
     const newId = Math.random().toString(36).substr(2, 9);
@@ -115,7 +115,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                 </div>
               ))}
             </div>
-            <button onClick={() => setShowAddAssignment(true)} className="w-full py-8 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-widest hover:border-indigo-100 hover:text-indigo-400 transition-all">+ Add Lesson Assignment</button>
           </div>
         </div>
       </div>
@@ -136,7 +135,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           <div>
             <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-2">Immovable Engagement Name</span>
             <input className="text-5xl font-black text-slate-900 bg-transparent border-0 p-0 focus:ring-0 w-full uppercase tracking-tighter" value={lock.name} onChange={e => updateLock(lock.id, { name: e.target.value })} autoFocus />
-            <p className="text-[10px] text-slate-400 mt-3 font-bold uppercase tracking-widest">e.g. GYM, SWIMMING, DANCE, LUNCH</p>
           </div>
           
           <div className="space-y-4">
@@ -189,7 +187,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           <p className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.4em] mt-3">Architect the School Lifecycle</p>
         </div>
         <button onClick={onGenerate} className="gradient-primary text-white px-14 py-7 rounded-[2.5rem] shadow-2xl font-black text-[13px] uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all group">
-          Optimize Engine Rhythms
+          Generate Schedule
           <svg className="w-4 h-4 inline-block ml-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
         </button>
       </div>
@@ -245,6 +243,27 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           </div>
         )}
 
+        {activeTab === 'subjects' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-4">
+            {subjects && subjects.length > 0 ? subjects.map(s => (
+               <div key={s.id} className="p-10 bg-slate-50 rounded-[3.5rem] space-y-6 shadow-sm border border-transparent hover:border-indigo-100 transition-all">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Subject Name</span>
+                    <input className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 font-black text-slate-900 uppercase text-xs focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none shadow-sm" value={s.name} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, name: e.target.value} : sub))} />
+                  </div>
+                  <div className="flex items-center justify-between px-2 pt-4 border-t border-slate-200/50">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Load: Periods / Week</span>
+                    <input type="number" className="w-14 bg-white border border-slate-100 rounded-xl px-2 py-2 text-center font-black text-indigo-600 outline-none text-lg shadow-inner" value={s.frequencyPerWeek} onChange={e => setSubjects(subjects.map(sub => sub.id === s.id ? {...sub, frequencyPerWeek: parseInt(e.target.value) || 1} : sub))} />
+                  </div>
+               </div>
+            )) : (
+              <div className="col-span-full py-20 text-center border-4 border-dashed border-slate-100 rounded-[3.5rem]">
+                <p className="text-slate-300 font-black text-[12px] uppercase tracking-widest">No Subjects defined in Institution Profile</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'global' && (
           <div className="space-y-12 animate-fadeIn p-4">
             <div className="bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800 shadow-2xl relative overflow-hidden group">
@@ -293,7 +312,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                                     </div>
                                   ) : (
                                     <div className="flex flex-wrap justify-center gap-1.5 mt-5">
-                                      {lock.classIds.map(cid => (
+                                      {lock.classIds?.map(cid => (
                                         <div 
                                           key={cid} 
                                           className="px-2 py-1 rounded-full text-[7px] font-black text-white uppercase shadow-sm" 
@@ -302,7 +321,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                                           {getClassName(cid)}
                                         </div>
                                       ))}
-                                      {lock.classIds.length === 0 && (
+                                      {(!lock.classIds || lock.classIds.length === 0) && (
                                         <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest animate-pulse">Assign Group</span>
                                       )}
                                     </div>
