@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
@@ -8,10 +9,9 @@ import Dashboard from './components/Dashboard';
 import ScheduleForm from './components/ScheduleForm';
 import ScheduleViewer from './components/ScheduleViewer';
 import TeacherView from './components/TeacherView';
+import MasterRhythm from './components/MasterRhythm';
 import Onboarding from './components/Onboarding';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
-import ResourcePlanner from './components/ResourcePlanner';
-import SchoolCalendar from './components/SchoolCalendar';
 import Settings from './components/Settings';
 import Auth from './components/Auth';
 
@@ -22,9 +22,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [timetableMode, setTimetableMode] = useState<'school' | 'staff'>('school');
   
-  // Navigation Context for deep linking from Dashboard
   const [navigationFocus, setNavigationFocus] = useState<{ id: string, type: 'teacher' | 'class' } | null>(null);
 
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
@@ -93,8 +91,7 @@ const App: React.FC = () => {
 
   const handleEntityJump = (id: string, type: 'teacher' | 'class') => {
     setNavigationFocus({ id, type });
-    setTimetableMode(type === 'teacher' ? 'staff' : 'school');
-    setActiveTab('timetable');
+    setActiveTab(type === 'teacher' ? 'faculty' : 'homerooms');
   };
 
   const handleUpdateScheduleSlot = (updatedSlot: ScheduleSlot) => {
@@ -125,23 +122,9 @@ const App: React.FC = () => {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
       const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile);
       setSchedule({ ...schedule, weeklySlots: slots, quarterlyPlan: schedule?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } });
-      setActiveTab('timetable');
+      setActiveTab('homerooms');
     } catch (e: any) {
       alert(e.message || "Optimization failed.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGenerateRoadmap = async () => {
-    if (!user || !profile) return;
-    setIsLoading(true);
-    setLoadingMsg("Pro Engine is planning curriculum...");
-    try {
-      const plan = await generateCurriculumRoadmap(textbooks, profile);
-      setSchedule({ ...schedule, weeklySlots: schedule?.weeklySlots || [], quarterlyPlan: plan });
-    } catch (e: any) {
-      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -177,6 +160,33 @@ const App: React.FC = () => {
               onJump={handleEntityJump}
             />
           )}
+          {activeTab === 'master' && (
+            <MasterRhythm profile={profile} />
+          )}
+          {activeTab === 'homerooms' && (
+            <ScheduleViewer 
+              schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} 
+              classes={classes} 
+              teachers={teachers} 
+              subjects={subjects} 
+              textbooks={textbooks}
+              profile={profile} 
+              onGenerateRoadmap={() => {}} 
+              onUpdateSlot={handleUpdateScheduleSlot}
+              onNavigate={setActiveTab}
+              initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined}
+            />
+          )}
+          {activeTab === 'faculty' && (
+            <TeacherView 
+              schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} 
+              teachers={teachers} 
+              classes={classes} 
+              subjects={subjects} 
+              profile={profile} 
+              initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined}
+            />
+          )}
           {activeTab === 'setup' && (
             <ScheduleForm 
               profile={profile} 
@@ -194,42 +204,6 @@ const App: React.FC = () => {
               onGenerate={handleGenerateMaster} 
               schedule={schedule} 
             />
-          )}
-          {activeTab === 'timetable' && (
-            <div className="space-y-8 animate-fadeIn">
-               <div className="flex justify-center bg-slate-100 p-1.5 rounded-2xl w-fit mx-auto shadow-inner">
-                  <button onClick={() => setTimetableMode('school')} className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Class Grids</button>
-                  <button onClick={() => setTimetableMode('staff')} className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timetableMode === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Staff Wellness</button>
-               </div>
-               {timetableMode === 'school' ? (
-                 <ScheduleViewer 
-                    schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} 
-                    classes={classes} 
-                    teachers={teachers} 
-                    subjects={subjects} 
-                    profile={profile} 
-                    onGenerateRoadmap={handleGenerateRoadmap} 
-                    onUpdateSlot={handleUpdateScheduleSlot}
-                    onNavigate={setActiveTab}
-                    initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined}
-                  />
-               ) : (
-                 <TeacherView 
-                   schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} 
-                   teachers={teachers} 
-                   classes={classes} 
-                   subjects={subjects} 
-                   profile={profile} 
-                   initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined}
-                 />
-               )}
-            </div>
-          )}
-          {activeTab === 'planner' && (
-            <div className="space-y-16">
-              <ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} />
-              <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => profile && setProfile({...profile, specialEvents: evs})} />
-            </div>
           )}
           {activeTab === 'insights' && schedule && profile && (
             <AnalyticsDashboard schedule={schedule} profile={profile} teachers={teachers} />
