@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { SchoolSchedule, Teacher, ClassGroup, SchoolProfile, SubjectConfig } from '../types';
+import { SchoolSchedule, Teacher, ClassGroup, SchoolProfile, SubjectConfig, LockedSlot } from '../types';
 
 interface TeacherViewProps {
   schedule: SchoolSchedule;
   teachers: Teacher[];
   classes: ClassGroup[];
   subjects: SubjectConfig[];
+  lockedSlots: LockedSlot[];
   profile: SchoolProfile | null;
   initialTeacherId?: string;
 }
 
-const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, subjects, profile, initialTeacherId }) => {
+const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, subjects, lockedSlots, profile, initialTeacherId }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   
   useEffect(() => {
@@ -102,17 +103,17 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                   const slot = filteredSlots.find(s => s.day === dIdx && s.period === pIdx);
                   const classInfo = slot ? (classes || []).find(c => c.id === slot.classId) : null;
                   
-                  const lock = (profile?.lockedSlots || []).find(f => 
+                  const lock = (lockedSlots || []).find(f => 
                     f.dayOfWeek === dIdx && 
                     f.period === pIdx && 
                     (f.isSchoolWide || (classInfo && f.classIds?.includes(classInfo.id)))
                   );
 
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-50/50 align-middle relative">
-                      <div className="absolute inset-0 border-2 border-dashed border-slate-200 m-2 rounded-2xl"></div>
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-50 align-middle relative">
+                      <div className="absolute inset-0 border-2 border-dashed border-slate-200 m-2 rounded-2xl opacity-20"></div>
                       <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
-                        <span className="text-[12px] font-black uppercase tracking-tight text-slate-500">{lock.name}</span>
+                        <span className="text-[12px] font-black uppercase tracking-tight text-slate-500 leading-none">{lock.name}</span>
                       </div>
                     </td>
                   );

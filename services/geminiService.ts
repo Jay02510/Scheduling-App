@@ -6,40 +6,6 @@ const sanitizeJson = (text: string) => {
   return text.replace(/```json/g, "").replace(/```/g, "").trim();
 };
 
-export const parseStaffList = async (text: string): Promise<Partial<Teacher>[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `
-    Parse this teacher list into JSON. 
-    Terms to watch for: "Homeroom" (homeroom), "Specialist" (specialist), "Subject" (subject).
-    Raw Text: "${text}"
-    Return JSON array: { name, role }.
-  `;
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              role: { type: Type.STRING, enum: ['homeroom', 'specialist', 'subject'] }
-            },
-            required: ["name", "role"]
-          }
-        }
-      }
-    });
-    return JSON.parse(sanitizeJson(response.text || '[]'));
-  } catch (e) {
-    console.error("Staff parsing failed", e);
-    return [];
-  }
-};
-
 export const generateWeeklyMaster = async (
   teachers: Teacher[],
   lockedSlots: LockedSlot[],
@@ -48,7 +14,6 @@ export const generateWeeklyMaster = async (
 ): Promise<ScheduleSlot[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Filter out any invalid assignments
   const sanitizedClasses = classes.map(c => ({
     ...c,
     assignments: (c.assignments || []).filter(a => a.teacherId && a.subjectId)
@@ -56,7 +21,6 @@ export const generateWeeklyMaster = async (
 
   const inputData = {
     periods: profile.hours.totalPeriods,
-    lunchAfter: profile.hours.lunchAfterPeriod,
     teachers: teachers.map(t => ({ 
       id: t.id, 
       name: t.name, 
@@ -76,6 +40,7 @@ export const generateWeeklyMaster = async (
       day: l.dayOfWeek, 
       period: l.period, 
       global: l.isSchoolWide, 
+      classIds: l.classIds || [],
       name: l.name 
     }))
   };
@@ -84,15 +49,19 @@ export const generateWeeklyMaster = async (
     TASK: You are a Pro Optimization Engine for school timetables.
     
     CONSTRAINTS:
-    1. INSTITUTIONAL LOCKS: ${JSON.stringify(inputData.locks.filter(l => l.global))} are BLOCKED for ALL classes.
-    2. TEACHER REST: Every teacher MUST have at least their "minBreaks" distributed across the week.
-    3. NO CLASHES: A teacher cannot teach two classes in the same period.
+    1. INSTITUTIONAL LOCKS: 
+       - Global locks (global: true) are forbidden for ALL classes. 
+       - Class-specific locks (classIds) are forbidden for those specific classes.
+       - NEVER assign a subject to a locked (day, period).
+    2. NO TEACHER CLASHES: A teacher ID can only appear ONCE per (day, period) across the entire institution.
+    3. TEACHER REST: Every teacher MUST have their "minBreaks" distributed.
     4. SUBJECT FREQUENCY: Each class must meet its subject "freq" per week exactly.
     5. CONTINUITY: Max 3 back-to-back periods for any teacher.
     
     DATA: ${JSON.stringify(inputData)}
     
-    RETURN: A JSON array of scheduled slots.
+    RETURN: A JSON array of scheduled slots. 
+    FORMAT: [{period, day, subjectId, teacherId, classId}]
   `;
 
   try {
@@ -120,11 +89,38 @@ export const generateWeeklyMaster = async (
     });
 
     const text = sanitizeJson(response.text || '[]');
-    const slots = JSON.parse(text);
-    return slots.map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
-  } catch (e) {
+    const slots: ScheduleSlot[] = JSON.parse(text);
+
+    // --- VALIDATION LAYER ---
+    const teacherSchedule = new Map<string, Set<string>>(); // "day-period" -> Set of teacherIds
+
+    for (const slot of slots) {
+      // Check for Teacher Clashes
+      const key = `${slot.day}-${slot.period}`;
+      if (!teacherSchedule.has(key)) teacherSchedule.set(key, new Set());
+      const teachersAtTime = teacherSchedule.get(key)!;
+      
+      if (teachersAtTime.has(slot.teacherId)) {
+        throw new Error(`CRITICAL: Teacher Clash detected at Period ${slot.period + 1}, Day ${slot.day + 1}. A teacher is double-booked.`);
+      }
+      teachersAtTime.add(slot.teacherId);
+
+      // Check for Lock Violations
+      const lockAtSlot = lockedSlots.find(l => 
+        l.dayOfWeek === slot.day && 
+        l.period === slot.period && 
+        (l.isSchoolWide || (l.classIds && l.classIds.includes(slot.classId)))
+      );
+
+      if (lockAtSlot) {
+        throw new Error(`CRITICAL: Lock violation at Period ${slot.period + 1}, Day ${slot.day + 1} for ${slot.classId}. AI attempted to override an Institutional Lock (${lockAtSlot.name}).`);
+      }
+    }
+
+    return slots.map(s => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
+  } catch (e: any) {
     console.error("Optimization Engine failed", e);
-    throw new Error("Timetable optimization failed. Please check if your assignments are complete.");
+    throw new Error(e.message || "Timetable optimization failed. Constraints could not be satisfied.");
   }
 };
 

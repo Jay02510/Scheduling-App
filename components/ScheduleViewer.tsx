@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, SubjectConfig, ScheduleSlot, Textbook } from '../types';
+import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, SubjectConfig, ScheduleSlot, Textbook, LockedSlot } from '../types';
 
 interface ScheduleViewerProps {
   schedule: SchoolSchedule;
@@ -8,6 +8,7 @@ interface ScheduleViewerProps {
   teachers: Teacher[];
   subjects: SubjectConfig[];
   textbooks: Textbook[];
+  lockedSlots: LockedSlot[];
   profile: SchoolProfile | null;
   onGenerateRoadmap: () => void;
   onUpdateSlot?: (slot: ScheduleSlot) => void;
@@ -15,7 +16,7 @@ interface ScheduleViewerProps {
   initialClassId?: string;
 }
 
-const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, profile, onGenerateRoadmap, onUpdateSlot, onNavigate, initialClassId }) => {
+const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onNavigate, initialClassId }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
 
@@ -99,7 +100,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
               <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
                 <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 text-4xl bg-slate-50 h-[140px]">{pIdx + 1}</td>
                 {Array.from({ length: 5 }).map((_, dIdx) => {
-                  const lock = (profile?.lockedSlots || []).find(f => 
+                  const lock = (lockedSlots || []).find(f => 
                     f.dayOfWeek === dIdx && 
                     f.period === pIdx && 
                     (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
@@ -108,10 +109,11 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                   const teacher = teachers.find(t => t.id === slot?.teacherId);
 
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-slate-50/50">
-                      <div className="absolute inset-0 border-2 border-dashed border-slate-200 m-2 rounded-2xl"></div>
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-slate-50">
+                      <div className="absolute inset-0 border-2 border-dashed border-slate-200 m-2 rounded-2xl opacity-20"></div>
                       <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
-                        <span className="text-[16px] font-black uppercase tracking-tighter text-slate-900">{lock.name}</span>
+                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-2 opacity-50">Blocked Slot</span>
+                        <span className="text-[14px] font-black uppercase tracking-tight text-slate-900 leading-none">{lock.name}</span>
                       </div>
                     </td>
                   );
