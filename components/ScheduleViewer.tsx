@@ -29,13 +29,9 @@ const formatTime = (timeStr: string, minutesToAdd: number) => {
 const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onMoveSlot, onFillSlots, onNavigate, onJump, initialClassId }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
-  
-  // Interaction states
   const [draggedItem, setDraggedItem] = useState<{ day: number, period: number } | null>(null);
   const [isAltPressed, setIsAltPressed] = useState(false);
   const [dropTarget, setDropTarget] = useState<{ day: number, period: number } | null>(null);
-  
-  // Fill states
   const [fillSource, setFillSource] = useState<{ day: number, period: number } | null>(null);
   const [fillTarget, setFillTarget] = useState<{ day: number, period: number } | null>(null);
 
@@ -77,9 +73,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     setEditingSlot(null);
   };
 
-  const handleDragStart = (day: number, period: number) => {
-    setDraggedItem({ day, period });
-  };
+  const handleDragStart = (day: number, period: number) => setDraggedItem({ day, period });
 
   const handleDragOver = (e: React.DragEvent, day: number, period: number) => {
     e.preventDefault();
@@ -98,48 +92,31 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     setDropTarget(null);
   };
 
-  // Fill Handle Handlers
   const onFillStart = (e: React.MouseEvent, day: number, period: number) => {
-    e.stopPropagation();
-    e.preventDefault();
+    e.stopPropagation(); e.preventDefault();
     setFillSource({ day, period });
     setFillTarget({ day, period });
   };
 
-  const onFillMove = (day: number, period: number) => {
-    if (fillSource) setFillTarget({ day, period });
-  };
+  const onFillMove = (day: number, period: number) => { if (fillSource) setFillTarget({ day, period }); };
 
   const onFillEnd = () => {
     if (fillSource && fillTarget && onFillSlots) {
-      // Logic: Only fill in one direction (whichever drag is further)
       const diffDay = Math.abs(fillTarget.day - fillSource.day);
       const diffPeriod = Math.abs(fillTarget.period - fillSource.period);
-      
       let range;
       if (diffDay >= diffPeriod) {
-        range = {
-          startDay: Math.min(fillSource.day, fillTarget.day),
-          endDay: Math.max(fillSource.day, fillTarget.day),
-          startPeriod: fillSource.period,
-          endPeriod: fillSource.period
-        };
+        range = { startDay: Math.min(fillSource.day, fillTarget.day), endDay: Math.max(fillSource.day, fillTarget.day), startPeriod: fillSource.period, endPeriod: fillSource.period };
       } else {
-        range = {
-          startDay: fillSource.day,
-          endDay: fillSource.day,
-          startPeriod: Math.min(fillSource.period, fillTarget.period),
-          endPeriod: Math.max(fillSource.period, fillTarget.period)
-        };
+        range = { startDay: fillSource.day, endDay: fillSource.day, startPeriod: Math.min(fillSource.period, fillTarget.period), endPeriod: Math.max(fillSource.period, fillTarget.period) };
       }
       onFillSlots(fillSource, range, currentClass.id);
     }
-    setFillSource(null);
-    setFillTarget(null);
+    setFillSource(null); setFillTarget(null);
   };
 
   return (
-    <div className="space-y-12 animate-fadeIn max-w-full" onMouseUp={onFillEnd}>
+    <div className="space-y-8 animate-fadeIn max-w-full" onMouseUp={onFillEnd}>
       {editingSlot && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-[3rem] p-12 w-full max-w-md shadow-2xl animate-fadeIn">
@@ -162,22 +139,22 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
       <header className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
-          <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">Homeroom Portal</h2>
-          <p className="text-slate-500 font-bold text-[11px] uppercase tracking-[0.3em] mt-2">Class Rhythm & Resources</p>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Homeroom Portal</h2>
+          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Class Rhythm & Resources</p>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-2 rounded-[2rem] border border-slate-200">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
           {classes.map(c => (
-            <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-6 py-3 rounded-[1.4rem] text-[10px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
+            <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
           ))}
         </div>
       </header>
 
-      <div className="bg-white border-[3px] border-slate-900 rounded-[3rem] overflow-hidden shadow-[16px_16px_0px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
-        <table className="w-full border-collapse table-fixed min-w-[1100px]">
+      <div className="bg-white border-[2px] border-slate-900 rounded-[2.5rem] overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.03)] max-w-full overflow-x-auto">
+        <table className="w-full border-collapse table-fixed min-w-[1000px]">
           <thead>
-            <tr className="bg-slate-50 border-b-[3px] border-slate-900">
-              <th className="border-r-[3px] border-slate-900 p-8 text-[12px] font-black uppercase w-48">Period</th>
-              {days.map(d => <th key={d} className="border-r-[3px] last:border-r-0 border-slate-900 p-8 text-[12px] font-black uppercase tracking-widest">{d}</th>)}
+            <tr className="bg-slate-50 border-b-[2px] border-slate-900">
+              <th className="border-r-[2px] border-slate-900 p-4 text-[10px] font-black uppercase w-40">Period</th>
+              {days.map(d => <th key={d} className="border-r-[2px] last:border-r-0 border-slate-900 p-4 text-[10px] font-black uppercase tracking-widest">{d}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -185,73 +162,45 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
               const pStart = formatTime(startTime, pIdx * duration);
               const pEnd = formatTime(startTime, (pIdx + 1) * duration);
               return (
-                <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
-                  <td className="border-r-[3px] border-slate-900 p-8 text-center font-black text-slate-900 bg-slate-50 h-[140px]">
-                    <div className="text-3xl tracking-tighter leading-none mb-2">{pIdx + 1}</div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">{pStart} — {pEnd}</div>
+                <tr key={pIdx} className="border-b-[2px] border-slate-900 last:border-b-0">
+                  <td className="border-r-[2px] border-slate-900 p-4 text-center font-black text-slate-900 bg-slate-50 h-[110px]">
+                    <div className="text-2xl tracking-tighter leading-none mb-1">{pIdx + 1}</div>
+                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">{pStart} — {pEnd}</div>
                   </td>
                   {Array.from({ length: 5 }).map((_, dIdx) => {
                     const lock = (lockedSlots || []).find(f => f.dayOfWeek === dIdx && f.period === pIdx && (f.isSchoolWide || f.classIds.includes(currentClass.id)));
                     const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                     const teacher = teachers.find(t => t.id === slot?.teacherId);
-                    
                     const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
                     const isDragging = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
-                    
-                    // Fill Logic
                     const isInFillRange = fillSource && fillTarget && (
                       (dIdx === fillSource.day && pIdx >= Math.min(fillSource.period, fillTarget.period) && pIdx <= Math.max(fillSource.period, fillTarget.period)) ||
                       (pIdx === fillSource.period && dIdx >= Math.min(fillSource.day, fillTarget.day) && dIdx <= Math.max(fillSource.day, fillTarget.day))
                     );
 
                     if (lock) return (
-                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-vivid-blocked">
-                        <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
-                          <span className="text-[14px] font-black uppercase tracking-[0.2em] text-white leading-none drop-shadow-lg">{lock.name}</span>
+                      <td key={dIdx} className="border-r-[2px] last:border-r-0 border-slate-900 p-0 h-[110px] align-middle relative overflow-hidden bg-vivid-blocked">
+                        <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
+                          <span className="text-[11px] font-black uppercase tracking-tight text-slate-500 leading-none">{lock.name}</span>
                         </div>
                       </td>
                     );
 
                     return (
-                      <td 
-                        key={dIdx} 
-                        onMouseEnter={() => onFillMove(dIdx, pIdx)}
-                        onDragOver={(e) => handleDragOver(e, dIdx, pIdx)}
-                        onDrop={(e) => handleDrop(e, dIdx, pIdx)}
-                        className={`border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] transition-all relative align-top ${
-                          isTarget ? 'bg-indigo-50 ring-4 ring-indigo-500 ring-inset z-10' : 
-                          isInFillRange ? 'bg-blue-50/50 ring-2 ring-blue-500 ring-inset z-20' : 'bg-white group hover:bg-slate-50'
-                        }`}
-                      >
+                      <td key={dIdx} onMouseEnter={() => onFillMove(dIdx, pIdx)} onDragOver={(e) => handleDragOver(e, dIdx, pIdx)} onDrop={(e) => handleDrop(e, dIdx, pIdx)}
+                        className={`border-r-[2px] last:border-r-0 border-slate-900 p-0 h-[110px] transition-all relative align-top ${isTarget ? 'bg-indigo-50 ring-2 ring-indigo-500 ring-inset z-10' : isInFillRange ? 'bg-blue-50/50 ring-2 ring-blue-500 ring-inset z-20' : 'bg-white group hover:bg-slate-50'}`}>
                         {slot ? (
-                          <div 
-                            className={`h-full flex flex-col relative ${isDragging ? 'opacity-30 scale-95' : ''} ${isAltPressed ? 'cursor-copy' : 'cursor-grab active:cursor-grabbing'}`}
-                            draggable="true"
-                            onDragStart={() => handleDragStart(dIdx, pIdx)}
-                          >
-                            <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-hidden focus:outline-none pointer-events-none">
-                              <span className="text-[16px] font-black text-slate-900 uppercase leading-tight line-clamp-2">{getSubjectName(slot.subjectId)}</span>
+                          <div className={`h-full flex flex-col relative ${isDragging ? 'opacity-30 scale-95' : ''} ${isAltPressed ? 'cursor-copy' : 'cursor-grab active:cursor-grabbing'}`} draggable="true" onDragStart={() => handleDragStart(dIdx, pIdx)}>
+                            <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden pointer-events-none">
+                              <span className="text-[13px] font-black text-slate-900 uppercase leading-tight line-clamp-2 tracking-tight">{getSubjectName(slot.subjectId)}</span>
                             </button>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); if(onJump) onJump(slot.teacherId, 'teacher'); }}
-                              className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0 hover:brightness-90 transition-all pointer-events-auto" 
-                              style={{ backgroundColor: teacher?.color || '#cbd5e1' }}
-                            >
-                              <span className="text-[11px] font-black uppercase text-slate-900 truncate px-6 tracking-tight">{teacher?.name}</span>
+                            <button onClick={(e) => { e.stopPropagation(); if(onJump) onJump(slot.teacherId, 'teacher'); }} className="h-8 flex items-center justify-center border-t-[2px] border-slate-900 shrink-0 hover:brightness-95 transition-all pointer-events-auto" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
+                              <span className="text-[9px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{teacher?.name}</span>
                             </button>
-
-                            {/* Fill Handle */}
-                            <div 
-                              onMouseDown={(e) => onFillStart(e, dIdx, pIdx)}
-                              className="absolute bottom-1 right-1 w-3 h-3 bg-blue-600 border border-white cursor-crosshair z-30 hover:scale-125 transition-transform"
-                              title="Drag to replicate"
-                            ></div>
+                            <div onMouseDown={(e) => onFillStart(e, dIdx, pIdx)} className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-blue-600 border border-white cursor-crosshair z-30 hover:scale-125 transition-transform" title="Replicate"></div>
                           </div>
                         ) : (
-                          <div 
-                            onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} 
-                            className={`h-full cursor-pointer ${isInFillRange ? 'bg-blue-400/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5'}`}
-                          ></div>
+                          <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className={`h-full cursor-pointer ${isInFillRange ? 'bg-blue-400/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-[0.03]'}`}></div>
                         )}
                         {isInFillRange && <div className="absolute inset-0 border-2 border-dashed border-blue-500 animate-pulse-soft pointer-events-none"></div>}
                       </td>
@@ -263,9 +212,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </tbody>
         </table>
       </div>
-      <div className="flex justify-center gap-8">
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em]">DRAG TO SWAP • ALT+DRAG TO COPY</p>
-        <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.4em]">DRAG BLUE HANDLE TO FILL RANGE</p>
+      <div className="flex justify-center gap-6">
+        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">SWAP • ALT+COPY • FILL HANDLE</p>
       </div>
     </div>
   );
