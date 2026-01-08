@@ -52,7 +52,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
           <div className="space-y-6 flex-1 overflow-hidden flex flex-col">
             <div className="shrink-0">
                <h5 className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4 border-b border-white/5 pb-2">Load Registry</h5>
-               <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scrollbar pr-2">
+               <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                 {teachers.map(t => (
                   <button 
                     key={t.id} 
@@ -110,10 +110,9 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                   );
 
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-slate-50 align-middle relative">
-                      <div className="absolute inset-0 border-2 border-dashed border-slate-200 m-2 rounded-2xl opacity-20"></div>
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-vivid-blocked align-middle relative overflow-hidden">
                       <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
-                        <span className="text-[12px] font-black uppercase tracking-tight text-slate-500 leading-none">{lock.name}</span>
+                        <span className="text-[12px] font-black uppercase tracking-tight text-white leading-none drop-shadow-lg">{lock.name}</span>
                       </div>
                     </td>
                   );

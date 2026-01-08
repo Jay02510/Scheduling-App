@@ -13,10 +13,11 @@ interface ScheduleViewerProps {
   onGenerateRoadmap: () => void;
   onUpdateSlot?: (slot: ScheduleSlot) => void;
   onNavigate?: (tab: string) => void;
+  onJump?: (id: string, type: 'teacher' | 'class') => void;
   initialClassId?: string;
 }
 
-const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onNavigate, initialClassId }) => {
+const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onNavigate, onJump, initialClassId }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
 
@@ -109,28 +110,30 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                   const teacher = teachers.find(t => t.id === slot?.teacherId);
 
                   if (lock) return (
-                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-slate-50">
-                      <div className="absolute inset-0 border-2 border-dashed border-slate-200 m-2 rounded-2xl opacity-20"></div>
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] align-middle relative overflow-hidden bg-vivid-blocked">
                       <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
-                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-2 opacity-50">Blocked Slot</span>
-                        <span className="text-[14px] font-black uppercase tracking-tight text-slate-900 leading-none">{lock.name}</span>
+                        <span className="text-[14px] font-black uppercase tracking-[0.2em] text-white leading-none drop-shadow-lg">{lock.name}</span>
                       </div>
                     </td>
                   );
 
                   return (
-                    <td key={dIdx} onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-white group hover:bg-slate-50 transition-colors cursor-pointer relative align-top">
+                    <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[140px] bg-white group hover:bg-slate-50 transition-colors relative align-top">
                       {slot ? (
                         <div className="h-full flex flex-col">
-                          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+                          <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-hidden focus:outline-none">
                             <span className="text-[16px] font-black text-slate-900 uppercase leading-tight line-clamp-2 group-hover:scale-105 transition-transform duration-300">{getSubjectName(slot.subjectId)}</span>
-                          </div>
-                          <div className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
+                          </button>
+                          <button 
+                            onClick={() => onJump?.(slot.teacherId, 'teacher')}
+                            className="h-12 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0 hover:brightness-90 active:scale-95 transition-all" 
+                            style={{ backgroundColor: teacher?.color || '#cbd5e1' }}
+                          >
                             <span className="text-[11px] font-black uppercase text-slate-900 truncate px-6 tracking-tight">{teacher?.name}</span>
-                          </div>
+                          </button>
                         </div>
                       ) : (
-                        <div className="h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5"></div>
+                        <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="h-full cursor-pointer bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-5"></div>
                       )}
                     </td>
                   );

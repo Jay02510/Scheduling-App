@@ -255,6 +255,7 @@ const App: React.FC = () => {
               onGenerateRoadmap={() => {}} 
               onUpdateSlot={handleUpdateScheduleSlot}
               onNavigate={setActiveTab}
+              onJump={handleEntityJump}
               initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined}
             />
           )}
