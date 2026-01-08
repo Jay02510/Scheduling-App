@@ -26,7 +26,7 @@ interface ScheduleFormProps {
 const ScheduleForm: React.FC<ScheduleFormProps> = ({ 
   onGenerate, profile, setProfile, teachers, setTeachers, classes, setClasses, textbooks, subjects, setSubjects, lockedSlots, setLockedSlots, schedule, onMoveLock, onFillLocks, onNavigate 
 }) => {
-  const [activeTab, setActiveTab] = useState<'classes' | 'staff' | 'subjects' | 'global' | 'rhythm'>('classes');
+  const [activeTab, setActiveTab] = useState<'classes' | 'staff' | 'subjects' | 'global' | 'rhythm' | 'tuning'>('classes');
   const [detailView, setDetailView] = useState<{ type: 'teacher' | 'class' | 'lock', id: string } | null>(null);
   
   const [draggedLock, setDraggedLock] = useState<{ day: number, period: number } | null>(null);
@@ -252,7 +252,8 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           { id: 'staff', label: 'Faculty' },
           { id: 'subjects', label: 'Subjects' },
           { id: 'global', label: 'Master Engagements' },
-          { id: 'rhythm', label: 'Daily Rhythm' }
+          { id: 'rhythm', label: 'Daily Rhythm' },
+          { id: 'tuning', label: 'AI Tuning' }
         ].map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id as any)} className={`px-6 py-3 rounded-[1.1rem] text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === t.id ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-700'}`}>{t.label}</button>
         ))}
@@ -377,6 +378,42 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
               <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">School Start Time</span><input type="time" className="bg-white border rounded-xl px-4 py-3 font-black text-indigo-600 shadow-sm outline-none" value={profile.hours.startTime} onChange={e => setProfile({...profile, hours: {...profile.hours, startTime: e.target.value}})} /></div>
               <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lesson Duration</span><div className="flex items-center gap-2"><input type="number" className="w-20 bg-white border rounded-xl px-4 py-3 font-black text-indigo-600 text-center shadow-sm outline-none" value={profile.hours.periodDuration} onChange={e => setProfile({...profile, hours: {...profile.hours, periodDuration: parseInt(e.target.value) || 45}})} /><span className="text-[8px] font-black text-slate-400 uppercase">Min</span></div></div>
               <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Daily Slots</span><div className="flex items-center gap-2"><input type="number" className="w-20 bg-white border rounded-xl px-4 py-3 font-black text-indigo-600 text-center shadow-sm outline-none" value={profile.hours.totalPeriods} onChange={e => setProfile({...profile, hours: {...profile.hours, totalPeriods: parseInt(e.target.value) || 8}})} /><span className="text-[8px] font-black text-slate-400 uppercase">Slots</span></div></div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'tuning' && profile && (
+          <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn py-10">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">AI Special Considerations</h3>
+                  <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mt-1">Guide the Optimization Engine with specific human constraints</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </div>
+              </div>
+              
+              <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-inner">
+                <textarea 
+                  className="w-full min-h-[200px] bg-transparent border-0 p-0 focus:ring-0 text-sm font-bold text-slate-700 leading-relaxed placeholder:text-slate-300 custom-scrollbar resize-none"
+                  placeholder="Example: Teacher Evan leaves after lunch and can only teach morning blocks. Class 1A needs Mathematics consistently in the first 2 periods. Homeroom teachers should have their planning time on Wednesday afternoons..."
+                  value={profile.specialInstructions || ''}
+                  onChange={e => setProfile({...profile, specialInstructions: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                  <p className="text-[8px] font-black text-indigo-600 uppercase tracking-widest mb-2">Pro Tip: Personnel</p>
+                  <p className="text-[10px] text-indigo-900/60 font-medium italic">Mention specific teacher names and their time preferences or availability limits.</p>
+                </div>
+                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                  <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-2">Pro Tip: Subjects</p>
+                  <p className="text-[10px] text-emerald-900/60 font-medium italic">Specify if certain high-focus subjects like 'Math' or 'English' must happen in the mornings.</p>
+                </div>
+              </div>
             </div>
           </div>
         )}

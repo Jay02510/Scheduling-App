@@ -43,7 +43,8 @@ export const generateWeeklyMaster = async (
       global: l.isSchoolWide, 
       classIds: l.classIds || [],
       name: l.name 
-    }))
+    })),
+    specialInstructions: profile.specialInstructions || "None provided."
   };
 
   const prompt = `
@@ -57,6 +58,9 @@ export const generateWeeklyMaster = async (
     3. FIVE-DAY UTILIZATION: You MUST distribute lessons across ALL 5 DAYS (0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri). Do not leave Fridays empty.
     4. TEACHER REST: Every teacher MUST have their "minBreaks" distributed across the week.
     5. SUBJECT FREQUENCY: Each class must meet its subject "freq" per week exactly.
+    
+    HUMAN TUNING & SPECIAL CONSIDERATIONS (CRITICAL):
+    ${inputData.specialInstructions}
     
     DATA: ${JSON.stringify(inputData)}
     

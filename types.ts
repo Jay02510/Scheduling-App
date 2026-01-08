@@ -112,4 +112,5 @@ export interface SchoolProfile {
   classes: ClassGroup[];
   lockedSlots: LockedSlot[];
   specialEvents: SchoolEvent[];
+  specialInstructions?: string; // New field for AI considerations
 }

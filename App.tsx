@@ -69,7 +69,7 @@ const App: React.FC = () => {
       const timeoutId = setTimeout(() => { saveUserData(user.uid, dataToSave); }, 2000);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading]);
+  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading, profile?.specialInstructions]);
 
   const handleOnboardingComplete = (newProfile: SchoolProfile) => {
     setProfile(newProfile);
