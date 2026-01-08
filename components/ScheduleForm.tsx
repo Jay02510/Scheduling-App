@@ -18,13 +18,18 @@ interface ScheduleFormProps {
   subjects: SubjectConfig[];
   setSubjects: (subjects: SubjectConfig[]) => void;
   schedule: SchoolSchedule | null;
+  onMoveLock?: (source: { day: number, period: number }, target: { day: number, period: number }) => void;
 }
 
 const ScheduleForm: React.FC<ScheduleFormProps> = ({ 
-  onGenerate, profile, setProfile, teachers, setTeachers, classes, setClasses, textbooks, subjects, setSubjects, lockedSlots, setLockedSlots, schedule 
+  onGenerate, profile, setProfile, teachers, setTeachers, classes, setClasses, textbooks, subjects, setSubjects, lockedSlots, setLockedSlots, schedule, onMoveLock 
 }) => {
   const [activeTab, setActiveTab] = useState<'classes' | 'staff' | 'subjects' | 'global' | 'rhythm'>('classes');
   const [detailView, setDetailView] = useState<{ type: 'teacher' | 'class' | 'lock', id: string } | null>(null);
+  
+  // Drag and Drop state for Global Locks
+  const [draggedLock, setDraggedLock] = useState<{ day: number, period: number } | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ day: number, period: number } | null>(null);
 
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown Subject';
   const getTeacherName = (id: string) => teachers?.find(t => t.id === id)?.name || 'Unknown Faculty';
@@ -109,6 +114,25 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       }
       return c;
     }));
+  };
+
+  // Lock Drag Handlers
+  const onLockDragStart = (day: number, period: number) => {
+    setDraggedLock({ day, period });
+  };
+
+  const onLockDragOver = (e: React.DragEvent, day: number, period: number) => {
+    e.preventDefault();
+    setDropTarget({ day, period });
+  };
+
+  const onLockDrop = (e: React.DragEvent, day: number, period: number) => {
+    e.preventDefault();
+    if (draggedLock && onMoveLock) {
+      onMoveLock(draggedLock, { day, period });
+    }
+    setDraggedLock(null);
+    setDropTarget(null);
   };
 
   if (detailView?.type === 'class') {
@@ -267,12 +291,12 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Daily Period Sequence</span>
                     <span className="px-4 py-1.5 bg-indigo-500 text-white rounded-full font-black text-[10px]">{profile.hours.totalPeriods} Slots</span>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 overflow-x-auto pb-2">
                     {Array.from({length: 12}).map((_, i) => (
                       <button 
                         key={i} 
                         onClick={() => setProfile({...profile, hours: {...profile.hours, totalPeriods: i + 1}})}
-                        className={`flex-1 h-14 rounded-2xl font-black text-sm transition-all ${profile.hours.totalPeriods === i + 1 ? 'bg-white text-slate-900 shadow-xl scale-110' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}
+                        className={`flex-1 min-w-[3rem] h-14 rounded-2xl font-black text-sm transition-all ${profile.hours.totalPeriods === i + 1 ? 'bg-white text-slate-900 shadow-xl scale-110' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}
                       >
                         {i + 1}
                       </button>
@@ -392,7 +416,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                 Institutional Engagements Architecture
               </p>
               <p className="text-slate-400 text-[10px] font-medium mt-2 max-w-2xl relative z-10">
-                Click cells to toggle engagements. Color-coded pills show which class groups are affected.
+                Drag established blocks to reschedule. Drop one block onto another to swap positions.
               </p>
             </div>
 
@@ -412,26 +436,36 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                       <td className="text-[12px] font-black text-slate-300 text-center uppercase h-[140px] pr-4">P{pIdx+1}</td>
                       {Array.from({length: 5}).map((_, dIdx) => {
                         const lock = lockedSlots.find(l => l.dayOfWeek === dIdx && l.period === pIdx);
+                        const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
+                        const isDragging = draggedLock?.day === dIdx && draggedLock?.period === pIdx;
+
                         return (
-                          <td key={dIdx} className="h-[140px]">
+                          <td 
+                            key={dIdx} 
+                            className={`h-[140px] transition-all relative ${isTarget ? 'scale-105 z-20' : ''}`}
+                            onDragOver={(e) => onLockDragOver(e, dIdx, pIdx)}
+                            onDrop={(e) => onLockDrop(e, dIdx, pIdx)}
+                          >
                             <button 
                               onClick={() => openLockConfig(dIdx, pIdx)} 
+                              draggable={!!lock}
+                              onDragStart={() => onLockDragStart(dIdx, pIdx)}
                               className={`group w-full h-full rounded-[2.5rem] border-[4px] flex flex-col items-center justify-center p-6 transition-all relative overflow-hidden ${
                                 lock 
-                                ? 'bg-white border-slate-900 shadow-2xl scale-[1.03] z-10' 
-                                : 'bg-white border-slate-100 text-slate-300 hover:border-indigo-200 hover:shadow-xl hover:scale-[1.02]'
+                                ? `bg-white border-slate-900 shadow-2xl z-10 ${isDragging ? 'opacity-30 scale-95' : 'cursor-grab active:cursor-grabbing hover:scale-[1.03]'}` 
+                                : `bg-white border-slate-100 text-slate-300 ${isTarget ? 'border-indigo-500 ring-4 ring-indigo-100' : 'hover:border-indigo-200 hover:shadow-xl hover:scale-[1.02]'}`
                               }`}
                             >
                               {lock ? (
                                 <>
                                   <div className="absolute top-0 left-0 w-full h-1 gradient-primary opacity-20"></div>
-                                  <span className="text-[15px] font-black uppercase text-center tracking-tighter leading-none text-slate-900 group-hover:scale-110 transition-transform">{lock.name}</span>
+                                  <span className="text-[15px] font-black uppercase text-center tracking-tighter leading-none text-slate-900 group-hover:scale-110 transition-transform pointer-events-none">{lock.name}</span>
                                   {lock.isSchoolWide ? (
-                                    <div className="mt-4 px-3 py-1 bg-slate-900 rounded-full">
+                                    <div className="mt-4 px-3 py-1 bg-slate-900 rounded-full pointer-events-none">
                                       <span className="text-[8px] font-black text-white uppercase tracking-widest">Global Hold</span>
                                     </div>
                                   ) : (
-                                    <div className="flex flex-wrap justify-center gap-1.5 mt-5">
+                                    <div className="flex flex-wrap justify-center gap-1.5 mt-5 pointer-events-none">
                                       {lock.classIds?.map(cid => (
                                         <div 
                                           key={cid} 
@@ -448,7 +482,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                                   )}
                                 </>
                               ) : (
-                                <div className="flex flex-col items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                                <div className="flex flex-col items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity pointer-events-none">
                                   <div className="w-8 h-8 rounded-full border-2 border-slate-100 flex items-center justify-center group-hover:bg-indigo-50 group-hover:border-indigo-200 transition-all">
                                     <svg className="w-3 h-3 text-slate-300 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M12 4v16m8-8H4" /></svg>
                                   </div>
@@ -463,6 +497,9 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="flex justify-center pt-6">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] animate-pulse">Drag Blocks to Structuralize Institution Sequence</p>
             </div>
           </div>
         )}

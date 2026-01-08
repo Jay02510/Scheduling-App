@@ -126,16 +126,35 @@ const App: React.FC = () => {
     const targetIdx = newSlots.findIndex(s => s.classId === classId && s.day === target.day && s.period === target.period);
 
     if (sourceIdx > -1) {
-      // If there's an existing item in target, we swap them
       if (targetIdx > -1) {
         const temp = { ...newSlots[sourceIdx], day: target.day, period: target.period };
         newSlots[sourceIdx] = { ...newSlots[targetIdx], day: source.day, period: source.period };
         newSlots[targetIdx] = temp;
       } else {
-        // Just move to empty slot
         newSlots[sourceIdx] = { ...newSlots[sourceIdx], day: target.day, period: target.period };
       }
       setSchedule({ ...schedule, weeklySlots: newSlots });
+    }
+  };
+
+  const handleMoveLockSlot = (source: { day: number, period: number }, target: { day: number, period: number }) => {
+    const newLocks = [...lockedSlots];
+    const sourceIdx = newLocks.findIndex(l => l.dayOfWeek === source.day && l.period === source.period);
+    const targetIdx = newLocks.findIndex(l => l.dayOfWeek === target.day && l.period === target.period);
+
+    if (sourceIdx > -1) {
+      if (targetIdx > -1) {
+        // Swap
+        const sourceData = { ...newLocks[sourceIdx] };
+        const targetData = { ...newLocks[targetIdx] };
+        
+        newLocks[sourceIdx] = { ...targetData, dayOfWeek: source.day, period: source.period };
+        newLocks[targetIdx] = { ...sourceData, dayOfWeek: target.day, period: target.period };
+      } else {
+        // Simple move
+        newLocks[sourceIdx] = { ...newLocks[sourceIdx], dayOfWeek: target.day, period: target.period };
+      }
+      setLockedSlots(newLocks);
     }
   };
 
@@ -261,6 +280,7 @@ const App: React.FC = () => {
               subjects={subjects} 
               setSubjects={setSubjects} 
               onGenerate={handleGenerateMaster} 
+              onMoveLock={handleMoveLockSlot}
               schedule={schedule} 
             />
           )}
