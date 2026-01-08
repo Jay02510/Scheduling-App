@@ -47,7 +47,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
   const currentTeacher = teachers.find(t => t.id === selectedTeacherId) || teachers[0];
   const filteredSlots = (schedule?.weeklySlots || []).filter(s => s.teacherId === currentTeacher.id);
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
-  const assignedClasses = classes.filter(c => c.homeroomTeacherId === currentTeacher.id || (c.assignments || []).some(a => a.teacherId === currentTeacher.id));
+  const assignedClasses = (classes || []).filter(c => c.homeroomTeacherId === currentTeacher.id || (c.assignments || []).some(a => a.teacherId === currentTeacher.id));
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 animate-fadeIn max-w-full pb-12">
@@ -121,7 +121,8 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                             <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
                               <span className="text-[13px] font-black leading-tight text-slate-900 uppercase tracking-tight line-clamp-2">{getSubjectName(slot.subjectId)}</span>
                             </div>
-                            <div className="h-8 flex items-center justify-center border-t-[2px] border-slate-900 shrink-0" style={{ backgroundColor: currentTeacher?.color || '#cbd5e1' }}>
+                            {/* Changed backgroundColor to use classInfo?.color instead of currentTeacher?.color */}
+                            <div className="h-8 flex items-center justify-center border-t-[2px] border-slate-900 shrink-0" style={{ backgroundColor: classInfo?.color || '#cbd5e1' }}>
                               <span className="text-[8px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{classInfo?.name}</span>
                             </div>
                           </div>
