@@ -32,30 +32,56 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
 
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
 
+  // Identify all classes assigned to this teacher across all subjects
+  const assignedClasses = classes.filter(c => 
+    c.homeroomTeacherId === currentTeacher.id || 
+    (c.assignments || []).some(a => a.teacherId === currentTeacher.id)
+  );
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 animate-fadeIn max-w-full pb-12">
       <div className="xl:col-span-1 space-y-6">
-        <div className="bg-[#0f172a] p-10 rounded-[3rem] text-white shadow-xl">
-           <div className="flex flex-col items-center mb-10">
-             <div className="w-24 h-24 rounded-[2.5rem] flex items-center justify-center text-white text-4xl font-black shadow-2xl mb-6" style={{ backgroundColor: currentTeacher.color }}>{currentTeacher.name[0]}</div>
-             <h4 className="text-xl font-black uppercase text-center">{currentTeacher.name}</h4>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{currentTeacher.role}</p>
+        <div className="bg-[#0f172a] p-10 rounded-[3rem] text-white shadow-xl flex flex-col h-full min-h-[600px]">
+           <div className="flex flex-col items-center mb-10 shrink-0">
+             <div className="w-24 h-24 rounded-[2.5rem] flex items-center justify-center text-white text-4xl font-black shadow-2xl mb-6 ring-4 ring-white/10" style={{ backgroundColor: currentTeacher.color }}>{currentTeacher.name[0]}</div>
+             <h4 className="text-xl font-black uppercase text-center tracking-tight truncate w-full px-4">{currentTeacher.name}</h4>
+             <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-1 opacity-70">{currentTeacher.role}</p>
           </div>
-          <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-            {teachers.map(t => (
-              <button 
-                key={t.id} 
-                onClick={() => setSelectedTeacherId(t.id)} 
-                className={`w-full flex items-center gap-4 px-6 py-5 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all ${
-                  selectedTeacherId === t.id 
-                  ? 'bg-white text-slate-900 shadow-xl scale-[1.02]' 
-                  : 'text-slate-400 hover:bg-white/5'
-                }`}
-              >
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }}></div>
-                <span className="truncate">{t.name}</span>
-              </button>
-            ))}
+
+          <div className="space-y-6 flex-1 overflow-hidden flex flex-col">
+            <div className="shrink-0">
+               <h5 className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4 border-b border-white/5 pb-2">Load Registry</h5>
+               <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scrollbar pr-2">
+                {teachers.map(t => (
+                  <button 
+                    key={t.id} 
+                    onClick={() => setSelectedTeacherId(t.id)} 
+                    className={`w-full flex items-center gap-4 px-6 py-4 rounded-[1.6rem] text-[10px] font-black uppercase tracking-widest transition-all ${
+                      selectedTeacherId === t.id 
+                      ? 'bg-white text-slate-900 shadow-xl scale-[1.02]' 
+                      : 'text-slate-400 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: t.color }}></div>
+                    <span className="truncate">{t.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden flex flex-col pt-6 border-t border-white/5">
+               <h5 className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-4 shrink-0">Faculty Portfolio</h5>
+               <div className="space-y-2 overflow-y-auto custom-scrollbar pr-2 flex-1">
+                 {assignedClasses.length > 0 ? assignedClasses.map(c => (
+                   <div key={c.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }}></div>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase">{c.name}</span>
+                   </div>
+                 )) : (
+                   <p className="text-[9px] text-slate-500 font-bold uppercase py-4 text-center">No Active Classes</p>
+                 )}
+               </div>
+            </div>
           </div>
         </div>
       </div>

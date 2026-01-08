@@ -62,6 +62,17 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     setDetailView({ type: 'class', id: newId });
   };
 
+  const handleAddNewSubject = () => {
+    const newId = `sub-${Math.random().toString(36).substr(2, 5)}`;
+    const newSub: SubjectConfig = {
+      id: newId,
+      name: 'New Subject Block',
+      frequencyPerWeek: 5,
+      gradeLevels: ['G1']
+    };
+    setSubjects([...subjects, newSub]);
+  };
+
   const openLockConfig = (day: number, period: number) => {
     const lockAtSlot = lockedSlots.find(l => l.dayOfWeek === day && l.period === period);
     
@@ -256,7 +267,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         {activeTab === 'subjects' && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 p-4">
             {subjects && subjects.length > 0 ? subjects.map(s => (
-               <div key={s.id} className="p-10 bg-slate-50 rounded-[3.5rem] shadow-sm border border-transparent hover:border-indigo-100 transition-all space-y-8">
+               <div key={s.id} className="p-10 bg-slate-50 rounded-[3.5rem] shadow-sm border border-transparent hover:border-indigo-100 transition-all space-y-8 relative group">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex-1 w-full">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1 mb-2">Curriculum Identity</span>
@@ -284,7 +295,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                               <span className="text-[9px] font-black text-slate-900 uppercase">{c.name}</span>
                             </div>
                             <select 
-                              className="w-full bg-slate-50 border-none rounded-xl px-3 py-2 text-[10px] font-bold text-slate-700 focus:ring-indigo-500"
+                              className="w-full bg-slate-50 border-none rounded-xl px-3 py-2 text-[10px] font-bold text-slate-700 focus:ring-indigo-500 outline-none transition-all hover:bg-slate-100"
                               value={currentAssignment?.teacherId || ''}
                               onChange={(e) => handleSubjectTeacherAssignment(c.id, s.id, e.target.value)}
                             >
@@ -304,6 +315,12 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                 <p className="text-slate-300 font-black text-[12px] uppercase tracking-widest">No Subjects defined in Institution Profile</p>
               </div>
             )}
+            <button onClick={handleAddNewSubject} className="p-12 border-4 border-dashed border-slate-100 rounded-[3.5rem] text-slate-300 font-black text-[12px] uppercase tracking-widest hover:border-indigo-100 hover:text-indigo-400 hover:bg-indigo-50/30 transition-all flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
+              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
+              </div>
+              Register New Subject Block
+            </button>
           </div>
         )}
 
