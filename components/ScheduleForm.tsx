@@ -83,7 +83,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     if (!newSubjectName.trim()) return;
     const name = newSubjectName.trim();
 
-    // Check if subject exists globally
     let existingSubject = subjects.find(s => s.name.toLowerCase() === name.toLowerCase());
     let subjectId = existingSubject?.id;
 
@@ -103,9 +102,11 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     setNewSubjectName('');
   };
 
+  // Fixed openLockConfig to use day and period arguments and removed erroneous lines.
   const openLockConfig = (day: number, period: number) => {
-    const lockAtSlot = lockedSlots.find(l => l.dayOfWeek === day && l.period === period);
-    if (lockAtSlot) setDetailView({ type: 'lock', id: lockAtSlot.id });
+    const lockAtSpecificSlot = lockedSlots.find(l => l.dayOfWeek === day && l.period === period);
+
+    if (lockAtSpecificSlot) setDetailView({ type: 'lock', id: lockAtSpecificSlot.id });
     else {
       const newId = Math.random().toString(36).substr(2, 9);
       setLockedSlots([...lockedSlots, { id: newId, name: 'NEW BLOCK', dayOfWeek: day, period: period, classIds: [], isSchoolWide: true }]);
@@ -117,7 +118,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     setLockedSlots(lockedSlots.map(l => l.id === id ? { ...l, ...updates } : l));
   };
 
-  // Drag/Fill Handlers
   const onLockDragStart = (day: number, period: number) => setDraggedLock({ day, period });
   const onLockDragOver = (e: React.DragEvent, day: number, period: number) => { e.preventDefault(); setDropTarget({ day, period }); };
   const onLockDrop = (e: React.DragEvent, day: number, period: number) => {
@@ -139,7 +139,6 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     setFillSource(null); setFillTarget(null);
   };
 
-  // Profile Detail Views
   if (detailView) {
     if (detailView.type === 'teacher') {
       const t = teachers.find(tea => tea.id === detailView.id);
@@ -328,7 +327,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           { id: 'rhythm', label: 'Daily Rhythm' },
           { id: 'tuning', label: 'AI Tuning' }
         ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id as any)} className={`px-6 py-3 rounded-[1.1rem] text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === t.id ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-700'}`}>{t.label}</button>
+          <button key={t.id} onClick={() => { setActiveTab(t.id as any); setDetailView(null); }} className={`px-6 py-3 rounded-[1.1rem] text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === t.id ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-700'}`}>{t.label}</button>
         ))}
       </div>
 

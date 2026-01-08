@@ -1,5 +1,5 @@
+
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Teacher, ClassGroup, Textbook } from '../types';
 
 interface DashboardProps {
@@ -11,11 +11,13 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], textbooks = [], onResync, onJump }) => {
+  const readiness = teachers.length > 0 && classes.length > 0 ? 100 : (teachers.length > 0 || classes.length > 0 ? 50 : 0);
+  
   const stats = [
     { name: 'Staff', value: teachers.length, color: '#6366f1', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
     { name: 'Classes', value: classes.length, color: '#a855f7', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
     { name: 'Books', value: textbooks.length, color: '#3b82f6', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-    { name: 'Readiness', value: teachers.length > 0 && classes.length > 0 ? 94 : 0, unit: '%', color: '#2dd4bf', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
+    { name: 'Readiness', value: readiness, unit: '%', color: '#2dd4bf', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
   ];
 
   return (
@@ -50,11 +52,10 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
         <div className="xl:col-span-8 space-y-10">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Classroom Hub */}
               <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col h-[400px]">
                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 px-2">Classroom Hub</h3>
                  <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                    {classes.map(c => (
+                    {classes.length > 0 ? classes.map(c => (
                        <button key={c.id} onClick={() => onJump?.(c.id, 'class')} className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 rounded-2xl transition-all group">
                           <div className="flex items-center gap-4">
                              <div className="w-10 h-10 rounded-xl shadow-inner" style={{ backgroundColor: c.color }}></div>
@@ -62,18 +63,19 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
                           </div>
                           <svg className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                        </button>
-                    ))}
+                    )) : (
+                      <div className="py-20 text-center opacity-30 font-black uppercase text-[10px]">No classes registered</div>
+                    )}
                  </div>
               </div>
 
-              {/* Faculty Registry */}
               <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col h-[400px]">
                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 px-2">Faculty Registry</h3>
                  <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                    {teachers.map(t => (
+                    {teachers.length > 0 ? teachers.map(t => (
                        <button key={t.id} onClick={() => onJump?.(t.id, 'teacher')} className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 rounded-2xl transition-all group">
                           <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg" style={{ backgroundColor: t.color }}>{t.name[0]}</div>
+                             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg" style={{ backgroundColor: t.color }}>{t.name[0] || 'T'}</div>
                              <div className="text-left">
                                 <p className="font-black text-slate-800 uppercase text-xs">{t.name}</p>
                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.role}</p>
@@ -81,7 +83,9 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
                           </div>
                           <svg className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                        </button>
-                    ))}
+                    )) : (
+                      <div className="py-20 text-center opacity-30 font-black uppercase text-[10px]">No faculty added</div>
+                    )}
                  </div>
               </div>
            </div>
@@ -94,12 +98,12 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
               <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8">Pro Optimization Engine</h3>
               <div className="space-y-6">
                 <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                  <span className="text-sm font-bold text-slate-400">System Load</span>
-                  <span className="text-lg font-black text-emerald-400">92%</span>
+                  <span className="text-sm font-bold text-slate-400">System Status</span>
+                  <span className={`text-lg font-black ${readiness === 100 ? 'text-emerald-400' : 'text-amber-400'}`}>{readiness === 100 ? 'Optimal' : 'Incomplete'}</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                  <span className="text-sm font-bold text-slate-400">Staff Rhythm</span>
-                  <span className="text-lg font-black text-white">Optimal</span>
+                  <span className="text-sm font-bold text-slate-400">Database</span>
+                  <span className="text-lg font-black text-white">Encrypted</span>
                 </div>
               </div>
             </div>

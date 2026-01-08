@@ -12,6 +12,8 @@ import TeacherView from './components/TeacherView';
 import Onboarding from './components/Onboarding';
 import Settings from './components/Settings';
 import Auth from './components/Auth';
+import ResourcePlanner from './components/ResourcePlanner';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -19,7 +21,6 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
   
   const [isLoading, setIsLoading] = useState(false);
-  const [isBackgrounded, setIsBackgrounded] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [notification, setNotification] = useState<{ msg: string; type: 'success' | 'error'; action?: () => void } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -202,6 +203,8 @@ const App: React.FC = () => {
           {activeTab === 'setup' && <ScheduleForm profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} onMoveLock={handleMoveLockSlot} onFillLocks={handleFillLockSlots} schedule={schedule} onNavigate={setActiveTab} />}
           {activeTab === 'homerooms' && <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} onUpdateSlot={handleUpdateScheduleSlot} onMoveSlot={handleMoveScheduleSlot} onFillSlots={handleFillScheduleSlots} onNavigate={setActiveTab} onJump={handleEntityJump} initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined} />}
           {activeTab === 'faculty' && <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} lockedSlots={lockedSlots} profile={profile} initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined} />}
+          {activeTab === 'resources' && <ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} />}
+          {activeTab === 'audit' && profile && <AnalyticsDashboard schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} profile={profile} teachers={teachers} />}
           {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />}
         </>
       )}
