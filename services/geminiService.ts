@@ -56,6 +56,7 @@ export const generateWeeklyMaster = async (
     3. FIVE-DAY UTILIZATION: Distribute lessons across all 5 days.
     4. TEACHER REST: Respect minimum break requirements.
     5. SUBJECT FREQUENCY: Meet exact frequency targets.
+    6. PEDAGOGICAL SPACING: For any class, do NOT schedule the same subject more than once in a single day unless that subject's weekly frequency is greater than 5. Teachers should not teach the same class the same subject twice in one day if possible.
     
     SPECIAL CONSIDERATIONS: ${inputData.specialInstructions}
     DATA: ${JSON.stringify(inputData)}

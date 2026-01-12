@@ -119,6 +119,14 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     window.print();
   };
 
+  // Conflict Detection Logic
+  const checkDailyConflict = (subjectId: string, day: number) => {
+    const daySlots = classSlots.filter(s => s.day === day && s.subjectId === subjectId);
+    const subjectConfig = subjects.find(sub => sub.id === subjectId);
+    // Conflict exists if subject appears > 1 time per day AND weekly frequency is <= 5
+    return daySlots.length > 1 && (subjectConfig?.frequencyPerWeek || 0) <= 5;
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn max-w-full" onMouseUp={onFillEnd}>
       {editingSlot && (
@@ -186,6 +194,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     const teacher = teachers.find(t => t.id === slot?.teacherId);
                     const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
                     const isDragging = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
+                    
+                    const hasConflict = slot ? checkDailyConflict(slot.subjectId, dIdx) : false;
+
                     const isInFillRange = fillSource && fillTarget && (
                       (dIdx === fillSource.day && pIdx >= Math.min(fillSource.period, fillTarget.period) && pIdx <= Math.max(fillSource.period, fillTarget.period)) ||
                       (pIdx === fillSource.period && dIdx >= Math.min(fillSource.day, fillTarget.day) && dIdx <= Math.max(fillSource.day, fillTarget.day))
@@ -203,9 +214,12 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                       <td key={dIdx} onMouseEnter={() => onFillMove(dIdx, pIdx)} onDragOver={(e) => handleDragOver(e, dIdx, pIdx)} onDrop={(e) => handleDrop(e, dIdx, pIdx)}
                         className={`border-r-[2px] last:border-r-0 border-slate-900 p-0 h-[110px] transition-all relative align-top ${isTarget ? 'bg-indigo-50 ring-2 ring-indigo-500 ring-inset z-10' : isInFillRange ? 'bg-blue-50/50 ring-2 ring-blue-500 ring-inset z-20' : 'bg-white group hover:bg-slate-50'}`}>
                         {slot ? (
-                          <div className={`h-full flex flex-col relative ${isDragging ? 'opacity-30 scale-95' : ''} ${isAltPressed ? 'cursor-copy' : 'cursor-grab active:cursor-grabbing'}`} draggable="true" onDragStart={() => handleDragStart(dIdx, pIdx)}>
+                          <div className={`h-full flex flex-col relative ${isDragging ? 'opacity-30 scale-95' : ''} ${isAltPressed ? 'cursor-copy' : 'cursor-grab active:cursor-grabbing'} ${hasConflict ? 'ring-2 ring-rose-500 ring-inset animate-pulse-soft' : ''}`} draggable="true" onDragStart={() => handleDragStart(dIdx, pIdx)}>
                             <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden pointer-events-none">
                               <span className="text-[13px] font-black text-slate-900 uppercase leading-tight line-clamp-2 tracking-tight">{getSubjectName(slot.subjectId)}</span>
+                              {hasConflict && (
+                                <span className="text-[7px] font-black text-rose-500 uppercase tracking-widest mt-1">Duplicate Block</span>
+                              )}
                             </button>
                             <button onClick={(e) => { e.stopPropagation(); if(onJump) onJump(slot.teacherId, 'teacher'); }} className="h-8 flex items-center justify-center border-t-[2px] border-slate-900 shrink-0 hover:brightness-95 transition-all pointer-events-auto" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
                               <span className="text-[9px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{teacher?.name}</span>
