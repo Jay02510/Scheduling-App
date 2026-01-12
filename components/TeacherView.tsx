@@ -49,9 +49,13 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
   const assignedClasses = (classes || []).filter(c => c.homeroomTeacherId === currentTeacher.id || (c.assignments || []).some(a => a.teacherId === currentTeacher.id));
 
+  const handleExportPDF = () => {
+    window.print();
+  };
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 animate-fadeIn max-w-full pb-12">
-      <div className="xl:col-span-1 space-y-6">
+      <div className="xl:col-span-1 space-y-6 no-print">
         <div className="bg-[#0f172a] p-8 rounded-[2rem] text-white shadow-xl flex flex-col h-full min-h-[500px]">
            <div className="flex flex-col items-center mb-8 shrink-0">
              <div className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center text-white text-2xl font-black shadow-2xl mb-4" style={{ backgroundColor: currentTeacher.color }}>{currentTeacher.name[0]}</div>
@@ -71,12 +75,21 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
               ))}
             </div>
 
-            <div className="pt-6 border-t border-white/5">
-               <h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-3">Portfolio</h5>
-               <div className="flex flex-wrap gap-2">
-                 {assignedClasses.map(c => (
-                   <div key={c.id} className="px-3 py-1.5 bg-white/5 rounded-lg text-[8px] font-bold text-slate-300 uppercase border border-white/5">{c.name}</div>
-                 ))}
+            <div className="pt-6 border-t border-white/5 space-y-4">
+               <button 
+                onClick={handleExportPDF}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg"
+               >
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                 Export PDF
+               </button>
+               <div>
+                  <h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-3">Portfolio</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {assignedClasses.map(c => (
+                      <div key={c.id} className="px-3 py-1.5 bg-white/5 rounded-lg text-[8px] font-bold text-slate-300 uppercase border border-white/5">{c.name}</div>
+                    ))}
+                  </div>
                </div>
             </div>
           </div>
@@ -84,6 +97,20 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
       </div>
 
       <div className="xl:col-span-3 bg-white border-[2px] border-slate-900 rounded-[2rem] overflow-hidden shadow-sm max-w-full overflow-x-auto">
+        {/* Header for PDF only */}
+        <div className="hidden print:block p-8 border-b-[2px] border-slate-900">
+           <div className="flex justify-between items-end">
+             <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter">{currentTeacher.name}</h1>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Weekly Instructional Schedule • {currentTeacher.role}</p>
+             </div>
+             <div className="text-right">
+                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">EduPlanner Pro</p>
+                <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</p>
+             </div>
+           </div>
+        </div>
+        
         <table className="w-full border-collapse table-fixed min-w-[800px]">
           <thead>
             <tr className="bg-slate-50 border-b-[2px] border-slate-900">
@@ -121,14 +148,13 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                             <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
                               <span className="text-[13px] font-black leading-tight text-slate-900 uppercase tracking-tight line-clamp-2">{getSubjectName(slot.subjectId)}</span>
                             </div>
-                            {/* Changed backgroundColor to use classInfo?.color instead of currentTeacher?.color */}
                             <div className="h-8 flex items-center justify-center border-t-[2px] border-slate-900 shrink-0" style={{ backgroundColor: classInfo?.color || '#cbd5e1' }}>
                               <span className="text-[8px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{classInfo?.name}</span>
                             </div>
                           </div>
                         ) : (
                           <div className="h-full flex flex-col items-center justify-center bg-indigo-50/20 group-hover:bg-indigo-50/40 transition-all m-1 rounded-xl">
-                            <svg className="w-3 h-3 text-indigo-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            <svg className="w-3 h-3 text-indigo-300 mb-1 no-print" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                             <span className="text-[7px] font-black text-indigo-300 uppercase tracking-widest">Rest</span>
                           </div>
                         )}

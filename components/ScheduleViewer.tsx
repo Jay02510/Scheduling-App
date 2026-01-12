@@ -115,10 +115,14 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     setFillSource(null); setFillTarget(null);
   };
 
+  const handleExportPDF = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn max-w-full" onMouseUp={onFillEnd}>
       {editingSlot && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 no-print">
           <div className="bg-white rounded-[3rem] p-12 w-full max-w-md shadow-2xl animate-fadeIn">
             <h3 className="text-2xl font-black text-slate-900 mb-8 uppercase tracking-tight">Modify Lesson</h3>
             <div className="space-y-4">
@@ -142,10 +146,19 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Homeroom Portal</h2>
           <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Class Rhythm & Resources</p>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
-          {classes.map(c => (
-            <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
-          ))}
+        <div className="flex items-center gap-4 no-print">
+          <button 
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            Export PDF
+          </button>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
+            {classes.map(c => (
+              <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -197,12 +210,12 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                             <button onClick={(e) => { e.stopPropagation(); if(onJump) onJump(slot.teacherId, 'teacher'); }} className="h-8 flex items-center justify-center border-t-[2px] border-slate-900 shrink-0 hover:brightness-95 transition-all pointer-events-auto" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
                               <span className="text-[9px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{teacher?.name}</span>
                             </button>
-                            <div onMouseDown={(e) => onFillStart(e, dIdx, pIdx)} className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-blue-600 border border-white cursor-crosshair z-30 hover:scale-125 transition-transform" title="Replicate"></div>
+                            <div onMouseDown={(e) => onFillStart(e, dIdx, pIdx)} className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-blue-600 border border-white cursor-crosshair z-30 hover:scale-125 transition-transform no-print" title="Replicate"></div>
                           </div>
                         ) : (
                           <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className={`h-full cursor-pointer ${isInFillRange ? 'bg-blue-400/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-[0.03]'}`}></div>
                         )}
-                        {isInFillRange && <div className="absolute inset-0 border-2 border-dashed border-blue-500 animate-pulse-soft pointer-events-none"></div>}
+                        {isInFillRange && <div className="absolute inset-0 border-2 border-dashed border-blue-500 animate-pulse-soft pointer-events-none no-print"></div>}
                       </td>
                     );
                   })}
@@ -212,7 +225,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </tbody>
         </table>
       </div>
-      <div className="flex justify-center gap-6">
+      <div className="flex justify-center gap-6 no-print">
         <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">SWAP • ALT+COPY • FILL HANDLE</p>
       </div>
     </div>

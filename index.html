@@ -53,6 +53,54 @@
       .animate-fadeInUp {
         animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
+
+      /* PDF/Print Optimization */
+      @media print {
+        nav, 
+        .no-print, 
+        button, 
+        .bg-slate-100, 
+        header .flex,
+        .xl\:col-span-1 {
+          display: none !important;
+        }
+        main {
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100% !important;
+          position: absolute;
+          left: 0;
+          top: 0;
+        }
+        .max-w-6xl {
+          max-width: 100% !important;
+        }
+        .xl\:col-span-3 {
+          width: 100% !important;
+          grid-column: span 4 / span 4 !important;
+        }
+        body {
+          background-color: white !important;
+        }
+        .bg-white {
+          background-color: white !important;
+        }
+        .border-slate-900 {
+          border-color: #000 !important;
+        }
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          box-shadow: none !important;
+        }
+        @page {
+          margin: 1cm;
+          size: landscape;
+        }
+        table {
+          page-break-inside: avoid;
+        }
+      }
     </style>
   <script type="importmap">
 {
