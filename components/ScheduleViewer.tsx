@@ -141,7 +141,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-full pb-20" onMouseUp={onFillEnd}>
+    <div className="space-y-8 animate-fadeIn max-w-full pb-32" onMouseUp={onFillEnd}>
       {/* Print-Only Header */}
       <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
         <div className="flex justify-between items-end">
@@ -179,19 +179,21 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       )}
 
       {clashes.length > 0 && (
-        <div className="bg-rose-50 border-[2px] border-rose-200 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 animate-fadeInUp shadow-xl no-print">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg animate-pulse">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl z-[90] no-print">
+          <div className="bg-rose-50 border-[2px] border-rose-200 p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 animate-fadeInUp shadow-[0_20px_50px_rgba(244,63,94,0.15)] ring-1 ring-white/50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg animate-pulse">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              </div>
+              <div>
+                <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Pedagogical Clash Detected</h4>
+                <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">Some subjects are scheduled twice in the same day.</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Pedagogical Clash Detected</h4>
-              <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">Some subjects are scheduled twice in the same day.</p>
+            <div className="flex gap-3">
+               <button onClick={() => setSelectedClassId(classes[0].id)} className="px-5 py-3 bg-white text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest border border-rose-100 hover:bg-slate-50 transition-colors">Manual Fix</button>
+               <button onClick={onRegenerate} className="px-7 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl hover:bg-rose-700 transition-all hover:scale-105 active:scale-95 shadow-rose-500/20">AI Re-Balance</button>
             </div>
-          </div>
-          <div className="flex gap-3">
-             <button onClick={() => setSelectedClassId(classes[0].id)} className="px-5 py-3 bg-white text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest border border-rose-100">Manual Fix</button>
-             <button onClick={onRegenerate} className="px-7 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg hover:bg-rose-700 transition-colors">AI Re-Balance</button>
           </div>
         </div>
       )}
