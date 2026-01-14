@@ -153,11 +153,18 @@ const App: React.FC = () => {
     setIsLoading(true);
     setErrorMessage(null);
     setValidationIssues([]);
-    setLoadingMsg(isComplex ? "Calibrating institutional complexity (Pro Solve)..." : "Drafting weekly master grid (Fast Solve)...");
+    setLoadingMsg("Initializing Parallel Engines...");
     
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
-      const { slots, validation } = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile, isComplex);
+      const { slots, validation } = await generateWeeklyMaster(
+        teachers, 
+        lockedSlots, 
+        classes, 
+        currentProfile, 
+        isComplex,
+        (msg) => setLoadingMsg(msg)
+      );
       
       setSchedule(prev => ({ ...prev, weeklySlots: slots, quarterlyPlan: prev?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } }));
       setLastInputHash(currentHash);
@@ -183,14 +190,24 @@ const App: React.FC = () => {
           </span>
         </div>
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-          AI Tier: Auto-Select Active
+          Parallel Engine: v3.0 Active
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fadeIn space-y-8">
-          <div className="w-16 h-16 border-[6px] border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="text-[11px] font-black text-slate-900 uppercase tracking-[0.4em]">{loadingMsg}</p>
+          <div className="relative">
+             <div className="w-20 h-20 border-[6px] border-indigo-100 rounded-full"></div>
+             <div className="w-20 h-20 border-[6px] border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+          </div>
+          <div className="text-center">
+            <p className="text-[12px] font-black text-slate-900 uppercase tracking-[0.4em] mb-2">{loadingMsg}</p>
+            <div className="flex justify-center gap-1">
+              <div className="w-1 h-1 bg-indigo-600 rounded-full animate-bounce"></div>
+              <div className="w-1 h-1 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-1 h-1 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          </div>
         </div>
       ) : (
         <>
@@ -200,7 +217,7 @@ const App: React.FC = () => {
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
               </div>
               <div>
-                <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">AI Service Error</h4>
+                <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Parallel Sync Error</h4>
                 <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage}</p>
               </div>
             </div>
@@ -212,7 +229,7 @@ const App: React.FC = () => {
                   <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                   </div>
-                  <h4 className="font-black text-amber-900 uppercase text-xs tracking-tight">Unresolved Constraints</h4>
+                  <h4 className="font-black text-amber-900 uppercase text-xs tracking-tight">Audit Findings</h4>
                </div>
                <ul className="space-y-2">
                   {validationIssues.map((issue, idx) => (
@@ -222,7 +239,7 @@ const App: React.FC = () => {
                     </li>
                   ))}
                </ul>
-               <button onClick={() => setValidationIssues([])} className="mt-4 text-amber-500 font-black text-[9px] uppercase tracking-widest hover:underline">Dismiss Warnings</button>
+               <button onClick={() => setValidationIssues([])} className="mt-4 text-amber-500 font-black text-[9px] uppercase tracking-widest hover:underline">Dismiss Findings</button>
             </div>
           )}
 
