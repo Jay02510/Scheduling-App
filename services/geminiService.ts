@@ -89,12 +89,16 @@ export const generateWeeklyMaster = async (
   const prompt = `
     TASK: Institutional Timetable Optimization Engine.
     
+    STRICT SCHEDULING RULES:
+    1. UTILIZE ALL AVAILABLE SLOTS: AI must use periods AFTER lunch (${inputData.schoolConfig.lunchAfter}) to meet weekly subject frequencies. Do NOT leave post-lunch slots empty if subject requirements are unmet.
+    2. TEACHER CARDINALITY: A teacher can NEVER be in two classes at the same time. Verify teacher overlap at every slot.
+    3. CLASS CARDINALITY: A class can only have one subject at a time.
+    4. SUBJECT FREQUENCY: Ensure each subject occurs the requested number of times per week.
+    
     LOGIC STEPS (CHAIN OF THOUGHT):
-    1. Cross-reference SPECIAL INSTRUCTIONS with Daily Rhythm. 
-       NOTE: "After lunch" means periods > ${inputData.schoolConfig.lunchAfter}.
-    2. Map weekly frequencies for all subjects across all classes.
-    3. Ensure NO teacher double-booking at any given slot.
-    4. Audit for rule violations before finalizing.
+    - Identify all available slots (non-locked).
+    - Map subjects to available slots across all 5 days.
+    - Validate teacher availability for every single assignment.
     
     CONSTRAINTS: ${inputData.specialInstructions}
     

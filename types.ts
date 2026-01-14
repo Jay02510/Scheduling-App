@@ -12,7 +12,8 @@ export interface SubjectConfig {
   name: string;
   frequencyPerWeek: number;
   gradeLevels: string[];
-  textbookId?: string; // Links to a specific textbook blueprint
+  textbookId?: string; 
+  color?: string;
 }
 
 export interface Textbook {
@@ -24,6 +25,7 @@ export interface Textbook {
   totalPages: number;
   currentPage?: number;
   classId?: string; 
+  assignedQuarter?: number; // 0: Q1, 1: Q2, 2: Q3, 3: Q4
 }
 
 export interface Teacher {
@@ -51,7 +53,7 @@ export interface LockedSlot {
 export interface ClassSubjectAssignment {
   subjectId: string;
   teacherId: string;
-  textbookId?: string; // Specific textbook used by this class for this subject
+  textbookId?: string; 
 }
 
 export interface ClassGroup {
@@ -112,5 +114,5 @@ export interface SchoolProfile {
   classes: ClassGroup[];
   lockedSlots: LockedSlot[];
   specialEvents: SchoolEvent[];
-  specialInstructions?: string; // New field for AI considerations
+  specialInstructions?: string; 
 }
