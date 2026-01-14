@@ -22,7 +22,7 @@ const App: React.FC = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
-  const [notification, setNotification] = useState<{ msg: string; type: 'success' | 'error'; action?: () => void } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [navigationFocus, setNavigationFocus] = useState<{ id: string, type: 'teacher' | 'class' } | null>(null);
 
@@ -140,6 +140,7 @@ const App: React.FC = () => {
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
+    setErrorMessage(null);
     setLoadingMsg("Optimizing pedagogical spacing and institutional flow...");
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
@@ -148,6 +149,7 @@ const App: React.FC = () => {
       setIsLoading(false);
     } catch (e: any) {
       console.error(e);
+      setErrorMessage(e.message || "An unexpected error occurred during optimization.");
       setIsLoading(false);
     }
   };
@@ -165,6 +167,20 @@ const App: React.FC = () => {
         </div>
       ) : (
         <>
+          {errorMessage && (
+            <div className="mb-8 p-6 bg-rose-50 border-[2px] border-rose-200 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 animate-fadeIn shadow-lg">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                  <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">AI Service Interruption</h4>
+                  <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage}</p>
+                </div>
+              </div>
+              <button onClick={() => setErrorMessage(null)} className="px-6 py-3 bg-white text-rose-500 border border-rose-200 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-sm">Dismiss</button>
+            </div>
+          )}
           {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} onJump={handleEntityJump} />}
           {activeTab === 'setup' && <ScheduleForm profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} schedule={schedule} onNavigate={setActiveTab} />}
           {activeTab === 'homerooms' && <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} onUpdateSlot={handleUpdateScheduleSlot} onMoveSlot={handleMoveScheduleSlot} onFillSlots={handleFillScheduleSlots} onNavigate={setActiveTab} onJump={handleEntityJump} onRegenerate={handleGenerateMaster} initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined} />}
