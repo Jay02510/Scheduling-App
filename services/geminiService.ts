@@ -6,9 +6,6 @@ const sanitizeJson = (text: string) => {
   return text.replace(/```json/g, "").replace(/```/g, "").trim();
 };
 
-/**
- * Creates a simple hash of the input data to detect if the schedule needs a new solve.
- */
 export const computeInputHash = (data: any): string => {
   const str = JSON.stringify(data);
   let hash = 0;
@@ -20,7 +17,6 @@ export const computeInputHash = (data: any): string => {
   return hash.toString();
 };
 
-// Internal helper for AI generation with automatic fallback
 async function generateWithFallback(params: {
   prompt: string;
   primaryModel: string;
@@ -36,12 +32,10 @@ async function generateWithFallback(params: {
       responseSchema: params.responseSchema,
     };
     
-    // Only add thinking budget if supported (Gemini 3 and 2.5 models)
     if (budget !== undefined && (modelName.includes('gemini-3') || modelName.includes('gemini-2.5'))) {
       config.thinkingConfig = { thinkingBudget: budget };
     }
 
-    // Call generateContent with model name and prompt in one go as per guidelines
     return await ai.models.generateContent({
       model: modelName,
       contents: params.prompt,
@@ -55,7 +49,7 @@ async function generateWithFallback(params: {
     const isRateLimit = error.message?.includes("429") || error.status === 429;
     if (isRateLimit) {
       console.warn(`Rate limit on ${params.primaryModel}. Falling back to ${params.fallbackModel}...`);
-      return await attempt(params.fallbackModel, undefined); // Flash fallback doesn't need high budget
+      return await attempt(params.fallbackModel, undefined);
     }
     throw error;
   }
@@ -67,15 +61,18 @@ export const generateWeeklyMaster = async (
   classes: ClassGroup[],
   profile: SchoolProfile,
   useHighPower: boolean = false
-): Promise<ScheduleSlot[]> => {
+): Promise<{ slots: ScheduleSlot[], validation: { success: boolean, issues: string[] } }> => {
   const sanitizedClasses = classes.map(c => ({
     ...c,
     assignments: (c.assignments || []).filter(a => a.teacherId && a.subjectId)
   })).filter(c => c.assignments.length > 0);
 
   const inputData = {
-    periods: profile.hours.totalPeriods,
-    days: [0, 1, 2, 3, 4],
+    schoolConfig: {
+      periods: profile.hours.totalPeriods,
+      lunchAfter: profile.hours.lunchAfterPeriod,
+      days: [0, 1, 2, 3, 4]
+    },
     teachers: teachers.map(t => ({ id: t.id, name: t.name, maxDaily: t.maxDailyPeriods })),
     classes: sanitizedClasses.map(c => ({
       id: c.id,
@@ -85,20 +82,29 @@ export const generateWeeklyMaster = async (
         teacherId: a.teacherId
       }))
     })),
-    locks: lockedSlots.map(l => ({ day: l.dayOfWeek, period: l.period, global: l.isSchoolWide, classIds: l.classIds || [] }))
+    locks: lockedSlots.map(l => ({ day: l.dayOfWeek, period: l.period, global: l.isSchoolWide, classIds: l.classIds || [] })),
+    specialInstructions: profile.specialInstructions || "No special constraints."
   };
 
   const prompt = `
     TASK: School Timetable Optimizer.
-    CONSTRAINTS: 
-    - STRICT: One subject per class per day max (if freq <= 5).
-    - No teacher double-booking.
-    - Match weekly frequency exactly.
+    
+    CRITICAL PRIORITY:
+    1. SPECIAL INSTRUCTIONS (HUMAN CONSTRAINTS): ${inputData.specialInstructions}. 
+       Example: If a teacher only teaches "after lunch", DO NOT schedule them in periods 1 to ${inputData.schoolConfig.lunchAfter}.
+    2. HARD LOGIC: One subject per class per day max (if frequency <= 5). No teacher double-booking. Match weekly frequency.
+    
+    SELF-AUDIT:
+    If a special instruction cannot be met due to a logic clash, include it in the "issues" array.
+    
     DATA: ${JSON.stringify(inputData)}
-    RETURN JSON: Array<{period, day, subjectId, teacherId, classId}>
+    
+    RETURN JSON: {
+      "slots": Array<{period, day, subjectId, teacherId, classId}>,
+      "validation": { "success": boolean, "issues": string[] }
+    }
   `;
 
-  // Use Flash by default to save 10x cost, use Pro only for "Deep Solve"
   const model = useHighPower ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
   const budget = useHighPower ? 16000 : 0;
 
@@ -107,28 +113,44 @@ export const generateWeeklyMaster = async (
     primaryModel: model,
     fallbackModel: 'gemini-3-flash-preview',
     responseSchema: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          period: { type: Type.INTEGER },
-          day: { type: Type.INTEGER },
-          subjectId: { type: Type.STRING },
-          teacherId: { type: Type.STRING },
-          classId: { type: Type.STRING }
+      type: Type.OBJECT,
+      properties: {
+        slots: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              period: { type: Type.INTEGER },
+              day: { type: Type.INTEGER },
+              subjectId: { type: Type.STRING },
+              teacherId: { type: Type.STRING },
+              classId: { type: Type.STRING }
+            },
+            required: ["period", "day", "subjectId", "teacherId", "classId"]
+          }
         },
-        required: ["period", "day", "subjectId", "teacherId", "classId"]
-      }
+        validation: {
+          type: Type.OBJECT,
+          properties: {
+            success: { type: Type.BOOLEAN },
+            issues: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["success", "issues"]
+        }
+      },
+      required: ["slots", "validation"]
     },
     thinkingBudget: budget
   });
 
-  const slots: ScheduleSlot[] = JSON.parse(sanitizeJson(response.text || '[]'));
-  return slots.map(s => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
+  const result = JSON.parse(sanitizeJson(response.text || '{"slots":[], "validation":{"success":false,"issues":["AI return error"]}}'));
+  return {
+    slots: result.slots.map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) })),
+    validation: result.validation
+  };
 };
 
 export const generateCurriculumRoadmap = async (textbooks: Textbook[]): Promise<QuarterlyPlan> => {
-  // Curriculum roadmaps are low-complexity, ALWAYS use Flash.
   const response = await generateWithFallback({
     prompt: `Generate 12-week roadmap for: ${JSON.stringify(textbooks)}`,
     primaryModel: 'gemini-3-flash-preview',
@@ -137,9 +159,6 @@ export const generateCurriculumRoadmap = async (textbooks: Textbook[]): Promise<
   return JSON.parse(sanitizeJson(response.text || '{"weeks":[]}'));
 };
 
-/**
- * Uses Gemini to analyze the current schedule for efficiency and potential issues.
- */
 export const analyzeSchedule = async (
   schedule: SchoolSchedule,
   profile: SchoolProfile,
@@ -153,17 +172,11 @@ export const analyzeSchedule = async (
     Teachers: ${JSON.stringify(teachers.map(t => ({ id: t.id, name: t.name, role: t.role, maxDaily: t.maxDailyPeriods })))}
     
     Analyze for:
-    1. Teacher burnout (exceeding max daily periods).
-    2. Rule violations (multiple high-focus subjects in a day).
-    3. Efficiency of usage.
+    1. Teacher burnout.
+    2. Special instruction adherence.
     
     RETURN JSON: {
       score: number,
-      loadScore: number,
-      rulesScore: number,
-      usageScore: number,
-      goalScore: number,
-      flowScore: number,
       insights: string[],
       burnoutRisks: string[]
     }
@@ -174,21 +187,7 @@ export const analyzeSchedule = async (
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          score: { type: Type.NUMBER },
-          loadScore: { type: Type.NUMBER },
-          rulesScore: { type: Type.NUMBER },
-          usageScore: { type: Type.NUMBER },
-          goalScore: { type: Type.NUMBER },
-          flowScore: { type: Type.NUMBER },
-          insights: { type: Type.ARRAY, items: { type: Type.STRING } },
-          burnoutRisks: { type: Type.ARRAY, items: { type: Type.STRING } }
-        },
-        required: ["score", "insights", "burnoutRisks"]
-      }
+      responseMimeType: "application/json"
     }
   });
 

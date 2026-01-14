@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [lastInputHash, setLastInputHash] = useState<string>('');
 
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
@@ -146,18 +147,20 @@ const App: React.FC = () => {
       if (!confirm) return;
     }
 
-    // Complexity Logic: Auto-determine model tier
-    const isComplex = classes.length > 4 || teachers.length > 8 || (profile.specialInstructions?.length || 0) > 60;
+    const isComplex = classes.length > 4 || teachers.length > 8 || (profile.specialInstructions?.length || 0) > 40;
     
     setIsLoading(true);
     setErrorMessage(null);
+    setValidationIssues([]);
     setLoadingMsg(isComplex ? "Calibrating institutional complexity (Pro Solve)..." : "Drafting weekly master grid (Fast Solve)...");
     
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
-      const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile, isComplex);
+      const { slots, validation } = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile, isComplex);
+      
       setSchedule(prev => ({ ...prev, weeklySlots: slots, quarterlyPlan: prev?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } }));
       setLastInputHash(currentHash);
+      if (validation.issues.length > 0) setValidationIssues(validation.issues);
       setIsLoading(false);
     } catch (e: any) {
       setErrorMessage(e.message || "Optimization failed.");
@@ -190,7 +193,38 @@ const App: React.FC = () => {
         </div>
       ) : (
         <>
-          {errorMessage && <div className="mb-8 p-6 bg-rose-50 border-2 border-rose-200 rounded-[2rem] text-rose-600 font-bold text-xs uppercase tracking-tight">{errorMessage}</div>}
+          {errorMessage && (
+            <div className="mb-8 p-6 bg-rose-50 border-2 border-rose-200 rounded-[2rem] flex items-center gap-4 animate-fadeIn shadow-lg">
+              <div className="w-10 h-10 bg-rose-500 rounded-xl flex items-center justify-center text-white shadow-md">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              </div>
+              <div>
+                <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">AI Service Error</h4>
+                <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage}</p>
+              </div>
+            </div>
+          )}
+
+          {validationIssues.length > 0 && (
+            <div className="mb-8 p-6 bg-amber-50 border-2 border-amber-200 rounded-[2rem] animate-fadeIn shadow-lg">
+               <div className="flex items-center gap-4 mb-4">
+                  <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                  </div>
+                  <h4 className="font-black text-amber-900 uppercase text-xs tracking-tight">Unresolved Constraints</h4>
+               </div>
+               <ul className="space-y-2">
+                  {validationIssues.map((issue, idx) => (
+                    <li key={idx} className="text-amber-800 font-bold text-[10px] uppercase tracking-wide flex items-center gap-2">
+                       <span className="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
+                       {issue}
+                    </li>
+                  ))}
+               </ul>
+               <button onClick={() => setValidationIssues([])} className="mt-4 text-amber-500 font-black text-[9px] uppercase tracking-widest hover:underline">Dismiss Warnings</button>
+            </div>
+          )}
+
           {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} onJump={handleEntityJump} />}
           {activeTab === 'setup' && <ScheduleForm profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} schedule={schedule} onNavigate={setActiveTab} />}
           {activeTab === 'homerooms' && <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} onUpdateSlot={handleUpdateScheduleSlot} onMoveSlot={handleMoveScheduleSlot} onFillSlots={handleFillScheduleSlots} onNavigate={setActiveTab} onRegenerate={handleGenerateMaster} onJump={handleEntityJump} initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined} />}
