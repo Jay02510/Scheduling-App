@@ -137,51 +137,17 @@ const App: React.FC = () => {
     setSchedule({ ...schedule, weeklySlots: newSlots });
   };
 
-  const handleMoveLockSlot = (source: { day: number, period: number }, target: { day: number, period: number }, isCopy: boolean = false) => {
-    const newLocks = [...lockedSlots];
-    const sourceIdx = newLocks.findIndex(l => l.dayOfWeek === source.day && l.period === source.period);
-    const targetIdx = newLocks.findIndex(l => l.dayOfWeek === target.day && l.period === target.period);
-    if (sourceIdx > -1) {
-      if (isCopy) {
-        const clonedLock = { ...newLocks[sourceIdx], id: Math.random().toString(36).substr(2, 9), dayOfWeek: target.day, period: target.period };
-        if (targetIdx > -1) newLocks[targetIdx] = clonedLock; else newLocks.push(clonedLock);
-      } else {
-        if (targetIdx > -1) {
-          const sD = { ...newLocks[sourceIdx] }; const tD = { ...newLocks[targetIdx] };
-          newLocks[sourceIdx] = { ...tD, dayOfWeek: source.day, period: source.period };
-          newLocks[targetIdx] = { ...sD, dayOfWeek: target.day, period: target.period };
-        } else newLocks[sourceIdx] = { ...newLocks[sourceIdx], dayOfWeek: target.day, period: target.period };
-      }
-      setLockedSlots(newLocks);
-    }
-  };
-
-  const handleFillLockSlots = (source: { day: number, period: number }, range: { startDay: number, endDay: number, startPeriod: number, endPeriod: number }) => {
-    const sourceLock = lockedSlots.find(l => l.dayOfWeek === source.day && l.period === source.period);
-    if (!sourceLock) return;
-    let newLocks = [...lockedSlots];
-    for (let d = range.startDay; d <= range.endDay; d++) {
-      for (let p = range.startPeriod; p <= range.endPeriod; p++) {
-        const targetIdx = newLocks.findIndex(l => l.dayOfWeek === d && l.period === p);
-        const filledLock = { ...sourceLock, id: Math.random().toString(36).substr(2, 9), dayOfWeek: d, period: p };
-        if (targetIdx > -1) newLocks[targetIdx] = filledLock; else newLocks.push(filledLock);
-      }
-    }
-    setLockedSlots(newLocks);
-  };
-
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     setIsLoading(true);
-    setLoadingMsg("Optimization Engine is balancing institutional rhythms...");
+    setLoadingMsg("Optimizing pedagogical spacing and institutional flow...");
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
       const slots = await generateWeeklyMaster(teachers, lockedSlots, classes, currentProfile);
       setSchedule(prev => ({ ...prev, weeklySlots: slots, quarterlyPlan: prev?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } }));
-      setNotification({ msg: "Schedule Optimized Successfully", type: 'success', action: () => { setActiveTab('homerooms'); setNotification(null); } });
       setIsLoading(false);
     } catch (e: any) {
-      setNotification({ msg: e.message || "Optimization failed.", type: 'error' });
+      console.error(e);
       setIsLoading(false);
     }
   };
@@ -200,8 +166,8 @@ const App: React.FC = () => {
       ) : (
         <>
           {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} onJump={handleEntityJump} />}
-          {activeTab === 'setup' && <ScheduleForm profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} onMoveLock={handleMoveLockSlot} onFillLocks={handleFillLockSlots} schedule={schedule} onNavigate={setActiveTab} />}
-          {activeTab === 'homerooms' && <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} onUpdateSlot={handleUpdateScheduleSlot} onMoveSlot={handleMoveScheduleSlot} onFillSlots={handleFillScheduleSlots} onNavigate={setActiveTab} onJump={handleEntityJump} initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined} />}
+          {activeTab === 'setup' && <ScheduleForm profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} schedule={schedule} onNavigate={setActiveTab} />}
+          {activeTab === 'homerooms' && <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} onUpdateSlot={handleUpdateScheduleSlot} onMoveSlot={handleMoveScheduleSlot} onFillSlots={handleFillScheduleSlots} onNavigate={setActiveTab} onJump={handleEntityJump} onRegenerate={handleGenerateMaster} initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined} />}
           {activeTab === 'faculty' && <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} lockedSlots={lockedSlots} profile={profile} initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined} />}
           {activeTab === 'resources' && <ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} />}
           {activeTab === 'audit' && profile && <AnalyticsDashboard schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} profile={profile} teachers={teachers} />}

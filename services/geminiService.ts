@@ -50,13 +50,12 @@ export const generateWeeklyMaster = async (
   const prompt = `
     TASK: You are a Pro Optimization Engine for school timetables.
     
-    CONSTRAINTS:
-    1. INSTITUTIONAL LOCKS: Never assign subjects to locked slots.
-    2. NO TEACHER CLASHES: One teacher per slot across the school.
-    3. FIVE-DAY UTILIZATION: Distribute lessons across all 5 days.
+    CRITICAL CONSTRAINTS:
+    1. PEDAGOGICAL SPACING (HIGHEST PRIORITY): For any class, NEVER schedule the same subjectId twice in the same day if its frequencyPerWeek is 5 or less. Spread lessons across different days of the week.
+    2. INSTITUTIONAL LOCKS: Never assign subjects to locked slots.
+    3. NO TEACHER CLASHES: One teacher per slot across the entire school.
     4. TEACHER REST: Respect minimum break requirements.
     5. SUBJECT FREQUENCY: Meet exact frequency targets.
-    6. PEDAGOGICAL SPACING: For any class, do NOT schedule the same subject more than once in a single day unless that subject's weekly frequency is greater than 5. Teachers should not teach the same class the same subject twice in one day if possible.
     
     SPECIAL CONSIDERATIONS: ${inputData.specialInstructions}
     DATA: ${JSON.stringify(inputData)}
