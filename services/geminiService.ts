@@ -87,15 +87,16 @@ export const generateWeeklyMaster = async (
   };
 
   const prompt = `
-    TASK: School Timetable Optimizer.
+    TASK: Institutional Timetable Optimization Engine.
     
-    CRITICAL PRIORITY:
-    1. SPECIAL INSTRUCTIONS (HUMAN CONSTRAINTS): ${inputData.specialInstructions}. 
-       Example: If a teacher only teaches "after lunch", DO NOT schedule them in periods 1 to ${inputData.schoolConfig.lunchAfter}.
-    2. HARD LOGIC: One subject per class per day max (if frequency <= 5). No teacher double-booking. Match weekly frequency.
+    LOGIC STEPS (CHAIN OF THOUGHT):
+    1. Cross-reference SPECIAL INSTRUCTIONS with Daily Rhythm. 
+       NOTE: "After lunch" means periods > ${inputData.schoolConfig.lunchAfter}.
+    2. Map weekly frequencies for all subjects across all classes.
+    3. Ensure NO teacher double-booking at any given slot.
+    4. Audit for rule violations before finalizing.
     
-    SELF-AUDIT:
-    If a special instruction cannot be met due to a logic clash, include it in the "issues" array.
+    CONSTRAINTS: ${inputData.specialInstructions}
     
     DATA: ${JSON.stringify(inputData)}
     
@@ -150,35 +151,33 @@ export const generateWeeklyMaster = async (
   };
 };
 
-export const generateCurriculumRoadmap = async (textbooks: Textbook[]): Promise<QuarterlyPlan> => {
-  const response = await generateWithFallback({
-    prompt: `Generate 12-week roadmap for: ${JSON.stringify(textbooks)}`,
-    primaryModel: 'gemini-3-flash-preview',
-    fallbackModel: 'gemini-3-flash-preview'
-  });
-  return JSON.parse(sanitizeJson(response.text || '{"weeks":[]}'));
-};
-
 export const analyzeSchedule = async (
   schedule: SchoolSchedule,
   profile: SchoolProfile,
   teachers: Teacher[]
 ): Promise<any> => {
   const prompt = `
-    TASK: School Schedule Auditor.
+    TASK: Professional Schedule Audit & Strategic Report.
     DATA: 
     Schedule: ${JSON.stringify(schedule.weeklySlots)}
     Profile: ${JSON.stringify(profile)}
     Teachers: ${JSON.stringify(teachers.map(t => ({ id: t.id, name: t.name, role: t.role, maxDaily: t.maxDailyPeriods })))}
     
-    Analyze for:
-    1. Teacher burnout.
-    2. Special instruction adherence.
+    ANALYSIS REQUIREMENTS:
+    1. Narrative Summary: Provide a 2-sentence executive summary of the schedule's health.
+    2. Quantitative Scores (0-100) for: Load Balance, Rule Adherence, Resource Usage, Curriculum Goals, and Daily Flow.
+    3. Burnout detection.
     
     RETURN JSON: {
-      score: number,
-      insights: string[],
-      burnoutRisks: string[]
+      "score": number,
+      "summary": string,
+      "loadScore": number,
+      "rulesScore": number,
+      "usageScore": number,
+      "goalScore": number,
+      "flowScore": number,
+      "insights": string[],
+      "burnoutRisks": string[]
     }
   `;
 
@@ -187,7 +186,22 @@ export const analyzeSchedule = async (
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
-      responseMimeType: "application/json"
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          score: { type: Type.NUMBER },
+          summary: { type: Type.STRING },
+          loadScore: { type: Type.NUMBER },
+          rulesScore: { type: Type.NUMBER },
+          usageScore: { type: Type.NUMBER },
+          goalScore: { type: Type.NUMBER },
+          flowScore: { type: Type.NUMBER },
+          insights: { type: Type.ARRAY, items: { type: Type.STRING } },
+          burnoutRisks: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["score", "summary", "insights", "burnoutRisks"]
+      }
     }
   });
 

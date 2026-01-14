@@ -35,10 +35,10 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
           <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
         </div>
         <div className="text-center max-w-md">
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight">AI Audit Engine</h3>
-          <p className="text-slate-500 text-sm mt-2 font-medium">Quantify institutional efficiency and identify burnout risks before they manifest.</p>
+          <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">AI Audit Engine</h3>
+          <p className="text-slate-500 text-sm mt-2 font-medium">Generate strategic analysis of institutional flow and rule adherence.</p>
         </div>
-        <button onClick={runAudit} className="px-10 py-5 bg-[#0f172a] text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all">Execute Diagnostic</button>
+        <button onClick={runAudit} className="px-10 py-5 bg-[#0f172a] text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all">Begin Strategic Audit</button>
       </div>
     );
   }
@@ -50,74 +50,85 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
           <div className="w-20 h-20 border-[6px] border-slate-100 rounded-full"></div>
           <div className="w-20 h-20 border-[6px] border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
         </div>
-        <p className="text-slate-400 font-black uppercase tracking-[0.25em] text-[11px]">Calculating Metrics...</p>
+        <p className="text-slate-400 font-black uppercase tracking-[0.25em] text-[11px]">Compiling Strategic Report...</p>
       </div>
     );
   }
 
   const chartData = [
-    { subject: 'Load', A: diagnostics?.loadScore || diagnostics?.score || 80, fullMark: 100 },
-    { subject: 'Rules', A: diagnostics?.rulesScore || 90, fullMark: 100 },
-    { subject: 'Usage', A: diagnostics?.usageScore || 75, fullMark: 100 },
-    { subject: 'Goal', A: diagnostics?.goalScore || 85, fullMark: 100 },
-    { subject: 'Flow', A: diagnostics?.flowScore || 70, fullMark: 100 },
+    { subject: 'Load Balance', A: diagnostics?.loadScore || diagnostics?.score || 80, fullMark: 100 },
+    { subject: 'Rule Integrity', A: diagnostics?.rulesScore || 90, fullMark: 100 },
+    { subject: 'Resource Efficiency', A: diagnostics?.usageScore || 75, fullMark: 100 },
+    { subject: 'Curriculum Goals', A: diagnostics?.goalScore || 85, fullMark: 100 },
+    { subject: 'Daily Flow', A: diagnostics?.flowScore || 70, fullMark: 100 },
   ];
 
   return (
     <div className="space-y-12 animate-fadeIn pb-24">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-1">
         <div>
-          <h2 className="text-4xl font-black text-slate-800 tracking-tight">AI Diagnostic</h2>
-          <p className="text-slate-400 font-bold uppercase text-[11px] tracking-widest mt-1">Operational analysis results</p>
+          <h2 className="text-4xl font-black text-slate-800 tracking-tight uppercase">Strategic Report</h2>
+          <p className="text-slate-400 font-bold uppercase text-[11px] tracking-widest mt-1">Audit version: Gemini v2.5 Diagnostic</p>
         </div>
-        <button onClick={runAudit} className="flex items-center gap-3 bg-white px-6 py-4 rounded-3xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors">
-          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Re-Analyze System</span>
-        </button>
+        <div className="flex gap-3">
+          <button onClick={() => window.print()} className="px-6 py-4 bg-white text-slate-900 border border-slate-200 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">Export Report</button>
+          <button onClick={runAudit} className="px-6 py-4 bg-[#0f172a] text-indigo-400 border border-indigo-900/50 rounded-3xl text-[10px] font-black uppercase tracking-widest shadow-lg">Refresh Audit</button>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
-          <div className="relative w-52 h-52 flex items-center justify-center">
-            <svg className="w-full h-full transform -rotate-90">
-              <circle cx="104" cy="104" r="96" stroke="currentColor" strokeWidth="16" fill="transparent" className="text-slate-50" />
-              <circle cx="104" cy="104" r="96" stroke="currentColor" strokeWidth="16" fill="transparent" strokeDasharray={603} strokeDashoffset={603 - (603 * (diagnostics?.score || 0)) / 100} className="text-indigo-600 transition-all duration-1000" strokeLinecap="round" />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-6xl font-black text-slate-900 tracking-tighter">{diagnostics?.score}%</span>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Efficiency</span>
-            </div>
-          </div>
-          <p className="mt-8 text-slate-500 text-xs font-bold uppercase tracking-widest">
-            {diagnostics?.burnoutRisks?.length || 0} Risk Factors Detected
-          </p>
+      {diagnostics?.summary && (
+        <div className="bg-white p-10 rounded-[3.5rem] border border-indigo-100 shadow-xl relative overflow-hidden group">
+           <div className="absolute top-0 left-0 w-2 h-full bg-indigo-600"></div>
+           <h3 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4">Executive Summary</h3>
+           <p className="text-lg font-bold text-slate-800 leading-relaxed italic">"{diagnostics.summary}"</p>
         </div>
+      )}
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col items-center">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10">Balance Matrix</h3>
-          <div className="w-full h-64">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10">System Load Matrix</h3>
+          <div className="w-full h-80">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
                 <PolarGrid stroke="#f1f5f9" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
-                <Radar name="System" dataKey="A" stroke="#6366f1" fill="#6366f1" fillOpacity={0.25} />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }} />
+                <Radar name="Performance" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#6366f1" fillOpacity={0.25} />
+                <Tooltip />
               </RadarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Engine Insights</h3>
-          <div className="space-y-3">
-            {diagnostics?.insights?.map((insight: string, idx: number) => (
-              <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex gap-5 group hover:border-indigo-100 transition-all">
-                <p className="text-[11px] text-slate-600 font-bold leading-relaxed italic">"{insight}"</p>
+        <div className="space-y-6">
+          <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
+             <div className="relative w-40 h-40 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="80" cy="80" r="74" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-50" />
+                  <circle cx="80" cy="80" r="74" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={465} strokeDashoffset={465 - (465 * (diagnostics?.score || 0)) / 100} className="text-indigo-600 transition-all duration-1000" strokeLinecap="round" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-black text-slate-900 tracking-tighter">{diagnostics?.score}%</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Efficiency</span>
+                </div>
               </div>
-            ))}
-            {diagnostics?.burnoutRisks?.map((risk: string, idx: number) => (
-              <div key={idx} className="bg-rose-50 p-6 rounded-[2rem] border border-rose-100 shadow-sm flex gap-5 group transition-all">
-                <p className="text-[11px] text-rose-600 font-black uppercase tracking-tight">Warning: {risk}</p>
-              </div>
-            ))}
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Diagnostic Findings</h3>
+            <div className="space-y-3">
+              {diagnostics?.insights?.map((insight: string, idx: number) => (
+                <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex gap-5 group hover:border-indigo-100 transition-all">
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-1.5"></div>
+                  <p className="text-[11px] text-slate-600 font-bold leading-relaxed">{insight}</p>
+                </div>
+              ))}
+              {diagnostics?.burnoutRisks?.map((risk: string, idx: number) => (
+                <div key={idx} className="bg-rose-50 p-6 rounded-[2rem] border border-rose-100 shadow-sm flex gap-5 group transition-all">
+                  <div className="w-2 h-2 bg-rose-500 rounded-full mt-1.5 animate-pulse"></div>
+                  <p className="text-[11px] text-rose-600 font-black uppercase tracking-tight italic">Priority Alert: {risk}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
