@@ -153,7 +153,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setErrorMessage(null);
     setValidationIssues([]);
-    setLoadingMsg("Initializing Parallel Engines...");
+    setLoadingMsg("Syncing Throttled Engine...");
     
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
@@ -171,7 +171,7 @@ const App: React.FC = () => {
       if (validation.issues.length > 0) setValidationIssues(validation.issues);
       setIsLoading(false);
     } catch (e: any) {
-      setErrorMessage(e.message || "Optimization failed.");
+      setErrorMessage(e.message || "Parallel optimization failed. Check your API limits.");
       setIsLoading(false);
     }
   };
@@ -186,39 +186,51 @@ const App: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions }) === lastInputHash ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></div>
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            {computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions }) === lastInputHash ? 'Database Synchronized' : 'Changes Pending Sync'}
+            {computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions }) === lastInputHash ? 'Sync Integrity: High' : 'Local Edits Pending Sync'}
           </span>
         </div>
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-          Parallel Engine: v3.0 Active
+          Engine Mode: Throttled Sequential (Stabilized)
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fadeIn space-y-8">
           <div className="relative">
-             <div className="w-20 h-20 border-[6px] border-indigo-100 rounded-full"></div>
-             <div className="w-20 h-20 border-[6px] border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+             <div className="w-24 h-24 border-[8px] border-indigo-100 rounded-full"></div>
+             <div className="w-24 h-24 border-[8px] border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
           </div>
-          <div className="text-center">
-            <p className="text-[12px] font-black text-slate-900 uppercase tracking-[0.4em] mb-2">{loadingMsg}</p>
-            <div className="flex justify-center gap-1">
-              <div className="w-1 h-1 bg-indigo-600 rounded-full animate-bounce"></div>
-              <div className="w-1 h-1 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-1 h-1 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+          <div className="text-center max-w-sm">
+            <p className="text-[14px] font-black text-slate-900 uppercase tracking-[0.4em] mb-4">{loadingMsg}</p>
+            <div className="flex justify-center gap-2 mb-4">
+              <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
             </div>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+              We are processing your school's logic in segments to satisfy API rate limits. 
+              Please stay on this page.
+            </p>
           </div>
         </div>
       ) : (
         <>
           {errorMessage && (
-            <div className="mb-8 p-6 bg-rose-50 border-2 border-rose-200 rounded-[2rem] flex items-center gap-4 animate-fadeIn shadow-lg">
-              <div className="w-10 h-10 bg-rose-500 rounded-xl flex items-center justify-center text-white shadow-md">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <div className="mb-8 p-6 bg-rose-50 border-2 border-rose-200 rounded-[2rem] flex flex-col gap-4 animate-fadeIn shadow-lg">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-rose-500 rounded-xl flex items-center justify-center text-white shadow-md">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <div>
+                  <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Sync Obstruction</h4>
+                  <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Parallel Sync Error</h4>
-                <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage}</p>
+              <div className="bg-white/50 p-4 rounded-xl">
+                 <p className="text-[9px] font-bold text-rose-800 uppercase leading-relaxed">
+                   API Rate Limits reached. This usually happens if you attempt many regenerations in a short time. 
+                   Wait 60 seconds and try again.
+                 </p>
               </div>
             </div>
           )}
@@ -229,7 +241,7 @@ const App: React.FC = () => {
                   <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                   </div>
-                  <h4 className="font-black text-amber-900 uppercase text-xs tracking-tight">Audit Findings</h4>
+                  <h4 className="font-black text-amber-900 uppercase text-xs tracking-tight">Post-Sync Audit findings</h4>
                </div>
                <ul className="space-y-2">
                   {validationIssues.map((issue, idx) => (
@@ -239,7 +251,7 @@ const App: React.FC = () => {
                     </li>
                   ))}
                </ul>
-               <button onClick={() => setValidationIssues([])} className="mt-4 text-amber-500 font-black text-[9px] uppercase tracking-widest hover:underline">Dismiss Findings</button>
+               <button onClick={() => setValidationIssues([])} className="mt-4 text-amber-500 font-black text-[9px] uppercase tracking-widest hover:underline">Acknowledge Audit</button>
             </div>
           )}
 
