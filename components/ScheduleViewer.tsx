@@ -62,7 +62,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
   
-  // Advanced Clash Detection
   const clashes = useMemo(() => {
     const foundClashes: { day: number, subjectId: string }[] = [];
     if (!currentClass) return foundClashes;
@@ -143,6 +142,22 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
   return (
     <div className="space-y-8 animate-fadeIn max-w-full pb-20" onMouseUp={onFillEnd}>
+      {/* Print-Only Header */}
+      <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-black uppercase tracking-tighter">{profile?.name}</h1>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">
+              Class Schedule: {currentClass.name} • {profile?.hours.totalPeriods} Periods
+            </p>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">Institutional Master Grid</span>
+            <span className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</span>
+          </div>
+        </div>
+      </div>
+
       {editingSlot && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 no-print">
           <div className="bg-white rounded-[3rem] p-12 w-full max-w-md shadow-2xl animate-fadeIn">
@@ -181,12 +196,12 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         </div>
       )}
 
-      <header className="flex flex-col md:flex-row justify-between items-end gap-6">
+      <header className="flex flex-col md:flex-row justify-between items-end gap-6 no-print">
         <div>
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Homeroom Portal</h2>
           <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Institution Grid • {currentClass.name}</p>
         </div>
-        <div className="flex items-center gap-4 no-print">
+        <div className="flex items-center gap-4">
           <button 
             onClick={() => window.print()}
             className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
