@@ -7,8 +7,20 @@ const sanitizeJson = (text: string) => {
 };
 
 /**
- * Attempts to generate content with a primary model, falling back to a secondary model on rate limit errors.
+ * Creates a simple hash of the input data to detect if the schedule needs a new solve.
  */
+export const computeInputHash = (data: any): string => {
+  const str = JSON.stringify(data);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString();
+};
+
+// Internal helper for AI generation with automatic fallback
 async function generateWithFallback(params: {
   prompt: string;
   primaryModel: string;
@@ -19,33 +31,31 @@ async function generateWithFallback(params: {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const attempt = async (modelName: string, budget?: number) => {
+    const config: any = {
+      responseMimeType: "application/json",
+      responseSchema: params.responseSchema,
+    };
+    
+    // Only add thinking budget if supported (Gemini 3 and 2.5 models)
+    if (budget !== undefined && (modelName.includes('gemini-3') || modelName.includes('gemini-2.5'))) {
+      config.thinkingConfig = { thinkingBudget: budget };
+    }
+
+    // Call generateContent with model name and prompt in one go as per guidelines
     return await ai.models.generateContent({
       model: modelName,
       contents: params.prompt,
-      config: {
-        thinkingConfig: budget ? { thinkingBudget: budget } : undefined,
-        responseMimeType: "application/json",
-        responseSchema: params.responseSchema,
-      },
+      config,
     });
   };
 
   try {
-    // Try primary model (usually Pro)
     return await attempt(params.primaryModel, params.thinkingBudget);
   } catch (error: any) {
-    // If it's a rate limit error (429) or the model is overloaded (503), try Flash
     const isRateLimit = error.message?.includes("429") || error.status === 429;
-    const isOverloaded = error.message?.includes("503") || error.status === 503;
-    
-    if (isRateLimit || isOverloaded) {
-      console.warn(`Primary model ${params.primaryModel} failed (${error.status}). Falling back to ${params.fallbackModel}...`);
-      try {
-        // Use a smaller thinking budget or none for Flash fallback to reduce token usage/latency
-        return await attempt(params.fallbackModel, params.thinkingBudget ? Math.min(params.thinkingBudget, 8000) : undefined);
-      } catch (fallbackError: any) {
-        throw new Error(`Both ${params.primaryModel} and ${params.fallbackModel} failed. Error: ${fallbackError.message}`);
-      }
+    if (isRateLimit) {
+      console.warn(`Rate limit on ${params.primaryModel}. Falling back to ${params.fallbackModel}...`);
+      return await attempt(params.fallbackModel, undefined); // Flash fallback doesn't need high budget
     }
     throw error;
   }
@@ -55,7 +65,8 @@ export const generateWeeklyMaster = async (
   teachers: Teacher[],
   lockedSlots: LockedSlot[],
   classes: ClassGroup[],
-  profile: SchoolProfile
+  profile: SchoolProfile,
+  useHighPower: boolean = false
 ): Promise<ScheduleSlot[]> => {
   const sanitizedClasses = classes.map(c => ({
     ...c,
@@ -65,149 +76,121 @@ export const generateWeeklyMaster = async (
   const inputData = {
     periods: profile.hours.totalPeriods,
     days: [0, 1, 2, 3, 4],
-    teachers: teachers.map(t => ({ 
-      id: t.id, 
-      name: t.name, 
-      maxDaily: t.maxDailyPeriods,
-      minBreaks: t.breaksNeededPerWeek || 5 
-    })),
+    teachers: teachers.map(t => ({ id: t.id, name: t.name, maxDaily: t.maxDailyPeriods })),
     classes: sanitizedClasses.map(c => ({
       id: c.id,
-      name: c.name,
       tasks: c.assignments.map(a => ({
         subjectId: a.subjectId,
         freq: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 5,
         teacherId: a.teacherId
       }))
     })),
-    locks: lockedSlots.map(l => ({ 
-      day: l.dayOfWeek, 
-      period: l.period, 
-      global: l.isSchoolWide, 
-      classIds: l.classIds || [],
-      name: l.name 
-    })),
-    specialInstructions: profile.specialInstructions || "None provided."
+    locks: lockedSlots.map(l => ({ day: l.dayOfWeek, period: l.period, global: l.isSchoolWide, classIds: l.classIds || [] }))
   };
 
   const prompt = `
-    TASK: You are a Pro Optimization Engine for school timetables.
-    
-    CRITICAL CONSTRAINTS:
-    1. PEDAGOGICAL SPACING (HIGHEST PRIORITY): For any class, NEVER schedule the same subjectId twice in the same day if its frequencyPerWeek is 5 or less.
-    2. ONE LESSON PER TEACHER: A teacher cannot teach two classes at once.
-    3. NO DOUBLE BOOKING: A teacher cannot teach the same class the same subject twice in one day. 
-    4. INSTITUTIONAL LOCKS: Never assign subjects to locked slots.
-    5. NO TEACHER CLASHES: One teacher per slot across the entire school.
-    6. TEACHER REST: Respect minimum break requirements.
-    7. SUBJECT FREQUENCY: Meet exact frequency targets.
-    
-    SPECIAL CONSIDERATIONS: ${inputData.specialInstructions}
+    TASK: School Timetable Optimizer.
+    CONSTRAINTS: 
+    - STRICT: One subject per class per day max (if freq <= 5).
+    - No teacher double-booking.
+    - Match weekly frequency exactly.
     DATA: ${JSON.stringify(inputData)}
-    
-    RETURN: A JSON array [{period, day, subjectId, teacherId, classId}]
+    RETURN JSON: Array<{period, day, subjectId, teacherId, classId}>
   `;
 
-  const responseSchema = {
-    type: Type.ARRAY,
-    items: {
-      type: Type.OBJECT,
-      properties: {
-        period: { type: Type.INTEGER },
-        day: { type: Type.INTEGER },
-        subjectId: { type: Type.STRING },
-        teacherId: { type: Type.STRING },
-        classId: { type: Type.STRING }
-      },
-      required: ["period", "day", "subjectId", "teacherId", "classId"]
-    }
-  };
+  // Use Flash by default to save 10x cost, use Pro only for "Deep Solve"
+  const model = useHighPower ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+  const budget = useHighPower ? 16000 : 0;
 
-  try {
-    const response = await generateWithFallback({
-      prompt,
-      primaryModel: 'gemini-3-pro-preview',
-      fallbackModel: 'gemini-3-flash-preview',
-      responseSchema,
-      thinkingBudget: 16000
-    });
-
-    const text = sanitizeJson(response.text || '[]');
-    const slots: ScheduleSlot[] = JSON.parse(text);
-    return slots.map(s => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
-  } catch (e: any) {
-    if (e.message?.includes("429")) {
-      throw new Error("The AI service is currently at capacity (Rate Limit). Please wait a minute and try again.");
-    }
-    throw new Error(e.message || "Optimization failed.");
-  }
-};
-
-export const generateCurriculumRoadmap = async (
-  textbooks: Textbook[],
-  profile: SchoolProfile
-): Promise<QuarterlyPlan> => {
-  const prompt = `Act as a Pro Optimization Engine. Create a 12-week teaching plan for these books: ${JSON.stringify(textbooks)}. Breakdown by week.`;
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      quarterName: { type: Type.STRING },
-      weeks: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            weekNumber: { type: Type.INTEGER },
-            subject: { type: Type.STRING },
-            unit: { type: Type.STRING },
-            pages: { type: Type.STRING }
-          },
-          required: ["weekNumber", "subject", "unit", "pages"]
-        }
+  const response = await generateWithFallback({
+    prompt,
+    primaryModel: model,
+    fallbackModel: 'gemini-3-flash-preview',
+    responseSchema: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          period: { type: Type.INTEGER },
+          day: { type: Type.INTEGER },
+          subjectId: { type: Type.STRING },
+          teacherId: { type: Type.STRING },
+          classId: { type: Type.STRING }
+        },
+        required: ["period", "day", "subjectId", "teacherId", "classId"]
       }
     },
-    required: ["weeks"]
-  };
+    thinkingBudget: budget
+  });
 
-  try {
-    const response = await generateWithFallback({
-      prompt,
-      primaryModel: 'gemini-3-flash-preview', // Roadmap is less complex, use Flash directly
-      fallbackModel: 'gemini-3-flash-preview',
-      responseSchema
-    });
-    return JSON.parse(sanitizeJson(response.text || '{"weeks":[]}'));
-  } catch (e) {
-    return { quarterName: "Error", weeks: [] };
-  }
+  const slots: ScheduleSlot[] = JSON.parse(sanitizeJson(response.text || '[]'));
+  return slots.map(s => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
 };
 
+export const generateCurriculumRoadmap = async (textbooks: Textbook[]): Promise<QuarterlyPlan> => {
+  // Curriculum roadmaps are low-complexity, ALWAYS use Flash.
+  const response = await generateWithFallback({
+    prompt: `Generate 12-week roadmap for: ${JSON.stringify(textbooks)}`,
+    primaryModel: 'gemini-3-flash-preview',
+    fallbackModel: 'gemini-3-flash-preview'
+  });
+  return JSON.parse(sanitizeJson(response.text || '{"weeks":[]}'));
+};
+
+/**
+ * Uses Gemini to analyze the current schedule for efficiency and potential issues.
+ */
 export const analyzeSchedule = async (
   schedule: SchoolSchedule,
   profile: SchoolProfile,
   teachers: Teacher[]
 ): Promise<any> => {
-  const prompt = `Act as a Pro Optimization Engine. Analyze this school schedule for burnout and efficiency. 
-  RETURN JSON EXACTLY: { 
-    score: number (0-100), 
-    loadScore: number (0-100),
-    rulesScore: number (0-100),
-    usageScore: number (0-100),
-    goalScore: number (0-100),
-    flowScore: number (0-100),
-    insights: [string], 
-    burnoutRisks: [string] 
-  }.
-  Schedule: ${JSON.stringify(schedule)}`;
+  const prompt = `
+    TASK: School Schedule Auditor.
+    DATA: 
+    Schedule: ${JSON.stringify(schedule.weeklySlots)}
+    Profile: ${JSON.stringify(profile)}
+    Teachers: ${JSON.stringify(teachers.map(t => ({ id: t.id, name: t.name, role: t.role, maxDaily: t.maxDailyPeriods })))}
+    
+    Analyze for:
+    1. Teacher burnout (exceeding max daily periods).
+    2. Rule violations (multiple high-focus subjects in a day).
+    3. Efficiency of usage.
+    
+    RETURN JSON: {
+      score: number,
+      loadScore: number,
+      rulesScore: number,
+      usageScore: number,
+      goalScore: number,
+      flowScore: number,
+      insights: string[],
+      burnoutRisks: string[]
+    }
+  `;
 
-  try {
-    const response = await generateWithFallback({
-      prompt,
-      primaryModel: 'gemini-3-flash-preview',
-      fallbackModel: 'gemini-3-flash-preview'
-    });
-    return JSON.parse(sanitizeJson(response.text || '{}'));
-  } catch (e) {
-    return { score: 75, insights: ["Automated analysis completed with defaults."] };
-  }
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          score: { type: Type.NUMBER },
+          loadScore: { type: Type.NUMBER },
+          rulesScore: { type: Type.NUMBER },
+          usageScore: { type: Type.NUMBER },
+          goalScore: { type: Type.NUMBER },
+          flowScore: { type: Type.NUMBER },
+          insights: { type: Type.ARRAY, items: { type: Type.STRING } },
+          burnoutRisks: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["score", "insights", "burnoutRisks"]
+      }
+    }
+  });
+
+  return JSON.parse(sanitizeJson(response.text || '{}'));
 };
