@@ -26,6 +26,7 @@ export interface Textbook {
   currentPage?: number;
   classId?: string; 
   assignedQuarter?: number; // 0: Q1, 1: Q2, 2: Q3, 3: Q4
+  color?: string;
 }
 
 export interface Teacher {
