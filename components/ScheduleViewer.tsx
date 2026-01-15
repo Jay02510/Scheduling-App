@@ -64,24 +64,35 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     [schedule?.weeklySlots, currentClass?.id]
   );
 
+  // Availability Mapping for "Ghosting"
+  const teacherBusyMap = useMemo(() => {
+    const map: Record<string, boolean> = {}; // "teacherId:day:period" -> busy
+    (schedule?.weeklySlots || []).forEach(s => {
+      if (s.classId !== currentClass?.id) {
+        map[`${s.teacherId}:${s.day}:${s.period}`] = true;
+      }
+    });
+    return map;
+  }, [schedule, currentClass]);
+
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
   
+  const getUnitForSubject = (subjectId: string) => {
+    const sub = subjects.find(s => s.id === subjectId);
+    const book = textbooks.find(b => b.subject === sub?.name && b.classId === currentClass?.id);
+    return book ? `${book.totalChapters} Units Pool` : null;
+  };
+
   const clashes = useMemo(() => {
     const foundClashes: { day: number, subjectId: string }[] = [];
     if (!currentClass) return foundClashes;
-
     for (let d = 0; d < 5; d++) {
       const daySlots = classSlots.filter(s => s.day === d);
       const counts: Record<string, number> = {};
-      daySlots.forEach(s => {
-        counts[s.subjectId] = (counts[s.subjectId] || 0) + 1;
-      });
-
+      daySlots.forEach(s => { counts[s.subjectId] = (counts[s.subjectId] || 0) + 1; });
       Object.entries(counts).forEach(([subId, count]) => {
         const subConfig = subjects.find(s => s.id === subId);
-        if (count > 1 && (subConfig?.frequencyPerWeek || 0) <= 5) {
-          foundClashes.push({ day: d, subjectId: subId });
-        }
+        if (count > 1 && (subConfig?.frequencyPerWeek || 0) <= 5) foundClashes.push({ day: d, subjectId: subId });
       });
     }
     return foundClashes;
@@ -116,9 +127,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
   const handleDrop = (e: React.DragEvent, day: number, period: number) => {
     e.preventDefault();
-    if (draggedItem && onMoveSlot) {
-      onMoveSlot(draggedItem, { day, period }, currentClass.id, isAltPressed);
-    }
+    if (draggedItem && onMoveSlot) onMoveSlot(draggedItem, { day, period }, currentClass.id, isAltPressed);
     setDraggedItem(null);
     setDropTarget(null);
   };
@@ -130,7 +139,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   };
 
   const onFillMove = (day: number, period: number) => { if (fillSource) setFillTarget({ day, period }); };
-
   const onFillEnd = () => {
     if (fillSource && fillTarget && onFillSlots) {
       const range = {
@@ -144,20 +152,14 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     setFillSource(null); setFillTarget(null);
   };
 
+  const draggingTeacherId = draggedItem ? classSlots.find(s => s.day === draggedItem.day && s.period === draggedItem.period)?.teacherId : null;
+
   return (
     <div className="space-y-8 animate-fadeIn max-w-full pb-32" onMouseUp={onFillEnd}>
       <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
         <div className="flex justify-between items-end">
-          <div>
-            <h1 className="text-3xl font-black uppercase tracking-tighter">{profile?.name}</h1>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">
-              Class Schedule: {currentClass.name} • {profile?.hours.totalPeriods} {t('period')}
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">Institutional Master Grid</span>
-            <span className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</span>
-          </div>
+          <div><h1 className="text-3xl font-black uppercase tracking-tighter">{profile?.name}</h1><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Class Schedule: {currentClass.name} • {profile?.hours.totalPeriods} {t('period')}</p></div>
+          <div className="text-right"><span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">Institutional Master Grid</span><span className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</span></div>
         </div>
       </div>
 
@@ -185,17 +187,10 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl z-[90] no-print">
           <div className="bg-rose-50 border-[2px] border-rose-200 p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 animate-fadeInUp shadow-[0_20px_50px_rgba(244,63,94,0.15)] ring-1 ring-white/50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg animate-pulse">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              </div>
-              <div>
-                <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">{t('clash_detected')}</h4>
-                <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">Found {clashes.length} duplicate lesson instances in this Homeroom.</p>
-              </div>
+              <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg animate-pulse"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></div>
+              <div><h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">{t('clash_detected')}</h4><p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">Found {clashes.length} duplicate lesson instances in this Homeroom.</p></div>
             </div>
-            <div className="flex gap-3">
-               <button onClick={onRegenerate} className="px-7 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl hover:bg-rose-700 transition-all hover:scale-105 active:scale-95 shadow-rose-500/20">{t('ai_fix')}</button>
-            </div>
+            <div className="flex gap-3"><button onClick={onRegenerate} className="px-7 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl hover:bg-rose-700 transition-all hover:scale-105 active:scale-95 shadow-rose-500/20">{t('ai_fix')}</button></div>
           </div>
         </div>
       )}
@@ -206,13 +201,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">{t('institution_grid')} • {currentClass.name}</p>
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            {t('export_pdf')}
-          </button>
+          <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>{t('export_pdf')}</button>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
             {classes.map(c => (
               <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
@@ -243,10 +232,14 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     const lock = (lockedSlots || []).find(f => f.dayOfWeek === dIdx && f.period === pIdx && (f.isSchoolWide || f.classIds.includes(currentClass.id)));
                     const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                     const teacher = teachers.find(t => t.id === slot?.teacherId);
+                    
                     const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
                     const isDragging = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
-                    
                     const hasClash = slot && clashes.some(c => c.day === dIdx && c.subjectId === slot.subjectId);
+                    
+                    // Availability Logic
+                    const isTeacherBusyElseWhere = draggingTeacherId && teacherBusyMap[`${draggingTeacherId}:${dIdx}:${pIdx}`];
+                    const isOptimalSlot = draggingTeacherId && !isTeacherBusyElseWhere && !lock && !slot;
 
                     const isInFillRange = fillSource && fillTarget && (
                       (dIdx === fillSource.day && pIdx >= Math.min(fillSource.period, fillTarget.period) && pIdx <= Math.max(fillSource.period, fillTarget.period)) ||
@@ -262,12 +255,24 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     );
 
                     return (
-                      <td key={dIdx} onMouseEnter={() => onFillMove(dIdx, pIdx)} onDragOver={(e) => handleDragOver(e, dIdx, pIdx)} onDrop={(e) => handleDrop(e, dIdx, pIdx)}
-                        className={`border-r-[2px] last:border-r-0 border-slate-900 p-0 h-[110px] transition-all relative align-top ${isTarget ? 'bg-indigo-50 ring-2 ring-indigo-500 ring-inset z-10' : isInFillRange ? 'bg-blue-50/50 ring-2 ring-blue-500 ring-inset z-20' : 'bg-white group hover:bg-slate-50'}`}>
+                      <td key={dIdx} 
+                        onMouseEnter={() => onFillMove(dIdx, pIdx)} 
+                        onDragOver={(e) => handleDragOver(e, dIdx, pIdx)} 
+                        onDrop={(e) => handleDrop(e, dIdx, pIdx)}
+                        className={`border-r-[2px] last:border-r-0 border-slate-900 p-0 h-[110px] transition-all relative align-top ${
+                          isTarget ? 'bg-indigo-50 ring-2 ring-indigo-500 ring-inset z-10' : 
+                          isInFillRange ? 'bg-blue-50/50 ring-2 ring-blue-500 ring-inset z-20' : 
+                          isTeacherBusyElseWhere ? 'bg-rose-50/40 opacity-40' : 
+                          isOptimalSlot ? 'bg-emerald-50/40 ring-1 ring-emerald-200 ring-inset' : 
+                          'bg-white group hover:bg-slate-50'
+                        }`}>
                         {slot ? (
                           <div className={`h-full flex flex-col relative transition-all ${isDragging ? 'opacity-30 scale-95' : ''} ${isAltPressed ? 'cursor-copy' : 'cursor-grab active:cursor-grabbing'} ${hasClash ? 'ring-2 ring-rose-500 ring-inset bg-rose-50/50' : ''}`} draggable="true" onDragStart={() => handleDragStart(dIdx, pIdx)}>
                             <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden pointer-events-none">
-                              <span className={`text-[13px] font-black uppercase leading-tight line-clamp-2 tracking-tight ${hasClash ? 'text-rose-600' : 'text-slate-900'}`}>{getSubjectName(slot.subjectId)}</span>
+                              <span className={`text-[12px] font-black uppercase leading-tight line-clamp-1 tracking-tight ${hasClash ? 'text-rose-600' : 'text-slate-900'}`}>{getSubjectName(slot.subjectId)}</span>
+                              {getUnitForSubject(slot.subjectId) && (
+                                <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-60">{getUnitForSubject(slot.subjectId)}</span>
+                              )}
                               {hasClash && <span className="text-[7px] font-black uppercase text-rose-500 tracking-[0.2em] mt-1 animate-pulse">Daily Duplicate</span>}
                             </button>
                             <button onClick={(e) => { e.stopPropagation(); if(onJump) onJump(slot.teacherId, 'teacher'); }} className="h-8 flex items-center justify-center border-t-[2px] border-slate-900 shrink-0 hover:brightness-95 transition-all pointer-events-auto" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
@@ -276,7 +281,13 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                             <div onMouseDown={(e) => onFillStart(e, dIdx, pIdx)} className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-blue-600 border border-white cursor-crosshair z-30 hover:scale-125 transition-transform no-print" title="Replicate"></div>
                           </div>
                         ) : (
-                          <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className={`h-full cursor-pointer ${isInFillRange ? 'bg-blue-400/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-[0.03]'}`}></div>
+                          <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className={`h-full cursor-pointer flex items-center justify-center ${isInFillRange ? 'bg-blue-400/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-[0.03]'}`}>
+                             {isTeacherBusyElseWhere && (
+                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <svg className="w-5 h-5 text-rose-300 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                               </div>
+                             )}
+                          </div>
                         )}
                         {isInFillRange && <div className="absolute inset-0 border-2 border-dashed border-blue-500 animate-pulse-soft pointer-events-none no-print"></div>}
                       </td>
