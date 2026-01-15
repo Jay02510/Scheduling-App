@@ -21,6 +21,9 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isConfigMode, setIsConfigMode] = useState(false);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
+  
+  // Selection Engine State
+  const [selectingSlot, setSelectingSlot] = useState<{ quarterId: number, subjectName: string } | null>(null);
 
   const quarters = [
     { id: 0, label: '1st Quarter', semester: 'S1', months: 'Mar-May' },
@@ -30,8 +33,8 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
   ];
 
   const currentClass = classes.find(c => c.id === selectedClassId);
-  
-  // FIX: Proper HTML5 Drag & Drop handlers
+
+  // --- INTERACTION LOGIC: DRAG & DROP ---
   const handleDragStart = (e: React.DragEvent, id: string) => {
     e.dataTransfer.setData('text/plain', id);
     e.dataTransfer.effectAllowed = 'move';
@@ -42,12 +45,26 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
     const bookId = e.dataTransfer.getData('text/plain');
     if (!bookId) return;
 
+    assignBookToSlot(bookId, quarterId, subjectName);
+  };
+
+  // --- INTERACTION LOGIC: ASSIGNMENT ---
+  const assignBookToSlot = (bookId: string, quarterId: number, subjectName: string) => {
     const updated = textbooks.map(t => 
       t.id === bookId ? { ...t, assignedQuarter: quarterId, subject: subjectName, classId: selectedClassId } : t
     );
     onUpdateTextbooks(updated);
+    setSelectingSlot(null);
   };
 
+  const removeBookFromSlot = (bookId: string) => {
+    const updated = textbooks.map(t => 
+      t.id === bookId ? { ...t, assignedQuarter: undefined } : t
+    );
+    onUpdateTextbooks(updated);
+  };
+
+  // --- ONBOARDING LOGIC ---
   const toggleSubjectForClass = (subId: string) => {
     if (!currentClass || !onUpdateClasses) return;
     const isAssigned = currentClass.assignments.some(a => a.subjectId === subId);
@@ -86,7 +103,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
 
   if (!currentClass) return null;
 
-  // Onboarding View: If class has no subjects or user enters Config Mode
+  // --- VIEW: ONBOARDING WIZARD (Modular Partition) ---
   if (!currentClass.isCurriculumOnboarded || isConfigMode) {
     return (
       <div className="space-y-10 animate-fadeIn pb-24 max-w-5xl mx-auto">
@@ -146,7 +163,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
   ];
 
   return (
-    <div className="space-y-10 animate-fadeIn pb-24 max-w-full">
+    <div className="space-y-10 animate-fadeIn pb-24 max-w-full relative">
       <header className="flex flex-col md:flex-row justify-between items-end gap-6 no-print">
         <div className="flex items-center gap-6">
           <div>
@@ -174,9 +191,53 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
         </div>
       </header>
 
-      {/* FIXED: Drag & Drop Sidebar Repository */}
+      {/* --- MODAL: SELECTOR OVERLAY --- */}
+      {selectingSlot && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[150] flex items-center justify-center p-6 no-print">
+           <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden animate-fadeInUp">
+              <div className="p-8 border-b bg-slate-50 flex justify-between items-center">
+                 <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Assign Asset</h3>
+                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">{selectingSlot.subjectName} • Quarter {selectingSlot.quarterId + 1}</p>
+                 </div>
+                 <button onClick={() => setSelectingSlot(null)} className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                 </button>
+              </div>
+              <div className="p-8 space-y-3 max-h-[50vh] overflow-y-auto custom-scrollbar">
+                 {textbooks
+                    .filter(t => t.classId === selectedClassId && t.subject === selectingSlot.subjectName)
+                    .map(book => (
+                       <button 
+                          key={book.id} 
+                          onClick={() => assignBookToSlot(book.id, selectingSlot.quarterId, selectingSlot.subjectName)}
+                          className="w-full p-6 rounded-2xl border-2 border-slate-50 bg-slate-50/50 hover:bg-white hover:border-indigo-500 transition-all text-left flex items-center justify-between group"
+                       >
+                          <div>
+                             <p className="font-black text-slate-900 text-sm uppercase tracking-tight">{book.title}</p>
+                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{book.totalChapters} Units</p>
+                          </div>
+                          <svg className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
+                       </button>
+                    ))}
+                 
+                 {textbooks.filter(t => t.classId === selectedClassId && t.subject === selectingSlot.subjectName).length === 0 && (
+                    <div className="text-center py-12 space-y-4">
+                       <p className="text-[10px] font-black text-slate-300 uppercase italic">No {selectingSlot.subjectName} books found in repository</p>
+                       <button onClick={handleAddBook} className="text-indigo-500 font-black text-[10px] uppercase tracking-widest underline underline-offset-4">+ Register New Book</button>
+                    </div>
+                 )}
+              </div>
+              <div className="p-6 bg-slate-900 flex justify-center">
+                 <button onClick={() => setSelectingSlot(null)} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Close Selection</button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- VIEW: ASSET REPOSITORY (Drawer) --- */}
       {isLibraryOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[100] flex items-center justify-end">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[100] flex items-center justify-end no-print">
            <div className="bg-white h-full w-full max-w-xl flex flex-col shadow-2xl animate-fadeIn">
               <div className="p-8 border-b flex justify-between items-center bg-slate-50">
                  <div>
@@ -213,7 +274,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
                              />
                            ) : (
                              <div className="flex-1">
-                               <p className="font-black text-slate-900 text-lg uppercase leading-tight tracking-tight">{book.title}</p>
+                               <p className="font-black text-slate-900 text-sm uppercase leading-tight tracking-tight">{book.title}</p>
                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{book.assignedQuarter !== undefined ? `Assigned to Q${book.assignedQuarter + 1}` : 'Unmapped Sequence'}</p>
                              </div>
                            )}
@@ -222,7 +283,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
                            </button>
                         </div>
                         <div className="flex items-center gap-3 mt-4">
-                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Chapters: {book.totalChapters}</span>
+                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Units: {book.totalChapters}</span>
                            <select 
                              className="bg-white border rounded-lg px-2 py-1 text-[8px] font-black uppercase"
                              value={book.subject}
@@ -239,12 +300,12 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
         </div>
       )}
 
-      {/* Annual Grid */}
+      {/* --- VIEW: SEQUENTIAL GRID (Modular Architecture) --- */}
       <div className="bg-white border-[3px] border-slate-900 rounded-[3rem] overflow-hidden shadow-[32px_32px_0px_rgba(0,0,0,0.03)] max-w-full overflow-x-auto">
         <table className="w-full border-collapse min-w-[1200px]">
           <thead>
             <tr className="bg-slate-50 border-b-[3px] border-slate-900">
-              <th rowSpan={2} className="border-r-[3px] border-slate-900 p-8 w-64 text-[12px] font-black uppercase text-slate-400 bg-white">Resource Stream</th>
+              <th rowSpan={2} className="border-r-[3px] border-slate-900 p-8 w-64 text-[12px] font-black uppercase text-slate-400 bg-white">Instructional Stream</th>
               <th colSpan={2} className="border-r-[3px] border-slate-900 p-4 text-[11px] font-black uppercase tracking-[0.3em] bg-indigo-50 text-indigo-900">1st Semester</th>
               <th colSpan={2} className="p-4 text-[11px] font-black uppercase tracking-[0.3em] bg-emerald-50 text-emerald-900">2nd Semester</th>
             </tr>
@@ -284,7 +345,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
                         key={q.id} 
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => handleDrop(e, q.id, sub.name)}
-                        className={`border-r-[3px] last:border-r-0 border-slate-900 p-4 min-h-[140px] align-top relative group ${!isVisibleInQuarter ? 'bg-slate-50/50 grayscale opacity-40' : ''}`}
+                        className={`border-r-[3px] last:border-r-0 border-slate-900 p-4 min-h-[140px] align-top relative group transition-colors ${!isVisibleInQuarter ? 'bg-slate-50/50 grayscale opacity-40' : 'hover:bg-slate-50/50'}`}
                       >
                         {isVisibleInQuarter ? (
                           <div className="space-y-3">
@@ -299,19 +360,24 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
                                  <p className="text-[11px] font-black text-slate-900 uppercase leading-tight line-clamp-2 tracking-tight">{book.title}</p>
                                  <div className="flex items-center justify-between mt-2">
                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{book.totalChapters} Units</span>
-                                    <button onClick={() => onUpdateTextbooks(textbooks.map(t => t.id === book.id ? {...t, assignedQuarter: undefined} : t))} className="text-rose-300 hover:text-rose-500 opacity-0 group-hover/book:opacity-100 transition-opacity">
-                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <button onClick={() => removeBookFromSlot(book.id)} className="text-rose-300 hover:text-rose-500 opacity-0 group-hover/book:opacity-100 transition-opacity">
+                                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
                                  </div>
                               </div>
                             ))}
-                            <div className="h-16 rounded-2xl border-2 border-dashed border-slate-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
-                              <span className="text-[9px] font-black text-slate-300 uppercase">Drop into Sequence</span>
-                            </div>
+                            
+                            {/* --- INTERACTIVE SLOT TRIGGER --- */}
+                            <button 
+                               onClick={() => setSelectingSlot({ quarterId: q.id, subjectName: sub.name })}
+                               className="w-full h-16 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:border-indigo-500 hover:bg-white transition-all cursor-pointer"
+                            >
+                               <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">+ Add {sub.name} Asset</span>
+                            </button>
                           </div>
                         ) : (
                           <div className="h-full flex items-center justify-center">
-                             <span className="text-[8px] font-black text-slate-300 uppercase rotate-[-45deg]">Inactive Semester</span>
+                             <span className="text-[8px] font-black text-slate-300 uppercase rotate-[-45deg] tracking-widest">Off Semester</span>
                           </div>
                         )}
                       </td>
@@ -322,6 +388,17 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
             })}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex justify-center gap-12 no-print opacity-60">
+         <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full bg-slate-100 border-2 border-dashed border-slate-300"></div>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Empty Slots (Click to Select)</span>
+         </div>
+         <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full bg-indigo-500 shadow-lg"></div>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Curriculum Unit</span>
+         </div>
       </div>
     </div>
   );
