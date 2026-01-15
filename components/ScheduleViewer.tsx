@@ -253,7 +253,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     if (lock) return (
                       <td key={dIdx} className="border-r-[2px] last:border-r-0 border-slate-900 p-0 h-[110px] align-middle relative overflow-hidden bg-vivid-blocked">
                         <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
-                          <span className="text-[11px] font-black uppercase tracking-tight text-slate-500 leading-none">{lock.name}</span>
+                          <span className="text-[10px] font-black uppercase tracking-tight text-slate-400 leading-none">{lock.name}</span>
                         </div>
                       </td>
                     );
