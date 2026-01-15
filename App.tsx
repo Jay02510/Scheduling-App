@@ -146,12 +146,10 @@ const App: React.FC = () => {
       if (!confirm) return;
     }
 
-    const isComplex = classes.length > 4 || teachers.length > 8 || (profile.specialInstructions?.length || 0) > 40;
-    
     setIsLoading(true);
     setErrorMessage(null);
     setValidationIssues([]);
-    setLoadingMsg("Syncing Throttled Engine...");
+    setLoadingMsg("Initializing Synchronization...");
     
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
@@ -160,7 +158,7 @@ const App: React.FC = () => {
         lockedSlots, 
         classes, 
         currentProfile, 
-        isComplex,
+        true, // Always use pro for Weaver to ensure better constraint logic
         (msg) => setLoadingMsg(msg)
       );
       
@@ -169,7 +167,7 @@ const App: React.FC = () => {
       if (validation.issues.length > 0) setValidationIssues(validation.issues);
       setIsLoading(false);
     } catch (e: any) {
-      setErrorMessage(e.message || "Parallel optimization failed. Check your API limits.");
+      setErrorMessage(`Sync Error: ${e.message || "Parallel optimization failed."}`);
       setIsLoading(false);
     }
   };
@@ -188,7 +186,7 @@ const App: React.FC = () => {
           </span>
         </div>
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-          Engine Mode: Stabilized Throttling
+          Engine Mode: Optimized Batch Processing
         </div>
       </div>
 
@@ -205,21 +203,34 @@ const App: React.FC = () => {
               <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
             </div>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Optimizing structural overlaps...</p>
           </div>
         </div>
       ) : (
         <>
-          {errorMessage && (
-            <div className="mb-8 p-6 bg-rose-50 border-2 border-rose-200 rounded-[2rem] flex flex-col gap-4 animate-fadeIn shadow-lg">
+          {(errorMessage || validationIssues.length > 0) && (
+            <div className="mb-8 p-8 bg-rose-50 border-2 border-rose-200 rounded-[2.5rem] space-y-4 animate-fadeIn shadow-xl">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-rose-500 rounded-xl flex items-center justify-center text-white shadow-md">
+                <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 </div>
                 <div>
-                  <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Sync Obstruction</h4>
-                  <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage}</p>
+                  <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Schedule Conflict Report</h4>
+                  <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage || "Minor validation warnings identified."}</p>
                 </div>
               </div>
+              
+              {validationIssues.length > 0 && (
+                <div className="mt-4 space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
+                  {validationIssues.map((issue, idx) => (
+                    <div key={idx} className="flex gap-3 items-start p-3 bg-white/50 rounded-xl border border-rose-100">
+                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full mt-1.5 shrink-0"></div>
+                      <p className="text-[10px] font-bold text-rose-800 uppercase tracking-tight leading-relaxed">{issue}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => { setErrorMessage(null); setValidationIssues([]); }} className="text-[9px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-600 transition-colors pt-2">Dismiss Alerts</button>
             </div>
           )}
 

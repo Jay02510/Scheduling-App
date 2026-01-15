@@ -75,6 +75,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
       Object.entries(counts).forEach(([subId, count]) => {
         const subConfig = subjects.find(s => s.id === subId);
+        // Only mark as clash if freq is 5 or less (usually meaning max 1 per day)
         if (count > 1 && (subConfig?.frequencyPerWeek || 0) <= 5) {
           foundClashes.push({ day: d, subjectId: subId });
         }
@@ -142,7 +143,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
   return (
     <div className="space-y-8 animate-fadeIn max-w-full pb-32" onMouseUp={onFillEnd}>
-      {/* Print-Only Header */}
       <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
         <div className="flex justify-between items-end">
           <div>
@@ -187,12 +187,11 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
               </div>
               <div>
                 <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Pedagogical Clash Detected</h4>
-                <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">Some subjects are scheduled twice in the same day.</p>
+                <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">Found {clashes.length} duplicate lesson instances in this Homeroom.</p>
               </div>
             </div>
             <div className="flex gap-3">
-               <button onClick={() => setSelectedClassId(classes[0].id)} className="px-5 py-3 bg-white text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest border border-rose-100 hover:bg-slate-50 transition-colors">Manual Fix</button>
-               <button onClick={onRegenerate} className="px-7 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl hover:bg-rose-700 transition-all hover:scale-105 active:scale-95 shadow-rose-500/20">AI Re-Balance</button>
+               <button onClick={onRegenerate} className="px-7 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl hover:bg-rose-700 transition-all hover:scale-105 active:scale-95 shadow-rose-500/20">AI Fix</button>
             </div>
           </div>
         </div>
