@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Textbook, SubjectConfig, ClassGroup, ClassSubjectAssignment } from '../types';
+import { Textbook, SubjectConfig, ClassGroup, ClassSubjectAssignment, Language } from '../types';
+import { TRANSLATIONS } from '../constants';
 
 interface CurriculumRoadmapProps {
   textbooks: Textbook[];
@@ -8,6 +9,7 @@ interface CurriculumRoadmapProps {
   subjects: SubjectConfig[];
   classes: ClassGroup[];
   onUpdateClasses?: (classes: ClassGroup[]) => void;
+  language: Language;
 }
 
 const BOOK_ACCENT_COLORS = [
@@ -19,31 +21,30 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
   onUpdateTextbooks, 
   subjects, 
   classes,
-  onUpdateClasses 
+  onUpdateClasses,
+  language
 }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isConfigMode, setIsConfigMode] = useState(false);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   
-  // Selection Engine State
+  const t = (key: string) => TRANSLATIONS[language][key] || key;
   const [selectingSlot, setSelectingSlot] = useState<{ quarterId: number, subjectName: string } | null>(null);
 
   const quarters = [
-    { id: 0, label: '1st Quarter', semester: 'S1', months: 'Mar - May' },
-    { id: 1, label: '2nd Quarter', semester: 'S1', months: 'Jun - Aug' },
-    { id: 2, label: '3rd Quarter', semester: 'S2', months: 'Sep - Nov' },
-    { id: 3, label: '4th Quarter', semester: 'S2', months: 'Dec - Feb' },
+    { id: 0, label: t('quarter_1'), semester: 'S1', months: 'Mar - May' },
+    { id: 1, label: t('quarter_2'), semester: 'S1', months: 'Jun - Aug' },
+    { id: 2, label: t('quarter_3'), semester: 'S2', months: 'Sep - Nov' },
+    { id: 3, label: t('quarter_4'), semester: 'S2', months: 'Dec - Feb' },
   ];
 
   const currentClass = classes.find(c => c.id === selectedClassId);
 
-  // --- LOGIC: UPDATE HELPER ---
   const updateBook = (id: string, updates: Partial<Textbook>) => {
     onUpdateTextbooks(textbooks.map(t => t.id === id ? { ...t, ...updates } : t));
   };
 
-  // --- LOGIC: ASSIGNMENT ---
   const assignBookToSlot = (bookId: string, quarterId: number, subjectName: string) => {
     const updated = textbooks.map(t => 
       t.id === bookId ? { ...t, assignedQuarter: quarterId, subject: subjectName, classId: selectedClassId } : t
@@ -60,7 +61,6 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
     onUpdateTextbooks(updated);
   };
 
-  // --- LOGIC: ASSET CREATION ---
   const handleAddBook = (autoAssign?: { quarterId: number, subjectName: string }) => {
     const newId = Math.random().toString(36).substr(2, 9);
     const assignedSubjects = currentClass?.assignments.map(a => subjects.find(s => s.id === a.subjectId)?.name).filter(Boolean) || [];
@@ -84,8 +84,6 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
     setEditingBookId(newId);
   };
 
-  // --- COMPONENT: SHARED BOOK CARD ---
-  // Fix: Explicitly type TextbookCard as React.FC to ensure 'key' prop is recognized in JSX
   const TextbookCard: React.FC<{ book: Textbook, onAssign?: () => void, isModalView?: boolean }> = ({ book, onAssign, isModalView = false }) => {
     const isEditing = editingBookId === book.id;
     const inputRef = useRef<HTMLInputElement>(null);
@@ -128,7 +126,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
                     onChange={(e) => updateBook(book.id, { totalChapters: parseInt(e.target.value) || 0 })}
                   />
                 </div>
-                <button onClick={() => setEditingBookId(null)} className="w-full py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md">Done</button>
+                <button onClick={() => setEditingBookId(null)} className="w-full py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md">{t('confirm_setup')}</button>
               </div>
             ) : (
               <div className="text-left w-full">
@@ -181,10 +179,10 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
       <div className="space-y-10 animate-fadeIn pb-24 max-w-5xl mx-auto">
         <header className="flex flex-col md:flex-row justify-between items-end gap-6">
           <div>
-            <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Class Setup</h2>
+            <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{t('setup')}</h2>
             <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Subjects for {currentClass.name}</p>
           </div>
-          <button onClick={handleFinishOnboarding} className="px-8 py-4 bg-[#0f172a] text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl border border-indigo-500/30">Confirm Setup</button>
+          <button onClick={handleFinishOnboarding} className="px-8 py-4 bg-[#0f172a] text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl border border-indigo-500/30">{t('confirm_setup')}</button>
         </header>
         <div className="bg-white p-10 rounded-[3rem] border-2 border-slate-100 shadow-sm space-y-8">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -235,7 +233,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
       <header className="flex flex-col md:flex-row justify-between items-end gap-6 no-print">
         <div className="flex items-center gap-6">
           <div>
-            <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Curriculum Roadmap</h2>
+            <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{t('curriculum')}</h2>
             <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">{currentClass.name} Annual Sequence</p>
           </div>
           <button onClick={() => setIsConfigMode(true)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:text-indigo-600 hover:bg-white shadow-sm transition-all">
@@ -245,7 +243,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
         <div className="flex gap-4 items-center">
           <button onClick={() => setIsLibraryOpen(true)} className="px-6 py-4 bg-[#0f172a] text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-2 border border-slate-700">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-            Resource Pool
+            {t('resource_pool')}
           </button>
           <div className="flex gap-2 bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
             {classes.map(c => (
@@ -261,7 +259,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
            <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fadeInUp border-4 border-slate-900 flex flex-col max-h-[90vh]">
               <div className="p-8 border-b bg-slate-50 flex justify-between items-center">
                  <div>
-                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Assign {selectingSlot.subjectName}</h3>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t('modify_lesson')} {selectingSlot.subjectName}</h3>
                     <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">Q{selectingSlot.quarterId + 1} Mapping • {currentClass.name}</p>
                  </div>
                  <button onClick={() => setSelectingSlot(null)} className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors">
@@ -269,7 +267,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
                  </button>
               </div>
               <div className="p-8 space-y-4 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/30">
-                 <button onClick={() => handleAddBook(selectingSlot)} className="w-full py-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-widest hover:border-indigo-100 hover:text-indigo-500 bg-white transition-all">+ Register New Resource</button>
+                 <button onClick={() => handleAddBook(selectingSlot)} className="w-full py-10 border-4 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 font-black text-[10px] uppercase tracking-widest hover:border-indigo-100 hover:text-indigo-500 bg-white transition-all">+ {t('register_resource')}</button>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    {textbooks.filter(t => (t.classId === selectedClassId || !t.classId) && t.subject === selectingSlot.subjectName).map(book => (
                      <TextbookCard key={book.id} book={book} isModalView onAssign={() => assignBookToSlot(book.id, selectingSlot.quarterId, selectingSlot.subjectName)} />
@@ -285,11 +283,11 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[100] flex items-center justify-end no-print">
            <div className="bg-white h-full w-full max-w-xl flex flex-col shadow-2xl animate-fadeIn border-l-8 border-slate-900">
               <div className="p-8 border-b bg-slate-50 flex justify-between items-center">
-                 <div><h3 className="text-xl font-black text-slate-900 uppercase">Resource Pool</h3><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Available for {currentClass.name}</p></div>
+                 <div><h3 className="text-xl font-black text-slate-900 uppercase">{t('resource_pool')}</h3><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Available for {currentClass.name}</p></div>
                  <button onClick={() => setIsLibraryOpen(false)} className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg></button>
               </div>
               <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
-                 <button onClick={() => handleAddBook()} className="w-full py-8 border-4 border-dashed border-slate-100 rounded-[2rem] text-slate-300 font-black text-[10px] uppercase hover:text-indigo-500 transition-all">+ New Global Resource</button>
+                 <button onClick={() => handleAddBook()} className="w-full py-8 border-4 border-dashed border-slate-100 rounded-[2rem] text-slate-300 font-black text-[10px] uppercase hover:text-indigo-500 transition-all">+ {t('register_resource')}</button>
                  <div className="grid grid-cols-1 gap-4">
                    {textbooks.filter(t => t.classId === selectedClassId || !t.classId).map(book => (
                      <TextbookCard key={book.id} book={book} />
@@ -305,9 +303,9 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
         <table className="w-full border-collapse min-w-[1200px]">
           <thead>
             <tr className="bg-slate-50 border-b-[4px] border-slate-900 text-slate-900">
-              <th rowSpan={3} className="border-r-[4px] border-slate-900 p-8 w-64 text-[12px] font-black uppercase bg-white">Academic Stream</th>
-              <th colSpan={2} className="border-r-[4px] border-slate-900 p-4 bg-indigo-50 text-indigo-900 font-black text-[10px] uppercase tracking-widest text-center">Semester 1 Focus</th>
-              <th colSpan={2} className="p-4 bg-emerald-50 text-emerald-900 font-black text-[10px] uppercase tracking-widest text-center">Semester 2 Focus</th>
+              <th rowSpan={3} className="border-r-[4px] border-slate-900 p-8 w-64 text-[12px] font-black uppercase bg-white">{t('academic_stream')}</th>
+              <th colSpan={2} className="border-r-[4px] border-slate-900 p-4 bg-indigo-50 text-indigo-900 font-black text-[10px] uppercase tracking-widest text-center">{t('semester_1')}</th>
+              <th colSpan={2} className="p-4 bg-emerald-50 text-emerald-900 font-black text-[10px] uppercase tracking-widest text-center">{t('semester_2')}</th>
             </tr>
             <tr className="bg-white border-b-[2px] border-slate-900">
               {quarters.map(q => <th key={q.id} className="border-r-[4px] last:border-r-0 border-slate-900 p-4 text-[11px] font-black uppercase tracking-widest">{q.label}</th>)}

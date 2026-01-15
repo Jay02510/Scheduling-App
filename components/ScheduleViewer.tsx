@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, SubjectConfig, ScheduleSlot, Textbook, LockedSlot } from '../types';
+import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, SubjectConfig, ScheduleSlot, Textbook, LockedSlot, Language } from '../types';
+import { TRANSLATIONS } from '../constants';
 
 interface ScheduleViewerProps {
   schedule: SchoolSchedule;
@@ -18,6 +19,7 @@ interface ScheduleViewerProps {
   onJump?: (id: string, type: 'teacher' | 'class') => void;
   onRegenerate?: () => void;
   initialClassId?: string;
+  language: Language;
 }
 
 const formatTime = (timeStr: string, minutesToAdd: number) => {
@@ -27,7 +29,7 @@ const formatTime = (timeStr: string, minutesToAdd: number) => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
-const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onMoveSlot, onFillSlots, onNavigate, onJump, onRegenerate, initialClassId }) => {
+const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onMoveSlot, onFillSlots, onNavigate, onJump, onRegenerate, initialClassId, language }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
   const [draggedItem, setDraggedItem] = useState<{ day: number, period: number } | null>(null);
@@ -35,6 +37,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   const [dropTarget, setDropTarget] = useState<{ day: number, period: number } | null>(null);
   const [fillSource, setFillSource] = useState<{ day: number, period: number } | null>(null);
   const [fillTarget, setFillTarget] = useState<{ day: number, period: number } | null>(null);
+
+  const t = (key: string) => TRANSLATIONS[language][key] || key;
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => setIsAltPressed(e.altKey);
@@ -48,7 +52,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     };
   }, [classes, initialClassId]);
 
-  const days = ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
+  const days = language === 'ko' ? ['월', '화', '수', '목', '금'] : ['MON', 'TUE', 'WED', 'THUR', 'FRI'];
   const totalPeriods = profile?.hours?.totalPeriods || 8;
   const startTime = profile?.hours?.startTime || '08:30';
   const duration = profile?.hours?.periodDuration || 45;
@@ -75,7 +79,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
       Object.entries(counts).forEach(([subId, count]) => {
         const subConfig = subjects.find(s => s.id === subId);
-        // Only mark as clash if freq is 5 or less (usually meaning max 1 per day)
         if (count > 1 && (subConfig?.frequencyPerWeek || 0) <= 5) {
           foundClashes.push({ day: d, subjectId: subId });
         }
@@ -148,7 +151,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tighter">{profile?.name}</h1>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">
-              Class Schedule: {currentClass.name} • {profile?.hours.totalPeriods} Periods
+              Class Schedule: {currentClass.name} • {profile?.hours.totalPeriods} {t('period')}
             </p>
           </div>
           <div className="text-right">
@@ -161,9 +164,9 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       {editingSlot && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 no-print">
           <div className="bg-white rounded-[3rem] p-12 w-full max-w-md shadow-2xl animate-fadeIn">
-            <h3 className="text-2xl font-black text-slate-900 mb-8 uppercase tracking-tight">Modify Lesson</h3>
+            <h3 className="text-2xl font-black text-slate-900 mb-8 uppercase tracking-tight">{t('modify_lesson')}</h3>
             <div className="space-y-4">
-              <button onClick={() => handleApplyChange('')} className="w-full py-5 rounded-2xl bg-slate-100 text-slate-500 font-black text-[11px] uppercase mb-4 hover:bg-slate-200">Clear Slot</button>
+              <button onClick={() => handleApplyChange('')} className="w-full py-5 rounded-2xl bg-slate-100 text-slate-500 font-black text-[11px] uppercase mb-4 hover:bg-slate-200">{t('clear_slot')}</button>
               <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar space-y-2">
                 {currentClass.assignments.map(a => (
                   <button key={a.subjectId} onClick={() => handleApplyChange(a.subjectId)} className="w-full py-5 rounded-2xl bg-white border-2 border-slate-100 text-slate-900 font-black text-[12px] uppercase flex items-center justify-between px-6 hover:border-slate-900 transition-all">
@@ -173,7 +176,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                 ))}
               </div>
             </div>
-            <button onClick={() => setEditingSlot(null)} className="mt-8 w-full text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] py-4">Close Menu</button>
+            <button onClick={() => setEditingSlot(null)} className="mt-8 w-full text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] py-4">{t('close_menu')}</button>
           </div>
         </div>
       )}
@@ -186,12 +189,12 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
               </div>
               <div>
-                <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Pedagogical Clash Detected</h4>
+                <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">{t('clash_detected')}</h4>
                 <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">Found {clashes.length} duplicate lesson instances in this Homeroom.</p>
               </div>
             </div>
             <div className="flex gap-3">
-               <button onClick={onRegenerate} className="px-7 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl hover:bg-rose-700 transition-all hover:scale-105 active:scale-95 shadow-rose-500/20">AI Fix</button>
+               <button onClick={onRegenerate} className="px-7 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl hover:bg-rose-700 transition-all hover:scale-105 active:scale-95 shadow-rose-500/20">{t('ai_fix')}</button>
             </div>
           </div>
         </div>
@@ -199,8 +202,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
 
       <header className="flex flex-col md:flex-row justify-between items-end gap-6 no-print">
         <div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Homeroom Portal</h2>
-          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Institution Grid • {currentClass.name}</p>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{t('homeroom_portal')}</h2>
+          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">{t('institution_grid')} • {currentClass.name}</p>
         </div>
         <div className="flex items-center gap-4">
           <button 
@@ -208,7 +211,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            Export PDF
+            {t('export_pdf')}
           </button>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
             {classes.map(c => (
@@ -222,7 +225,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         <table className="w-full border-collapse table-fixed min-w-[1000px]">
           <thead>
             <tr className="bg-slate-50 border-b-[2px] border-slate-900">
-              <th className="border-r-[2px] border-slate-900 p-4 text-[10px] font-black uppercase w-40">Period</th>
+              <th className="border-r-[2px] border-slate-900 p-4 text-[10px] font-black uppercase w-40">{t('period')}</th>
               {days.map(d => <th key={d} className="border-r-[2px] last:border-r-0 border-slate-900 p-4 text-[10px] font-black uppercase tracking-widest">{d}</th>)}
             </tr>
           </thead>

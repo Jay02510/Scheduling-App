@@ -1,4 +1,6 @@
 
+export type Language = 'en' | 'ko';
+
 export interface SchoolEvent {
   id: string;
   name: string;

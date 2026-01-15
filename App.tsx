@@ -1,9 +1,10 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, saveUserData, fetchUserData, clearUserData } from './services/firebase';
-import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolSchedule, SchoolProfile, SubjectConfig, ScheduleSlot } from './types';
+import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolSchedule, SchoolProfile, SubjectConfig, ScheduleSlot, Language } from './types';
 import { generateWeeklyMaster, computeInputHash } from './services/geminiService';
+import { TRANSLATIONS } from './constants';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ScheduleForm from './components/ScheduleForm';
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
+  const [language, setLanguage] = useState<Language>('ko'); // Default to Korean as requested
   
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
@@ -34,6 +36,8 @@ const App: React.FC = () => {
   const [schedule, setSchedule] = useState<SchoolSchedule | null>(null);
   const [navigationFocus, setNavigationFocus] = useState<{ id: string, type: 'teacher' | 'class' } | null>(null);
 
+  const t = (key: string) => TRANSLATIONS[language][key] || key;
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setAuthLoading(true);
@@ -49,6 +53,7 @@ const App: React.FC = () => {
           setSubjects(cloudData.subjects || []);
           setSchedule(cloudData.schedule || null);
           setLastInputHash(cloudData.lastInputHash || '');
+          if (cloudData.language) setLanguage(cloudData.language);
         }
       }
       setAuthLoading(false);
@@ -61,12 +66,13 @@ const App: React.FC = () => {
       const dataToSave = {
         profile: { ...profile, teachers, classes, textbooks, lockedSlots, subjects },
         teachers, classes, textbooks, lockedSlots, subjects, schedule,
-        lastInputHash
+        lastInputHash,
+        language
       };
       const timeoutId = setTimeout(() => { saveUserData(user.uid, dataToSave); }, 5000);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading, lastInputHash]);
+  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading, lastInputHash, language]);
 
   const handleEntityJump = (id: string, type: 'teacher' | 'class') => {
     setNavigationFocus({ id, type });
@@ -140,7 +146,6 @@ const App: React.FC = () => {
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     
-    // Always use current profile state to ensure specialInstructions are captured
     const currentInputState = { 
       teachers, 
       classes, 
@@ -151,14 +156,14 @@ const App: React.FC = () => {
     
     const currentHash = computeInputHash(currentInputState);
     if (currentHash === lastInputHash) {
-      const confirm = window.confirm("Configuration identical to last sync. Force re-synchronization?");
+      const confirm = window.confirm(t('confirmation_resync'));
       if (!confirm) return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
     setValidationIssues([]);
-    setLoadingMsg("Initializing Parallel Infrastructure Sync...");
+    setLoadingMsg(t('sync_initializing'));
     
     try {
       const currentProfile: SchoolProfile = { 
@@ -176,7 +181,7 @@ const App: React.FC = () => {
         lockedSlots, 
         classes, 
         currentProfile, 
-        true, // Power mode
+        true,
         (msg) => setLoadingMsg(msg)
       );
       
@@ -199,12 +204,12 @@ const App: React.FC = () => {
   if (!profile) return <Onboarding onComplete={(p) => { setProfile(p); setTeachers(p.teachers); setClasses(p.classes); setSubjects(p.subjects); }} />;
 
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab} language={language} setLanguage={setLanguage}>
       <div className="mb-8 no-print flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-100 p-4 rounded-[2rem] border border-slate-200">
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions || "" }) === lastInputHash ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></div>
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            {computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions || "" }) === lastInputHash ? 'System State: Synchronized' : 'Drafting Phase: Local Changes Detected'}
+            {computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions || "" }) === lastInputHash ? t('synchronized') : t('local_changes')}
           </span>
         </div>
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
@@ -259,12 +264,12 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} onJump={handleEntityJump} />}
-          {activeTab === 'setup' && <ScheduleForm profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} schedule={schedule} onNavigate={setActiveTab} />}
-          {activeTab === 'homerooms' && <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} onUpdateSlot={handleUpdateScheduleSlot} onMoveSlot={handleMoveScheduleSlot} onFillSlots={handleFillScheduleSlots} onNavigate={setActiveTab} onRegenerate={handleGenerateMaster} onJump={handleEntityJump} initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined} />}
-          {activeTab === 'curriculum' && <CurriculumRoadmap textbooks={textbooks} onUpdateTextbooks={setTextbooks} subjects={subjects} classes={classes} onUpdateClasses={setClasses} />}
-          {activeTab === 'faculty' && <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} lockedSlots={lockedSlots} profile={profile} initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined} />}
-          {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />}
+          {activeTab === 'home' && <Dashboard teachers={teachers} classes={classes} textbooks={textbooks} onResync={() => setActiveTab('setup')} onJump={handleEntityJump} language={language} />}
+          {activeTab === 'setup' && <ScheduleForm profile={profile} setProfile={setProfile} teachers={teachers} setTeachers={setTeachers} classes={classes} setClasses={setClasses} textbooks={textbooks} setTextbooks={setTextbooks} lockedSlots={lockedSlots} setLockedSlots={setLockedSlots} subjects={subjects} setSubjects={setSubjects} onGenerate={handleGenerateMaster} schedule={schedule} onNavigate={setActiveTab} language={language} />}
+          {activeTab === 'homerooms' && <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} onUpdateSlot={handleUpdateScheduleSlot} onMoveSlot={handleMoveScheduleSlot} onFillSlots={handleFillScheduleSlots} onNavigate={setActiveTab} onRegenerate={handleGenerateMaster} onJump={handleEntityJump} initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined} language={language} />}
+          {activeTab === 'curriculum' && <CurriculumRoadmap textbooks={textbooks} onUpdateTextbooks={setTextbooks} subjects={subjects} classes={classes} onUpdateClasses={setClasses} language={language} />}
+          {activeTab === 'faculty' && <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} lockedSlots={lockedSlots} profile={profile} initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined} language={language} />}
+          {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} language={language} />}
         </>
       )}
     </Layout>
