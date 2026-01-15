@@ -139,35 +139,57 @@ const App: React.FC = () => {
 
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
-    const currentInputState = { teachers, classes, lockedSlots, subjects, special: profile.specialInstructions };
+    
+    // Always use current profile state to ensure specialInstructions are captured
+    const currentInputState = { 
+      teachers, 
+      classes, 
+      lockedSlots, 
+      subjects, 
+      special: profile.specialInstructions || "" 
+    };
+    
     const currentHash = computeInputHash(currentInputState);
     if (currentHash === lastInputHash) {
-      const confirm = window.confirm("Input data has not changed. Regenerating will consume API credits. Continue?");
+      const confirm = window.confirm("Configuration identical to last sync. Force re-synchronization?");
       if (!confirm) return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
     setValidationIssues([]);
-    setLoadingMsg("Initializing Synchronization...");
+    setLoadingMsg("Initializing Parallel Infrastructure Sync...");
     
     try {
-      const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
+      const currentProfile: SchoolProfile = { 
+        ...profile, 
+        teachers, 
+        classes, 
+        textbooks, 
+        lockedSlots, 
+        subjects,
+        specialInstructions: profile.specialInstructions || ""
+      };
+      
       const { slots, validation } = await generateWeeklyMaster(
         teachers, 
         lockedSlots, 
         classes, 
         currentProfile, 
-        true, // Always use pro for Weaver to ensure better constraint logic
+        true, // Power mode
         (msg) => setLoadingMsg(msg)
       );
       
-      setSchedule(prev => ({ ...prev, weeklySlots: slots, quarterlyPlan: prev?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } }));
+      setSchedule(prev => ({ 
+        ...prev, 
+        weeklySlots: slots, 
+        quarterlyPlan: prev?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } 
+      }));
       setLastInputHash(currentHash);
       if (validation.issues.length > 0) setValidationIssues(validation.issues);
       setIsLoading(false);
     } catch (e: any) {
-      setErrorMessage(`Sync Error: ${e.message || "Parallel optimization failed."}`);
+      setErrorMessage(`Sync Failure: ${e.message || "Parallel optimization pipeline interrupted."}`);
       setIsLoading(false);
     }
   };
@@ -180,13 +202,13 @@ const App: React.FC = () => {
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
       <div className="mb-8 no-print flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-100 p-4 rounded-[2rem] border border-slate-200">
         <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions }) === lastInputHash ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></div>
+          <div className={`w-3 h-3 rounded-full ${computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions || "" }) === lastInputHash ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></div>
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            {computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions }) === lastInputHash ? 'Sync Integrity: High' : 'Local Edits Pending Sync'}
+            {computeInputHash({ teachers, classes, lockedSlots, subjects, special: profile.specialInstructions || "" }) === lastInputHash ? 'System State: Synchronized' : 'Drafting Phase: Local Changes Detected'}
           </span>
         </div>
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-          Engine Mode: Optimized Batch Processing
+          Engine Optimization: Parallel Batch Mode
         </div>
       </div>
 
@@ -203,7 +225,7 @@ const App: React.FC = () => {
               <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
             </div>
-            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Optimizing structural overlaps...</p>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Applying AI Tuning & Constraints...</p>
           </div>
         </div>
       ) : (
@@ -215,8 +237,8 @@ const App: React.FC = () => {
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 </div>
                 <div>
-                  <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Schedule Conflict Report</h4>
-                  <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage || "Minor validation warnings identified."}</p>
+                  <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Logic Validation Report</h4>
+                  <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage || "The schedule has been generated but contains minor constraint conflicts."}</p>
                 </div>
               </div>
               
@@ -230,7 +252,10 @@ const App: React.FC = () => {
                   ))}
                 </div>
               )}
-              <button onClick={() => { setErrorMessage(null); setValidationIssues([]); }} className="text-[9px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-600 transition-colors pt-2">Dismiss Alerts</button>
+              <div className="flex gap-4 items-center pt-2">
+                <button onClick={() => { setErrorMessage(null); setValidationIssues([]); }} className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Dismiss Warnings</button>
+                <button onClick={handleGenerateMaster} className="text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 transition-colors">Rerunning Optimized Weaver</button>
+              </div>
             </div>
           )}
 
