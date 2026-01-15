@@ -30,13 +30,18 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
   const [selectingSlot, setSelectingSlot] = useState<{ quarterId: number, subjectName: string } | null>(null);
 
   const quarters = [
-    { id: 0, label: '1st Quarter', semester: 'S1', months: 'Mar-May' },
-    { id: 1, label: '2nd Quarter', semester: 'S1', months: 'Jun-Aug' },
-    { id: 2, label: '3rd Quarter', semester: 'S2', months: 'Sep-Nov' },
-    { id: 3, label: '4th Quarter', semester: 'S2', months: 'Dec-Feb' },
+    { id: 0, label: '1st Quarter', semester: 'S1', months: 'Mar - May' },
+    { id: 1, label: '2nd Quarter', semester: 'S1', months: 'Jun - Aug' },
+    { id: 2, label: '3rd Quarter', semester: 'S2', months: 'Sep - Nov' },
+    { id: 3, label: '4th Quarter', semester: 'S2', months: 'Dec - Feb' },
   ];
 
   const currentClass = classes.find(c => c.id === selectedClassId);
+
+  // --- LOGIC: UPDATE HELPER ---
+  const updateBook = (id: string, updates: Partial<Textbook>) => {
+    onUpdateTextbooks(textbooks.map(t => t.id === id ? { ...t, ...updates } : t));
+  };
 
   // --- LOGIC: ASSIGNMENT ---
   const assignBookToSlot = (bookId: string, quarterId: number, subjectName: string) => {
@@ -45,6 +50,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
     );
     onUpdateTextbooks(updated);
     setSelectingSlot(null);
+    setEditingBookId(null);
   };
 
   const removeBookFromSlot = (bookId: string) => {
@@ -64,7 +70,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
 
     const newBook: Textbook = {
       id: newId,
-      title: 'New Textbook',
+      title: 'New Resource',
       subject: subjectToSet,
       gradeLevel: currentClass?.grade || 'G1',
       totalChapters: 12,
@@ -75,13 +81,8 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
     };
 
     onUpdateTextbooks([...textbooks, newBook]);
+    // Set for editing immediately
     setEditingBookId(newId);
-    // Note: We don't close the modal if autoAssign is true so the user can edit the title
-  };
-
-  // --- LOGIC: UPDATE HELPER ---
-  const updateBook = (id: string, updates: Partial<Textbook>) => {
-    onUpdateTextbooks(textbooks.map(t => t.id === id ? { ...t, ...updates } : t));
   };
 
   // --- LOGIC: DRAG & DROP ---
@@ -104,17 +105,20 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
   };
 
   // --- COMPONENT: SHARED BOOK CARD ---
-  // Fix: Added key property to the props type to resolve TypeScript error when used in list rendering
-  const TextbookCard = ({ book, onAssign, isModalView = false }: { book: Textbook, onAssign?: () => void, isModalView?: boolean, key?: string | number }) => {
+  // Fix: Added key to props type to satisfy TS compiler for JSX mapping usage
+  const TextbookCard = ({ book, onAssign, isModalView = false }: { book: Textbook, onAssign?: () => void, isModalView?: boolean, key?: React.Key }) => {
     const isEditing = editingBookId === book.id;
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
       if (isEditing && inputRef.current) {
         inputRef.current.focus();
-        inputRef.current.select();
       }
     }, [isEditing]);
+
+    const handleSave = () => {
+      setEditingBookId(null);
+    };
 
     return (
       <div 
@@ -122,84 +126,101 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
         onDragStart={(e) => handleDragStart(e, book.id)}
         className={`p-5 rounded-[2rem] border-2 transition-all group relative overflow-hidden flex flex-col justify-between h-full ${
           isEditing 
-            ? 'border-indigo-600 bg-white shadow-2xl scale-[1.02] z-10' 
-            : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200 hover:shadow-lg cursor-grab active:cursor-grabbing'
+            ? 'border-indigo-600 bg-white shadow-2xl scale-[1.02] z-[200]' 
+            : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200 hover:shadow-lg'
         }`}
         style={{ borderLeftColor: book.color || '#e2e8f0', borderLeftWidth: '10px' }}
       >
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1">
             {isEditing ? (
-              <input 
-                ref={inputRef}
-                className="w-full bg-slate-50 border-2 border-indigo-100 rounded-xl px-3 py-2 font-black text-slate-900 text-sm uppercase outline-none focus:border-indigo-600 transition-all"
-                value={book.title}
-                onChange={(e) => updateBook(book.id, { title: e.target.value })}
-                onKeyDown={(e) => e.key === 'Enter' && setEditingBookId(null)}
-                onBlur={() => setEditingBookId(null)}
-              />
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Resource Name</span>
+                  <input 
+                    ref={inputRef}
+                    className="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-3 py-2 font-black text-slate-900 text-sm uppercase outline-none focus:border-indigo-500 transition-all"
+                    value={book.title}
+                    onChange={(e) => updateBook(book.id, { title: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Chapters / Units</span>
+                  <input 
+                    type="number"
+                    className="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-3 py-2 font-black text-indigo-600 text-sm outline-none focus:border-indigo-500 transition-all"
+                    value={book.totalChapters}
+                    onChange={(e) => updateBook(book.id, { totalChapters: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <button 
+                  onClick={handleSave}
+                  className="w-full py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors"
+                >
+                  Confirm Details
+                </button>
+              </div>
             ) : (
-              <button 
-                onClick={() => onAssign ? onAssign() : setEditingBookId(book.id)}
-                className="text-left w-full group/title"
-              >
+              <div className="text-left w-full">
                 <p className="font-black text-slate-900 text-sm uppercase leading-tight line-clamp-2 tracking-tight">
                   {book.title}
                 </p>
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                  {book.assignedQuarter !== undefined ? `Assigned: Q${book.assignedQuarter + 1}` : 'Pending Mapping'}
+                  {book.assignedQuarter !== undefined ? `Allocated: Q${book.assignedQuarter + 1}` : 'Unmapped Asset'}
                 </p>
-              </button>
+              </div>
             )}
           </div>
-          <div className="flex gap-1 shrink-0">
-            {!isEditing && (
+          {!isEditing && (
+            <div className="flex gap-1 shrink-0">
               <button 
                 onClick={() => setEditingBookId(book.id)} 
-                className="p-2 text-slate-300 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"
+                className="p-2 text-slate-300 hover:text-indigo-600 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </button>
-            )}
-            {!isModalView && !isEditing && (
+              {!isModalView && (
+                <button 
+                  onClick={() => onUpdateTextbooks(textbooks.filter(t => t.id !== book.id))} 
+                  className="p-2 text-slate-300 hover:text-rose-600 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {!isEditing && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{book.totalChapters} Units</span>
+              <input 
+                type="color" 
+                value={book.color || '#6366f1'} 
+                onChange={e => updateBook(book.id, { color: e.target.value })}
+                className="w-4 h-4 rounded-full overflow-hidden cursor-pointer border-0 p-0 bg-transparent ring-1 ring-slate-100"
+              />
+            </div>
+            {onAssign && (
               <button 
-                onClick={() => onUpdateTextbooks(textbooks.filter(t => t.id !== book.id))} 
-                className="p-2 text-slate-300 hover:text-rose-600 transition-colors opacity-0 group-hover:opacity-100"
+                onClick={onAssign}
+                className="px-3 py-1.5 bg-[#0f172a] text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 transition-all"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                Assign
               </button>
             )}
           </div>
-        </div>
-
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{book.totalChapters} Units</span>
-            <input 
-              type="color" 
-              value={book.color || '#6366f1'} 
-              onChange={e => updateBook(book.id, { color: e.target.value })}
-              className="w-4 h-4 rounded-full overflow-hidden cursor-pointer border-0 p-0 bg-transparent ring-1 ring-slate-100"
-            />
-          </div>
-          {onAssign && !isEditing && (
-            <button 
-              onClick={onAssign}
-              className="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:scale-105 transition-all"
-            >
-              Assign
-            </button>
-          )}
-        </div>
+        )}
       </div>
     );
   };
 
-  // --- LOGIC: ONBOARDING PERSISTENCE ---
   const handleFinishOnboarding = () => {
     if (!onUpdateClasses || !currentClass) return;
     onUpdateClasses(classes.map(c => c.id === selectedClassId ? { ...c, isCurriculumOnboarded: true } : c));
@@ -277,7 +298,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
             <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">{currentClass.name} Annual Sequence</p>
           </div>
           <button onClick={() => setIsConfigMode(true)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all hover:bg-white hover:shadow-md">
-             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>
           </button>
         </div>
         <div className="flex gap-4 items-center">
@@ -295,7 +316,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
 
       {/* --- MODAL: SELECTOR OVERLAY --- */}
       {selectingSlot && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[150] flex items-center justify-center p-6 no-print">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-6 no-print">
            <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fadeInUp border-4 border-slate-900 flex flex-col max-h-[90vh]">
               <div className="p-8 border-b bg-slate-50 flex justify-between items-center">
                  <div>
@@ -356,7 +377,7 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
                     <span>New Global Resource</span>
                  </button>
                  <div className="grid grid-cols-1 gap-4">
-                   {textbooks.filter(t => t.classId === selectedClassId).map(book => (
+                   {textbooks.filter(t => t.classId === selectedClassId || !t.classId).map(book => (
                      <TextbookCard key={book.id} book={book} />
                    ))}
                  </div>
@@ -369,14 +390,25 @@ const CurriculumRoadmap: React.FC<CurriculumRoadmapProps> = ({
       <div className="bg-white border-[4px] border-slate-900 rounded-[3rem] overflow-hidden shadow-[32px_32px_0px_rgba(0,0,0,0.03)] max-w-full overflow-x-auto">
         <table className="w-full border-collapse min-w-[1200px]">
           <thead>
+            {/* Row 1: Stream and Semester Cycle */}
             <tr className="bg-slate-50 border-b-[4px] border-slate-900 text-slate-900">
-              <th rowSpan={2} className="border-r-[4px] border-slate-900 p-8 w-64 text-[12px] font-black uppercase bg-white">Academic Stream</th>
+              <th rowSpan={3} className="border-r-[4px] border-slate-900 p-8 w-64 text-[12px] font-black uppercase bg-white shadow-inner">Academic Stream</th>
+              <th colSpan={2} className="border-r-[4px] border-slate-900 p-4 text-[10px] font-black uppercase tracking-[0.2em] bg-indigo-50 text-indigo-900">1st Semester Cycle</th>
+              <th colSpan={2} className="p-4 text-[10px] font-black uppercase tracking-[0.2em] bg-emerald-50 text-emerald-900">2nd Semester Cycle</th>
+            </tr>
+            {/* Row 2: Quarters */}
+            <tr className="bg-white border-b-[2px] border-slate-900">
               {quarters.map(q => (
-                <th key={q.id} className="border-r-[4px] last:border-r-0 border-slate-900 p-6 bg-slate-50/20">
-                  <div className="flex flex-col items-center">
-                    <span className="text-[11px] font-black uppercase tracking-widest">{q.label}</span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{q.months}</span>
-                  </div>
+                <th key={q.id} className="border-r-[4px] last:border-r-0 border-slate-900 p-4 bg-slate-50/10">
+                  <span className="text-[11px] font-black uppercase tracking-widest">{q.label}</span>
+                </th>
+              ))}
+            </tr>
+            {/* Row 3: Months Row */}
+            <tr className="bg-slate-100 border-b-[4px] border-slate-900">
+              {quarters.map(q => (
+                <th key={q.id} className="border-r-[4px] last:border-r-0 border-slate-900 p-2">
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{q.months}</span>
                 </th>
               ))}
             </tr>
