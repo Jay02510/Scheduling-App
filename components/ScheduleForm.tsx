@@ -21,6 +21,7 @@ interface ScheduleFormProps {
   onMoveLock?: (source: { day: number, period: number }, target: { day: number, period: number }, isCopy: boolean) => void;
   onFillLocks?: (source: { day: number, period: number }, range: { startDay: number, endDay: number, startPeriod: number, endPeriod: number }) => void;
   onNavigate?: (tab: string) => void;
+  language?: string;
 }
 
 const ScheduleForm: React.FC<ScheduleFormProps> = ({ 
@@ -244,12 +245,12 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                             <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
                               <button 
                                 onClick={(e) => { e.stopPropagation(); updateSubjectFrequency(a.subjectId, -1); }}
-                                className="w-4 h-4 flex items-center justify-center font-black text-slate-400 hover:text-indigo-600 transition-colors"
+                                className="w-4 h-4 flex items-center justify-center font-black text-slate-300 hover:text-indigo-600 transition-colors"
                               >-</button>
                               <span className="text-[10px] font-black text-indigo-600 w-3 text-center">{subject?.frequencyPerWeek || 5}</span>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); updateSubjectFrequency(a.subjectId, 1); }}
-                                className="w-4 h-4 flex items-center justify-center font-black text-slate-400 hover:text-indigo-600 transition-colors"
+                                className="w-4 h-4 flex items-center justify-center font-black text-slate-300 hover:text-indigo-600 transition-colors"
                               >+</button>
                             </div>
                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">per week</span>

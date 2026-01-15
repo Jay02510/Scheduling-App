@@ -29,7 +29,6 @@ async function callWithRetry(fn: () => Promise<any>, maxRetries = 3): Promise<an
       const errorMsg = error.message || "";
       const isRateLimit = errorMsg.includes("429") || error.status === 429 || errorMsg.includes("RESOURCE_EXHAUSTED");
       if (isRateLimit && i < maxRetries - 1) {
-        // Exponential backoff for rate limits
         const waitTime = Math.pow(2, i) * 6000 + Math.random() * 1000;
         await delay(waitTime);
         continue;
@@ -44,9 +43,6 @@ async function callWithRetry(fn: () => Promise<any>, maxRetries = 3): Promise<an
   throw lastError;
 }
 
-/**
- * Programmatic Validation: Pinpoints exactly where and why the schedule fails.
- */
 export const validateScheduleProgrammatically = (
   slots: ScheduleSlot[],
   teachers: Teacher[],
@@ -55,15 +51,14 @@ export const validateScheduleProgrammatically = (
   lockedSlots: LockedSlot[]
 ) => {
   const issues: string[] = [];
-  const teacherTimeMap: Record<string, string> = {}; // "day:period:teacherId" -> classId
-  const classSubjectDailyMap: Record<string, number> = {}; // "day:classId:subjectId" -> count
+  const teacherTimeMap: Record<string, string> = {}; 
+  const classSubjectDailyMap: Record<string, number> = {}; 
 
   slots.forEach(slot => {
     const teacher = teachers.find(t => t.id === slot.teacherId);
     const className = classes.find(c => c.id === slot.classId)?.name || "Unknown Class";
     const subName = profile.subjects.find(s => s.id === slot.subjectId)?.name || "Unknown Subject";
 
-    // 1. Teacher Double-Booking
     const tKey = `${slot.day}:${slot.period}:${slot.teacherId}`;
     if (teacherTimeMap[tKey] && teacherTimeMap[tKey] !== slot.classId) {
       const otherClass = classes.find(c => c.id === teacherTimeMap[tKey])?.name || "another class";
@@ -72,7 +67,6 @@ export const validateScheduleProgrammatically = (
       teacherTimeMap[tKey] = slot.classId;
     }
 
-    // 2. Daily Subject Cap (Pedagogical Balance)
     const subConfig = profile.subjects.find(s => s.id === slot.subjectId);
     if (subConfig && subConfig.frequencyPerWeek <= 5) {
       const sKey = `${slot.day}:${slot.classId}:${slot.subjectId}`;
@@ -82,7 +76,6 @@ export const validateScheduleProgrammatically = (
       }
     }
 
-    // 3. Locked Slot Violations
     const lock = lockedSlots.find(l => 
       l.dayOfWeek === slot.day && 
       l.period === slot.period && 
@@ -97,44 +90,48 @@ export const validateScheduleProgrammatically = (
 };
 
 /**
- * Master Sync Engine:
- * Phase 1: Concurrent Drafting (Parallel)
- * Phase 2: Institutional Weaver (Contextual Refinement)
+ * Master Sync Engine with Incremental Update Support
  */
 export const generateWeeklyMaster = async (
   teachers: Teacher[],
   lockedSlots: LockedSlot[],
   classes: ClassGroup[],
   profile: SchoolProfile,
-  useHighPower: boolean = false,
+  previousSlots: ScheduleSlot[] = [],
+  dirtyClassIds: string[] = [], // If empty, full re-sync
   onProgress?: (msg: string) => void
 ): Promise<{ slots: ScheduleSlot[], validation: { success: boolean, issues: string[] } }> => {
   
-  if (onProgress) onProgress("Initializing Concurrent Sync Engines...");
+  const isIncremental = dirtyClassIds.length > 0 && previousSlots.length > 0;
+  const classesToProcess = isIncremental ? classes.filter(c => dirtyClassIds.includes(c.id)) : classes;
+  const preservedSlots = isIncremental ? previousSlots.filter(s => !dirtyClassIds.includes(s.classId)) : [];
+
+  if (onProgress) onProgress(isIncremental ? `Running Incremental Sync for ${dirtyClassIds.length} Classes...` : "Initializing Full Infrastructure Sync...");
+  
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const modelName = 'gemini-3-flash-preview';
 
-  // Batching: 4 classes per request is a good balance for context density vs token limits
-  const batches = [];
-  for (let i = 0; i < classes.length; i += 4) {
-    batches.push(classes.slice(i, i + 4));
+  if (classesToProcess.length === 0) {
+    return { slots: previousSlots, validation: { success: true, issues: [] } };
   }
 
-  // Phase 1: Drafting (Parallel requests)
-  const draftPromises = batches.map(async (batch, index) => {
-    const batchNames = batch.map(c => c.name).join(", ");
-    
+  // Phase 1: Selective Drafting
+  const batches = [];
+  for (let i = 0; i < classesToProcess.length; i += 4) {
+    batches.push(classesToProcess.slice(i, i + 4));
+  }
+
+  const draftPromises = batches.map(async (batch) => {
     const draftPrompt = `
-      TASK: Generate a weekly schedule for: ${batchNames}.
+      TASK: Generate a weekly schedule for: ${batch.map(c => c.name).join(", ")}.
       
-      HUMAN TUNING & SPECIAL INSTRUCTIONS (MANDATORY):
-      ${profile.specialInstructions || "None provided. Use standard balanced logic."}
+      HUMAN TUNING & CONTEXT:
+      ${profile.specialInstructions || "Standard balanced logic."}
       
-      INSTITUTIONAL RULES:
-      1. Periods: 0 to ${profile.hours.totalPeriods - 1}.
-      2. No Teacher Overlaps.
-      3. No duplicate subjects for a class on the same day.
-      4. Global Locks: ${JSON.stringify(lockedSlots.filter(l => l.isSchoolWide).map(l => ({p: l.period, d: l.dayOfWeek, n: l.name})))}.
+      GLOBAL CONSTRAINTS (MUST RESPECT PRESERVED GRID):
+      - Periods: 0 to ${profile.hours.totalPeriods - 1}.
+      - No Teacher Overlaps.
+      - Global Locks: ${JSON.stringify(lockedSlots.filter(l => l.isSchoolWide).map(l => ({p: l.period, d: l.dayOfWeek, n: l.name})))}.
       
       DATA:
       ${JSON.stringify(batch.map(c => ({
@@ -160,40 +157,33 @@ export const generateWeeklyMaster = async (
     return (result.slots || []).map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
   });
 
-  if (onProgress) onProgress("Syncing Curriculum Streams...");
   const draftResults = await Promise.all(draftPromises);
-  const allDraftSlots: ScheduleSlot[] = draftResults.flat();
+  const combinedSlots: ScheduleSlot[] = [...preservedSlots, ...draftResults.flat()];
 
-  // Phase 2: Conflict Resolution (The Weaver)
-  if (onProgress) onProgress("Auditing Institutional Logic...");
-  const issues = validateScheduleProgrammatically(allDraftSlots, teachers, classes, profile, lockedSlots);
+  // Phase 2: Targeted Resolution
+  if (onProgress) onProgress("Auditing Integrity...");
+  const issues = validateScheduleProgrammatically(combinedSlots, teachers, classes, profile, lockedSlots);
   
   if (issues.length === 0) {
-    if (onProgress) onProgress("Sync Successful. Zero conflicts.");
-    return { slots: allDraftSlots, validation: { success: true, issues: [] } };
+    if (onProgress) onProgress("Sync Successful.");
+    return { slots: combinedSlots, validation: { success: true, issues: [] } };
   }
 
-  if (onProgress) onProgress(`Resolving ${issues.length} Structural Overlaps...`);
+  if (onProgress) onProgress(`Resolving ${issues.length} Conflicts...`);
 
-  // The Weaver pass uses a higher reasoning budget to handle multi-point constraints
   const weaverPrompt = `
-    TASK: Institutional Conflict Resolution.
-    We have a draft schedule with specific errors. Fix them while respecting the original human tuning.
+    TASK: Institutional Weaver. Resolve schedule conflicts.
     
-    MANDATORY TUNING INSTRUCTIONS:
-    ${profile.specialInstructions || "Follow standard balanced scheduling logic."}
+    MANDATORY TUNING:
+    ${profile.specialInstructions || "Balanced logic."}
     
-    IDENTIFIED ERRORS (MUST FIX):
+    ERRORS:
     ${issues.join("\n")}
     
     CURRENT DRAFT:
-    ${JSON.stringify(allDraftSlots)}
+    ${JSON.stringify(combinedSlots)}
     
-    RULES:
-    - You MUST return a full valid schedule JSON.
-    - Swap lesson slots to resolve teacher/class overlaps.
-    - DO NOT double-schedule teachers.
-    
+    INSTRUCTION: Adjust only the necessary slots to fix double-bookings.
     OUTPUT: Full corrected JSON { "slots": Array }.
   `;
 
@@ -202,15 +192,15 @@ export const generateWeeklyMaster = async (
     contents: weaverPrompt,
     config: { 
       responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 2500 }
+      thinkingConfig: { thinkingBudget: 2000 }
     }
   }));
 
   const finalResult = JSON.parse(sanitizeJson(weaverResponse.text || '{"slots":[]}'));
-  const finalSlots = finalResult.slots || allDraftSlots;
+  const finalSlots = finalResult.slots || combinedSlots;
   const finalIssues = validateScheduleProgrammatically(finalSlots, teachers, classes, profile, lockedSlots);
 
-  if (onProgress) onProgress(finalIssues.length === 0 ? "Integrity Verified." : "Sync Complete (Minor warnings).");
+  if (onProgress) onProgress("Sync Complete.");
 
   return {
     slots: finalSlots,
