@@ -53,7 +53,8 @@ export interface LockedSlot {
 export interface ClassSubjectAssignment {
   subjectId: string;
   teacherId: string;
-  textbookId?: string; 
+  textbookId?: string;
+  semesterFocus?: 'S1' | 'S2' | 'Both';
 }
 
 export interface ClassGroup {
@@ -64,6 +65,7 @@ export interface ClassGroup {
   koreanTeacherId?: string;
   assignments: ClassSubjectAssignment[];
   color: string;
+  isCurriculumOnboarded?: boolean;
 }
 
 export interface ScheduleSlot {
