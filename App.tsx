@@ -12,8 +12,6 @@ import TeacherView from './components/TeacherView';
 import Onboarding from './components/Onboarding';
 import Settings from './components/Settings';
 import Auth from './components/Auth';
-import ResourcePlanner from './components/ResourcePlanner';
-import AnalyticsDashboard from './components/AnalyticsDashboard';
 import CurriculumRoadmap from './components/CurriculumRoadmap';
 
 const App: React.FC = () => {
@@ -190,7 +188,7 @@ const App: React.FC = () => {
           </span>
         </div>
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-          Engine Mode: Throttled Sequential (Stabilized)
+          Engine Mode: Stabilized Throttling
         </div>
       </div>
 
@@ -207,10 +205,6 @@ const App: React.FC = () => {
               <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
             </div>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              We are processing your school's logic in segments to satisfy API rate limits. 
-              Please stay on this page.
-            </p>
           </div>
         </div>
       ) : (
@@ -226,32 +220,6 @@ const App: React.FC = () => {
                   <p className="text-rose-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{errorMessage}</p>
                 </div>
               </div>
-              <div className="bg-white/50 p-4 rounded-xl">
-                 <p className="text-[9px] font-bold text-rose-800 uppercase leading-relaxed">
-                   API Rate Limits reached. This usually happens if you attempt many regenerations in a short time. 
-                   Wait 60 seconds and try again.
-                 </p>
-              </div>
-            </div>
-          )}
-
-          {validationIssues.length > 0 && (
-            <div className="mb-8 p-6 bg-amber-50 border-2 border-amber-200 rounded-[2rem] animate-fadeIn shadow-lg">
-               <div className="flex items-center gap-4 mb-4">
-                  <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                  </div>
-                  <h4 className="font-black text-amber-900 uppercase text-xs tracking-tight">Post-Sync Audit findings</h4>
-               </div>
-               <ul className="space-y-2">
-                  {validationIssues.map((issue, idx) => (
-                    <li key={idx} className="text-amber-800 font-bold text-[10px] uppercase tracking-wide flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
-                       {issue}
-                    </li>
-                  ))}
-               </ul>
-               <button onClick={() => setValidationIssues([])} className="mt-4 text-amber-500 font-black text-[9px] uppercase tracking-widest hover:underline">Acknowledge Audit</button>
             </div>
           )}
 
@@ -260,9 +228,7 @@ const App: React.FC = () => {
           {activeTab === 'homerooms' && <ScheduleViewer schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} onUpdateSlot={handleUpdateScheduleSlot} onMoveSlot={handleMoveScheduleSlot} onFillSlots={handleFillScheduleSlots} onNavigate={setActiveTab} onRegenerate={handleGenerateMaster} onJump={handleEntityJump} initialClassId={navigationFocus?.type === 'class' ? navigationFocus.id : undefined} />}
           {activeTab === 'curriculum' && <CurriculumRoadmap textbooks={textbooks} onUpdateTextbooks={setTextbooks} subjects={subjects} classes={classes} />}
           {activeTab === 'faculty' && <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} lockedSlots={lockedSlots} profile={profile} initialTeacherId={navigationFocus?.type === 'teacher' ? navigationFocus.id : undefined} />}
-          {activeTab === 'resources' && <ResourcePlanner textbooks={textbooks} onUpdate={setTextbooks} profile={profile} classes={classes} />}
-          {activeTab === 'audit' && profile && <AnalyticsDashboard schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} profile={profile} teachers={teachers} />}
-          {activeTab === 'settings' && <Settings user={user} profile={profile} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />}
+          {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />}
         </>
       )}
     </Layout>
