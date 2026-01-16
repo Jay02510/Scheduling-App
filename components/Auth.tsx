@@ -21,7 +21,7 @@ const Auth: React.FC = () => {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please check your credentials.');
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -29,7 +29,7 @@ const Auth: React.FC = () => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-6 overflow-hidden bg-slate-950 font-inter">
-      {/* Cinematic Background with darker overlay for contrast */}
+      {/* Background with overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center transition-transform duration-[60s] scale-110"
         style={{ 
@@ -41,10 +41,10 @@ const Auth: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-tr from-indigo-950/40 via-transparent to-slate-950/60"></div>
       </div>
 
-      {/* Large Decorative Watermark */}
+      {/* Watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
         <h1 className="text-[25vw] font-black text-white/[0.03] leading-none tracking-tighter uppercase translate-y-12">
-          SYSTEM
+          PLANNER
         </h1>
       </div>
 
@@ -58,41 +58,40 @@ const Auth: React.FC = () => {
              </div>
           </div>
           <h1 className="text-6xl font-black text-white tracking-tighter uppercase mb-2 drop-shadow-2xl">EduPlanner</h1>
-          <p className="text-indigo-400 font-black tracking-[0.5em] uppercase text-[10px] opacity-100 drop-shadow-md">Global Academic Node</p>
+          <p className="text-indigo-400 font-black tracking-[0.5em] uppercase text-[10px] opacity-100 drop-shadow-md">Simple School Planning</p>
         </div>
 
-        {/* Increased Card Opacity and Refined Borders for clear layering */}
         <div className="bg-slate-900/70 backdrop-blur-3xl border border-white/20 p-10 rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
           <div className="flex bg-black/60 p-1.5 rounded-[1.5rem] mb-12 ring-1 ring-white/10">
             <button 
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-4 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${isLogin ? 'bg-white text-slate-900 shadow-2xl' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              Sign In
+              Log In
             </button>
             <button 
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-4 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${!isLogin ? 'bg-white text-slate-900 shadow-2xl' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              Register
+              Join
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-2 group">
-              <label className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] ml-2 group-focus-within:text-white transition-colors">Institutional ID</label>
+              <label className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] ml-2 group-focus-within:text-white transition-colors">Email Address</label>
               <input 
                 type="email"
                 required
                 className="w-full bg-white/10 border border-white/20 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500/50 focus:bg-white/15 focus:border-white/30 transition-all placeholder:text-slate-500"
-                placeholder="admin@institution.edu"
+                placeholder="admin@school.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
             </div>
 
             <div className="space-y-2 group">
-              <label className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] ml-2 group-focus-within:text-white transition-colors">Access Key</label>
+              <label className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] ml-2 group-focus-within:text-white transition-colors">Password</label>
               <input 
                 type="password"
                 required
@@ -117,7 +116,7 @@ const Auth: React.FC = () => {
                 <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <div className="flex items-center gap-4">
-                  <span>{isLogin ? 'Initialize Session' : 'Create Identity'}</span>
+                  <span>{isLogin ? 'Log In' : 'Sign Up'}</span>
                   <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
@@ -128,7 +127,7 @@ const Auth: React.FC = () => {
         </div>
         
         <div className="mt-14 text-center opacity-60">
-           <p className="text-[8px] text-white font-black uppercase tracking-[0.6em]">Infrastructure Version 2.5.4-STABLE</p>
+           <p className="text-[8px] text-white font-black uppercase tracking-[0.6em]">System Version 2.5</p>
         </div>
       </div>
 
