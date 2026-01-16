@@ -23,17 +23,22 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     hours: { 
       startTime: '08:30', periodDuration: 45, totalPeriods: 8, lunchAfterPeriod: 4, recessAfterPeriod: 2, homeworkAfterPeriod: 8
     },
-    subjects: DEFAULT_SUBJECTS, textbooks: [],
+    subjects: DEFAULT_SUBJECTS, 
+    textbooks: [],
     teachers: [
       { id: 't-1', name: 'Lead Teacher', role: 'homeroom', subjects: [], maxDailyPeriods: 8, breaksNeededPerWeek: 5, color: TEACHER_COLORS[0], assignedClasses: [], employmentType: 'Full-Time' }
     ],
     classes: [
       { id: 'c-1', name: 'Group 1A', grade: 'G1', homeroomTeacherId: 't-1', assignments: [], color: CLASS_COLORS[0] }
     ],
-    lockedSlots: [], specialEvents: []
+    lockedSlots: [], 
+    specialEvents: []
   });
 
-  const next = () => { if (step === 4 && profile.classes.length > 0) setActiveClassId(profile.classes[0].id); setStep(s => s + 1); };
+  const next = () => { 
+    if (step === 4 && profile.classes.length > 0) setActiveClassId(profile.classes[0].id); 
+    setStep(s => s + 1); 
+  };
   const back = () => setStep(s => s - 1);
 
   const addClass = () => {
@@ -59,11 +64,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   return (
     <div className="fixed inset-0 bg-[#020617] flex items-center justify-center z-[100] p-4 animate-fadeIn">
-      <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col md:flex-row h-full max-h-[800px] overflow-hidden">
+      <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col md:flex-row h-full max-h-[800px] overflow-hidden border border-white/10">
         <div className="w-full md:w-80 bg-[#0f172a] p-10 text-white flex flex-col justify-between shrink-0">
           <div>
-            <h1 className="text-2xl font-black tracking-tighter uppercase mb-2">EduPlanner</h1>
-            <p className="text-indigo-400 text-[9px] font-black uppercase tracking-widest">Setup Architecture</p>
+            <h1 className="text-2xl font-black tracking-tighter uppercase mb-2 leading-none">EduPlanner<br/><span className="text-indigo-400">Builder</span></h1>
+            <p className="text-indigo-400 text-[9px] font-black uppercase tracking-widest mt-2">Architecture v2.5</p>
           </div>
           <div className="space-y-6">
             {[1, 2, 3, 4, 5].map(s => (
@@ -79,7 +84,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div className="overflow-y-auto flex-1 pr-4 custom-scrollbar space-y-8">
             {step === 1 && (
               <div className="space-y-8 animate-fadeIn">
-                <header><h2 className="text-3xl font-black text-slate-900 uppercase">Institution Identity</h2></header>
+                <header><h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Institution Identity</h2></header>
                 <div className="space-y-6">
                   <label className="block">
                     <span className="text-[9px] font-black text-slate-400 uppercase block mb-2 ml-1">School Name</span>
@@ -97,7 +102,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
             {step === 2 && (
               <div className="space-y-8 animate-fadeIn">
-                <h2 className="text-3xl font-black text-slate-900 uppercase">Groupings</h2>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Groupings</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profile.classes.map(c => (
                     <div key={c.id} className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center gap-4 shadow-sm">
@@ -112,7 +117,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
             {step === 3 && (
               <div className="space-y-8 animate-fadeIn">
-                <h2 className="text-3xl font-black text-slate-900 uppercase">Faculty</h2>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Faculty</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {profile.teachers.map(t => (
                     <div key={t.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-col items-center gap-4 text-center">
@@ -125,9 +130,19 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
             )}
 
+            {step === 4 && (
+              <div className="space-y-8 animate-fadeIn">
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Global Locks</h2>
+                <p className="text-slate-500 text-sm">Locks can be configured later in the Setup Center for more precision.</p>
+                <div className="p-10 bg-indigo-50 rounded-[3rem] border border-indigo-100 text-center">
+                   <p className="text-indigo-600 font-black text-[10px] uppercase tracking-widest">Advanced Grid Editing Available Post-Onboarding</p>
+                </div>
+              </div>
+            )}
+
             {step === 5 && (
               <div className="space-y-8 animate-fadeIn h-full flex flex-col">
-                <h2 className="text-3xl font-black text-slate-900 uppercase">Lessons</h2>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Lesson Mapping</h2>
                 <div className="flex gap-2 overflow-x-auto pb-4 sticky top-0 bg-slate-50 z-10">
                   {profile.classes.map(c => (
                     <button key={c.id} onClick={() => setActiveClassId(c.id)} className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap ${activeClassId === c.id ? 'bg-[#0f172a] text-white shadow-xl' : 'bg-white text-slate-400'}`}>{c.name}</button>
@@ -151,8 +166,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             )}
           </div>
           <div className="flex justify-between pt-10 border-t border-slate-200">
-            {step > 1 && <button onClick={back} className="px-8 py-4 text-slate-400 font-black uppercase text-[9px]">Back</button>}
-            <button onClick={step === 5 ? () => onComplete(profile) : next} className="px-12 py-4 gradient-primary text-white rounded-2xl font-black uppercase text-[10px] shadow-xl ml-auto">{step === 5 ? 'Optimize & Launch' : 'Continue'}</button>
+            {step > 1 && <button onClick={back} className="px-8 py-4 text-slate-400 font-black uppercase text-[9px] tracking-widest">Back</button>}
+            <button onClick={step === 5 ? () => onComplete(profile) : next} className="px-12 py-4 gradient-primary text-white rounded-2xl font-black uppercase text-[10px] shadow-xl ml-auto tracking-widest">{step === 5 ? 'Optimize & Launch' : 'Continue →'}</button>
           </div>
         </div>
       </div>

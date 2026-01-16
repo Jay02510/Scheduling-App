@@ -89,16 +89,13 @@ export const validateScheduleProgrammatically = (
   return issues;
 };
 
-/**
- * Master Sync Engine with Incremental Update Support
- */
 export const generateWeeklyMaster = async (
   teachers: Teacher[],
   lockedSlots: LockedSlot[],
   classes: ClassGroup[],
   profile: SchoolProfile,
   previousSlots: ScheduleSlot[] = [],
-  dirtyClassIds: string[] = [], // If empty, full re-sync
+  dirtyClassIds: string[] = [], 
   onProgress?: (msg: string) => void
 ): Promise<{ slots: ScheduleSlot[], validation: { success: boolean, issues: string[] } }> => {
   
@@ -109,13 +106,12 @@ export const generateWeeklyMaster = async (
   if (onProgress) onProgress(isIncremental ? `Running Incremental Sync for ${dirtyClassIds.length} Classes...` : "Initializing Full Infrastructure Sync...");
   
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const modelName = 'gemini-3-flash-preview';
 
   if (classesToProcess.length === 0) {
     return { slots: previousSlots, validation: { success: true, issues: [] } };
   }
 
-  // Phase 1: Selective Drafting
+  // Phase 1: Drafting with Gemini 3 Flash
   const batches = [];
   for (let i = 0; i < classesToProcess.length; i += 4) {
     batches.push(classesToProcess.slice(i, i + 4));
@@ -148,7 +144,7 @@ export const generateWeeklyMaster = async (
     `;
 
     const response = await callWithRetry(() => ai.models.generateContent({
-      model: modelName,
+      model: 'gemini-3-flash-preview',
       contents: draftPrompt,
       config: { responseMimeType: "application/json" }
     }));
@@ -160,7 +156,7 @@ export const generateWeeklyMaster = async (
   const draftResults = await Promise.all(draftPromises);
   const combinedSlots: ScheduleSlot[] = [...preservedSlots, ...draftResults.flat()];
 
-  // Phase 2: Targeted Resolution
+  // Phase 2: Targeted Resolution with Gemini 3 Pro
   if (onProgress) onProgress("Auditing Integrity...");
   const issues = validateScheduleProgrammatically(combinedSlots, teachers, classes, profile, lockedSlots);
   
@@ -183,7 +179,7 @@ export const generateWeeklyMaster = async (
     CURRENT DRAFT:
     ${JSON.stringify(combinedSlots)}
     
-    INSTRUCTION: Adjust only the necessary slots to fix double-bookings.
+    INSTRUCTION: Adjust only the necessary slots to fix double-bookings and lock violations.
     OUTPUT: Full corrected JSON { "slots": Array }.
   `;
 
@@ -219,7 +215,7 @@ export const analyzeSchedule = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Institutional audit of schedule: ${JSON.stringify(schedule.weeklySlots.slice(0, 100))}`,
+    contents: `Institutional audit of schedule: ${JSON.stringify(schedule.weeklySlots.slice(0, 100))}. Provide diagnostic scores and summary.`,
     config: { responseMimeType: "application/json" }
   });
   return JSON.parse(sanitizeJson(response.text || '{}'));
