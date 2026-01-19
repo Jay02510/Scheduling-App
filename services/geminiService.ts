@@ -89,6 +89,28 @@ export const validateScheduleProgrammatically = (
   return issues;
 };
 
+const SYSTEM_DIRECTIVE = `
+You are EduPlanner’s Institutional Intelligence Engine. 
+Your role is to preserve, optimize, and evolve the school’s OPERATIONAL LOGIC.
+
+PRIMARY OBJECTIVES:
+1. Conflict-free schedules (teachers, rooms).
+2. Human-sustainability (balanced workload, rest preservation).
+3. Minimal change: If constraints are added, modify ONLY the minimum required portion.
+4. Preserve institutional memory: Assume prior patterns are intentional decisions.
+
+HARD CONSTRAINTS (NON-NEGOTIABLE):
+- No teacher double-booking.
+- Guaranteed Rest Slots must NEVER be violated.
+- Global Engagements are immutable.
+
+SOFT PRIORITIES (RANKED):
+1. Teacher fatigue reduction (Avoid long consecutive blocks).
+2. Cognitive load (Prefer subject variety).
+3. Stability (Preserve existing slots).
+4. Aesthetic clarity (Legible patterns).
+`;
+
 export const generateWeeklyMaster = async (
   teachers: Teacher[],
   lockedSlots: LockedSlot[],
@@ -103,7 +125,7 @@ export const generateWeeklyMaster = async (
   const classesToProcess = isIncremental ? classes.filter(c => dirtyClassIds.includes(c.id)) : classes;
   const preservedSlots = isIncremental ? previousSlots.filter(s => !dirtyClassIds.includes(s.classId)) : [];
 
-  if (onProgress) onProgress(isIncremental ? `Updating ${dirtyClassIds.length} classes...` : "Building your school plan...");
+  if (onProgress) onProgress(isIncremental ? `Preserving trusted state for ${classes.length - dirtyClassIds.length} classes...` : "Initializing Institutional Intelligence Engine...");
   
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -119,15 +141,15 @@ export const generateWeeklyMaster = async (
 
   const draftPromises = batches.map(async (batch) => {
     const draftPrompt = `
-      TASK: Create a weekly schedule for: ${batch.map(c => c.name).join(", ")}.
+      ${SYSTEM_DIRECTIVE}
+      
+      TASK: Create/Update weekly schedule for: ${batch.map(c => c.name).join(", ")}.
       
       SPECIAL RULES:
       ${profile.specialInstructions || "Keep it simple and balanced."}
       
-      RULES:
-      - Periods: 0 to ${profile.hours.totalPeriods - 1}.
-      - Teachers cannot be in two places at once.
-      - Respect these blocked times: ${JSON.stringify(lockedSlots.filter(l => l.isSchoolWide).map(l => ({p: l.period, d: l.dayOfWeek, n: l.name})))}.
+      EXISTING STATE (TRUSTED):
+      ${JSON.stringify(preservedSlots.slice(0, 50))} (Avoid conflicts with these teachers)
       
       DATA:
       ${JSON.stringify(batch.map(c => ({
@@ -156,30 +178,29 @@ export const generateWeeklyMaster = async (
   const draftResults = await Promise.all(draftPromises);
   const combinedSlots: ScheduleSlot[] = [...preservedSlots, ...draftResults.flat()];
 
-  // Phase 2: Check for problems
-  if (onProgress) onProgress("Checking for conflicts...");
+  // Phase 2: Guardian Audit
+  if (onProgress) onProgress("Performing internal Guardian audit...");
   const issues = validateScheduleProgrammatically(combinedSlots, teachers, classes, profile, lockedSlots);
   
   if (issues.length === 0) {
-    if (onProgress) onProgress("All clear!");
+    if (onProgress) onProgress("Logic integrity verified.");
     return { slots: combinedSlots, validation: { success: true, issues: [] } };
   }
 
-  if (onProgress) onProgress(`Fixing ${issues.length} schedule problems...`);
+  if (onProgress) onProgress(`Evaluating trade-offs to fix ${issues.length} conflicts...`);
 
   const weaverPrompt = `
-    TASK: Fix schedule conflicts in the school plan.
+    ${SYSTEM_DIRECTIVE}
     
-    SPECIAL RULES:
-    ${profile.specialInstructions || "Keep it balanced."}
+    TASK: Resolve schedule conflicts while minimizing surface area change.
     
-    PROBLEMS TO FIX:
+    PROBLEMS DETECTED:
     ${issues.join("\n")}
     
-    CURRENT PLAN:
+    CURRENT UNTRUSTED PLAN:
     ${JSON.stringify(combinedSlots)}
     
-    INSTRUCTION: Change only what is needed to fix overlaps and blocked times.
+    INSTRUCTION: Apply the smallest possible correction. Prefer stability over perfect aesthetics.
     OUTPUT JSON ONLY: { "slots": Array }.
   `;
 
@@ -196,7 +217,7 @@ export const generateWeeklyMaster = async (
   const finalSlots = finalResult.slots || combinedSlots;
   const finalIssues = validateScheduleProgrammatically(finalSlots, teachers, classes, profile, lockedSlots);
 
-  if (onProgress) onProgress("Finished updating!");
+  if (onProgress) onProgress("Operational health optimized.");
 
   return {
     slots: finalSlots,
@@ -215,7 +236,18 @@ export const analyzeSchedule = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Review this school schedule and give simple advice: ${JSON.stringify(schedule.weeklySlots.slice(0, 100))}. Give a score and summary in JSON.`,
+    contents: `
+      Review the current institutional schedule and produce:
+      - An Operational Health Score (0–100)
+      - A Burnout Risk Indicator per teacher (Low / Medium / High)
+      - Curriculum Coverage Confidence (Safe / Watch / Risk)
+      - 3 actionable insights for the administrator.
+
+      DATA: ${JSON.stringify(schedule.weeklySlots.slice(0, 150))}
+      FACULTY: ${JSON.stringify(teachers.map(t => ({id: t.id, name: t.name, role: t.role})))}
+
+      OUTPUT JSON ONLY with keys: score, insights (array), burnoutRisks (object {teacherName: risk}), coverageConfidence (string), summary.
+    `,
     config: { responseMimeType: "application/json" }
   });
   return JSON.parse(sanitizeJson(response.text || '{}'));
