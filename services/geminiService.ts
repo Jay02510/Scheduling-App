@@ -7,7 +7,7 @@ const sanitizeJson = (text: string) => {
   let cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
   // Attempt to fix trailing commas before closing braces/brackets
   cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
-  // Ensure property names are double-quoted if they aren't (basic fix for common AI quirks)
+  // Ensure property names are double-quoted if they aren't
   cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3');
   return cleaned;
 };
@@ -101,18 +101,13 @@ export const validateScheduleProgrammatically = (
 
 const SYSTEM_DIRECTIVE = `
 You are EduPlanner’s Institutional Intelligence Engine. 
-Your role is to preserve, optimize, and evolve the school’s OPERATIONAL LOGIC.
+You must generate a schedule that is operationally perfect and follows all human-sustainability rules.
 
-PRIMARY OBJECTIVES:
-1. Conflict-free schedules (teachers, rooms, resources).
-2. Human-sustainability (balanced workload, rest preservation).
-3. Complete Coverage: Ensure ALL periods of the day are utilized. 
-4. Post-Lunch Utilization: Lunch is a mid-day pause. You MUST continue scheduling lessons after lunch until the final Period is reached.
-
-HARD CONSTRAINTS:
-- No teacher can be in two places at once.
-- No class can have two lessons at once.
-- Subjects with frequency <= 5 should rarely appear twice in one day.
+CRITICAL RULES:
+1. USE EXACT IDs: You MUST use the provided subjectId and teacherId. Never invent new IDs or use names as IDs.
+2. FULL DAY COVERAGE: You MUST fill all periods from 0 to [Total Periods - 1]. 
+3. POST-LUNCH MANDATE: Scheduling does NOT stop at lunch. Periods occurring after the lunch break are high-priority teaching slots. Fill them completely.
+4. ZERO-INDEXING: 'day' is 0 (Mon) to 4 (Fri). 'period' is 0 to [Total Periods - 1].
 `;
 
 export const generateWeeklyMaster = async (
@@ -146,30 +141,41 @@ export const generateWeeklyMaster = async (
     const draftPrompt = `
       ${SYSTEM_DIRECTIVE}
       
-      INSTITUTIONAL RHYTHM:
-      - Total Periods: ${profile.hours.totalPeriods}
-      - Lunch occurs AFTER Period ${profile.hours.lunchAfterPeriod}.
-      - IMPORTANT: You MUST schedule lessons for Periods ${profile.hours.lunchAfterPeriod + 1} through ${profile.hours.totalPeriods} unless a specific instruction forbids it.
+      INSTITUTIONAL CONFIG:
+      - Total Periods per Day: ${profile.hours.totalPeriods}
+      - Lunch occurs AFTER Period: ${profile.hours.lunchAfterPeriod} (Note: Next lesson starts at period ${profile.hours.lunchAfterPeriod + 1})
+      - Global Locked Slots (Do not schedule here): ${JSON.stringify(lockedSlots.filter(l => l.isSchoolWide))}
 
-      SPECIAL INSTRUCTIONS (MANUAL TUNING):
+      SPECIAL INSTRUCTIONS:
       "${profile.specialInstructions || "None."}"
 
-      TASK: Create/Update weekly schedule for: ${batch.map(c => c.name).join(", ")}.
-      EXISTING STATE (OTHER CLASSES): ${JSON.stringify(preservedSlots.slice(0, 30))} 
+      TASK: Generate a 5-day schedule for these classes: ${batch.map(c => c.name).join(", ")}.
       
-      DATA: ${JSON.stringify(batch.map(c => ({
-        id: c.id,
-        name: c.name,
-        subjects: c.assignments.map(a => ({
+      VALID SUBJECT POOL FOR THESE CLASSES:
+      ${JSON.stringify(batch.map(c => ({
+        classId: c.id,
+        className: c.name,
+        availableLessons: c.assignments.map(a => ({
           subjectId: a.subjectId,
+          subjectName: profile.subjects.find(s => s.id === a.subjectId)?.name,
           teacherId: a.teacherId,
-          teacherName: teachers.find(t => t.id === a.teacherId)?.name || "Unassigned",
-          timesPerWeek: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek
+          teacherName: teachers.find(t => t.id === a.teacherId)?.name,
+          weeklyFrequency: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek
         }))
       })))}
 
-      OUTPUT JSON ONLY: { "slots": Array<{day, period, classId, subjectId, teacherId}> }
-      Note: 'period' is 0-indexed (0 to ${profile.hours.totalPeriods - 1}).
+      IMPORTANT: 
+      - Distribute the total weekly frequency for each subject across the 5 days.
+      - Ensure periods ${profile.hours.lunchAfterPeriod + 1} to ${profile.hours.totalPeriods - 1} are populated with lessons.
+      - Return ONLY a JSON object.
+
+      OUTPUT FORMAT:
+      {
+        "slots": [
+          { "day": 0, "period": 0, "classId": "...", "subjectId": "...", "teacherId": "..." },
+          ...
+        ]
+      }
     `;
 
     const response = await callWithRetry(() => ai.models.generateContent({
@@ -179,8 +185,13 @@ export const generateWeeklyMaster = async (
     }));
 
     const cleaned = sanitizeJson(response.text || '{"slots":[]}');
-    const result = JSON.parse(cleaned);
-    return (result.slots || []).map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
+    try {
+      const result = JSON.parse(cleaned);
+      return (result.slots || []).map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
+    } catch (e) {
+      console.error("JSON Parse Error in Draft:", cleaned);
+      return [];
+    }
   });
 
   const draftResults = await Promise.all(draftPromises);
@@ -194,22 +205,24 @@ export const generateWeeklyMaster = async (
     return { slots: combinedSlots, validation: { success: true, issues: [] } };
   }
 
-  if (onProgress) onProgress(`Resolving ${issues.length} identified conflicts...`);
+  if (onProgress) onProgress(`Resolving ${issues.length} conflicts with Deep Reasoning...`);
 
   const weaverPrompt = `
     ${SYSTEM_DIRECTIVE}
-    TASK: Fixing a schedule with specific programmatic errors.
+    TASK: Correct the following schedule. It contains double-bookings or missing coverage.
+    
+    LUNCH BREAK: After Period ${profile.hours.lunchAfterPeriod}.
+    TOTAL PERIODS: ${profile.hours.totalPeriods}.
+    
     ERRORS TO FIX:
     ${issues.join("\n")}
     
-    LUNCH BREAK: After Period ${profile.hours.lunchAfterPeriod}.
-    
     CURRENT FAULTY PLAN: ${JSON.stringify(combinedSlots)}
     
-    INSTRUCTION: Adjust ONLY the slots causing the errors above. Return the FULL corrected list of slots. 
-    Maintain schedule density after Period ${profile.hours.lunchAfterPeriod}.
-    
-    OUTPUT JSON ONLY: { "slots": Array }.
+    INSTRUCTION: 
+    - Fix overlaps by moving lessons to empty slots (especially after lunch).
+    - Ensure EVERY subject reaches its required weekly frequency.
+    - Return the FULL corrected list of slots as JSON.
   `;
 
   let finalSlots = combinedSlots;
@@ -225,18 +238,9 @@ export const generateWeeklyMaster = async (
     const result = JSON.parse(sanitizeJson(weaverResponse.text || '{"slots":[]}'));
     finalSlots = result.slots || combinedSlots;
   } catch (error: any) {
-    if (error.message?.includes("429") || error.status === 429) {
-      if (onProgress) onProgress("Applying heuristic fallback...");
-      const recoveryResponse = await callWithRetry(() => ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: weaverPrompt,
-        config: { responseMimeType: "application/json" }
-      }));
-      const result = JSON.parse(sanitizeJson(recoveryResponse.text || '{"slots":[]}'));
-      finalSlots = result.slots || combinedSlots;
-    } else {
-      throw error;
-    }
+    console.error("Weaver Failure:", error);
+    // Fallback if Pro fails
+    finalSlots = combinedSlots;
   }
 
   const finalIssues = validateScheduleProgrammatically(finalSlots, teachers, classes, profile, lockedSlots);

@@ -133,16 +133,12 @@ const App: React.FC = () => {
     setSchedule({ ...schedule, weeklySlots: updatedSlots });
   };
 
-  // Fix: Implemented handleMoveLock to manage moving or copying locked slots
   const handleMoveLock = (source: { day: number, period: number }, target: { day: number, period: number }, isCopy: boolean) => {
     const sourceLock = lockedSlots.find(l => l.dayOfWeek === source.day && l.period === source.period);
     if (!sourceLock) return;
 
     let updatedLocks = lockedSlots.filter(l => !(l.dayOfWeek === target.day && l.period === target.period));
-    
-    if (!isCopy) {
-      updatedLocks = updatedLocks.filter(l => !(l.dayOfWeek === source.day && l.period === source.period));
-    }
+    if (!isCopy) updatedLocks = updatedLocks.filter(l => !(l.dayOfWeek === source.day && l.period === source.period));
     
     updatedLocks.push({ 
       ...sourceLock, 
@@ -153,7 +149,6 @@ const App: React.FC = () => {
     setLockedSlots(updatedLocks);
   };
 
-  // Fix: Implemented handleFillLocks to manage replicating locked slots over a range in the grid
   const handleFillLocks = (source: { day: number, period: number }, range: { startDay: number, endDay: number, startPeriod: number, endPeriod: number }) => {
     const sourceLock = lockedSlots.find(l => l.dayOfWeek === source.day && l.period === source.period);
     if (!sourceLock) return;
@@ -179,6 +174,7 @@ const App: React.FC = () => {
     const currentInputState = { teachers, classes, lockedSlots, subjects, hours: profile.hours, special: profile.specialInstructions || "" };
     const currentHash = computeInputHash(currentInputState);
     
+    // If not forced and no dirty IDs, ask for confirmation
     if (currentHash === lastInputHash && !forceFullSync && dirtyClassIds.size === 0) {
       if (!window.confirm(t('confirmation_resync'))) return;
     }
@@ -189,13 +185,24 @@ const App: React.FC = () => {
     
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
+      
+      // Determine which IDs to process. If forceFullSync is true, we pass an empty array to generateWeeklyMaster 
+      // but internal service logic treats empty as 'process all'. Actually, let's pass all class IDs to be explicit.
+      const classesToProcess = forceFullSync ? classes.map(c => c.id) : Array.from(dirtyClassIds);
+
       const { slots, validation } = await generateWeeklyMaster(
-        teachers, lockedSlots, classes, currentProfile, schedule?.weeklySlots || [],
-        forceFullSync ? [] : Array.from(dirtyClassIds),
+        teachers, lockedSlots, classes, currentProfile, 
+        forceFullSync ? [] : (schedule?.weeklySlots || []),
+        classesToProcess,
         (msg) => setLoadingMsg(msg)
       );
       
-      setSchedule(prev => ({ ...prev, weeklySlots: slots, quarterlyPlan: prev?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } }));
+      setSchedule(prev => ({ 
+        ...prev, 
+        weeklySlots: slots, 
+        quarterlyPlan: prev?.quarterlyPlan || { quarterName: 'Term 1', weeks: [] } 
+      }));
+      
       setLastInputHash(currentHash);
       setDirtyClassIds(new Set());
       setForceFullSync(false);
@@ -215,11 +222,13 @@ const App: React.FC = () => {
     <Layout activeTab={activeTab} setActiveTab={setActiveTab} language={language} setLanguage={setLanguage}>
       <div className="mb-8 no-print flex items-center justify-between bg-white border border-slate-200 p-4 rounded-[1.5rem] shadow-sm">
         <div className="flex items-center gap-3 ml-2">
-          <div className={`w-2.5 h-2.5 rounded-full ${dirtyClassIds.size === 0 && computeInputHash({ teachers, classes, lockedSlots, subjects, hours: profile.hours, special: profile.specialInstructions || "" }) === lastInputHash ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></div>
+          <div className={`w-2.5 h-2.5 rounded-full ${dirtyClassIds.size === 0 && !forceFullSync && computeInputHash({ teachers, classes, lockedSlots, subjects, hours: profile.hours, special: profile.specialInstructions || "" }) === lastInputHash ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></div>
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            {dirtyClassIds.size > 0 
-              ? `${dirtyClassIds.size} ${t('classes')} ${t('local_changes')}` 
-              : (computeInputHash({ teachers, classes, lockedSlots, subjects, hours: profile.hours, special: profile.specialInstructions || "" }) === lastInputHash ? t('synchronized') : t('local_changes'))}
+            {forceFullSync 
+              ? `FORCE GLOBAL RE-SYNC ACTIVE`
+              : (dirtyClassIds.size > 0 
+                ? `${dirtyClassIds.size} ${t('classes')} ${t('local_changes')}` 
+                : (computeInputHash({ teachers, classes, lockedSlots, subjects, hours: profile.hours, special: profile.specialInstructions || "" }) === lastInputHash ? t('synchronized') : t('local_changes')))}
           </span>
         </div>
         <div className="flex gap-4">
