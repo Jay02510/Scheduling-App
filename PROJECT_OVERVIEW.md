@@ -4,49 +4,43 @@
 ## 1. Executive Summary
 EduPlanner is a next-generation administrative platform designed to eliminate the "Scheduling Nightmare" in modern educational institutions. By combining high-end cinematic UI/UX with the reasoning power of the Gemini 3 Pro AI model, it transforms static school management into a dynamic, optimized ecosystem.
 
-**Vision:** To act as the **Guardian of Operational Health**, preserving institutional logic while optimizing for teacher sustainability and curriculum alignment.
+**Vision:** To act as the **Guardian of Institutional Health**, preserving operational logic while optimizing for human sustainability and curriculum excellence.
 
 ---
 
-## 2. The Core Problem vs. The EduPlanner Solution
+## 2. Intelligence Engine Persona (The "Guardian")
 
-| The Problem | The EduPlanner Solution |
-| :--- | :--- |
-| **Manual Errors:** Overlapping teachers and double-booked rooms. | **Guardian Logic:** Real-time programmatic checks + AI "Guardian" Weaver. |
-| **Disconnected Planning:** Schedules don't reflect curriculum goals. | **Curriculum Confidence:** Links slots to quarterly targets with safety flags. |
-| **Faculty Burnout:** Imbalanced workloads and lack of rest. | **Human Sustainability:** AI respects "Burnout Risk" and fatigue reduction. |
-| **Complexity Barrier:** Software is often too "ugly" or "hard" to use. | **Cinematic UX:** High-contrast, brutalist design for professional clarity. |
+The AI's role is not just to generate slots; it is to:
+1.  **Minimize Unnecessary Change:** Treat the existing schedule as "Trusted State."
+2.  **Preserve Institutional Memory:** Inferred patterns from previous terms are treated as intentional administrative decisions.
+3.  **Human-Centered Design:** Prioritize teacher burnout risk and student cognitive load over pure math optimization.
 
----
+### Hard Constraints (Non-Negotiable)
+- Conflict-free teachers, rooms, and resources.
+- **Guaranteed Rest Slots** must NEVER be violated.
+- Global Engagements (assemblies, lunch) are immutable.
+- Curriculum sequencing must remain achievable by year-end.
 
-## 3. Feature Universe
-
-### A. The Guardian Dashboard (Operational Health)
-*   **Operational Health Score:** A real-time audit (0-100) of the school's "Health."
-*   **Burnout Indicator:** AI-driven risk assessment (Low/Med/High) per teacher.
-*   **Live Indices:** One-click "Jump" navigation to any teacher or class file.
-
-### B. The Setup Center (Institutional Logic)
-*   **Global Engagements:** Drag-and-drop system for blocking school-wide events.
-*   **Institutional Memory:** AI treats previous schedules as "Trusted State" to minimize unnecessary reshuffling.
-*   **AI Tuning:** Natural language instructions used to evolve institutional rules over time.
+### Soft Priorities (Ranked)
+1.  **Teacher Fatigue Reduction:** Avoiding long consecutive blocks.
+2.  **Cognitive Load:** Subject variety across the day.
+3.  **Schedule Stability:** Preserving existing time slots.
+4.  **Aesthetic Clarity:** Visual grid legibility.
 
 ---
 
-## 4. Technical Architecture & AI Directives
+## 3. Technical Implementation Strategy
 
-### AI Strategy (The "Intelligence Engine")
-EduPlanner utilizing a tiered AI approach based on **Change Management Behavior**:
-1.  **Drafting Phase:** Uses Gemini 3 Flash to build initial blocks.
-2.  **Guardian Weaver (Fixing):** Uses Gemini 3 Pro with a thinking budget to apply the *smallest possible correction* to fix conflicts while preserving stability.
-3.  **Institutional Memory:** Analyze finalized schedules at term-end to extract stable patterns for the next cycle.
-
-### Hard Constraint Rules
-- No teacher/room double-booking.
-- Guaranteed Rest Slots must NEVER be violated.
-- Fixed Global Engagements are immutable.
+### Tiered AI Architecture
+1.  **Drafting Phase (Gemini 3 Flash):** High-speed batch generation for core slots.
+2.  **Guardian Weaver (Gemini 3 Pro):** Deep reasoning for conflict resolution with a Thinking Budget.
+3.  **High-Performance Fallback:** If Pro hits API quota limits (429), the system automatically falls back to an optimized Flash Weaver to ensure institutional continuity.
 
 ---
 
-## 5. Strategic Product Q&A
-*(See sections A-E for detailed market positioning including Korean Market Fit and the AI Operations Designer persona.)*
+## 4. Strategic Product Features
+
+*   **Operational Health Score:** Real-time audit (0-100) of school status.
+*   **Burnout Risk Indicator:** Diagnostic per teacher (Low/Medium/High).
+*   **Curriculum Coverage Confidence:** (Safe/Watch/Risk) status for textbook pacing.
+*   **Admin-Facing Explanation:** Plain language logic summaries for non-technical users.

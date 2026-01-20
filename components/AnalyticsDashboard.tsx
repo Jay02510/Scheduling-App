@@ -36,7 +36,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
         </div>
         <div className="text-center max-w-md">
           <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Guardian Audit Engine</h3>
-          <p className="text-slate-500 text-sm mt-2 font-medium">Analyze operational health, burnout risks, and curriculum coverage confidence.</p>
+          <p className="text-slate-500 text-sm mt-2 font-medium text-balance">Review burnout risks, operational stability, and curriculum coverage confidence.</p>
         </div>
         <button onClick={runAudit} className="px-10 py-5 bg-[#0f172a] text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all">Perform Institutional Audit</button>
       </div>
@@ -50,16 +50,16 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
           <div className="w-20 h-20 border-[6px] border-slate-100 rounded-full"></div>
           <div className="w-20 h-20 border-[6px] border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
         </div>
-        <p className="text-slate-400 font-black uppercase tracking-[0.25em] text-[11px]">Guardian is auditing operational state...</p>
+        <p className="text-slate-400 font-black uppercase tracking-[0.25em] text-[11px]">Guardian is auditing operational health...</p>
       </div>
     );
   }
 
   const chartData = [
-    { subject: 'Teacher Balance', A: diagnostics?.score || 80, fullMark: 100 },
+    { subject: 'Faculty Balance', A: diagnostics?.score || 80, fullMark: 100 },
     { subject: 'Stability', A: 95, fullMark: 100 },
     { subject: 'Cognitive Load', A: 85, fullMark: 100 },
-    { subject: 'Logic Integrity', A: 100, fullMark: 100 },
+    { subject: 'Integrity', A: 100, fullMark: 100 },
     { subject: 'Sustainability', A: 75, fullMark: 100 },
   ];
 
@@ -71,16 +71,24 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
     }
   };
 
+  const getImpactColor = (impact: string) => {
+    switch (impact?.toLowerCase()) {
+      case 'high': return 'text-rose-500 bg-rose-50';
+      case 'medium': return 'text-amber-500 bg-amber-50';
+      default: return 'text-emerald-500 bg-emerald-50';
+    }
+  };
+
   return (
     <div className="space-y-12 animate-fadeIn pb-24">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-1">
         <div>
-          <h2 className="text-4xl font-black text-slate-800 tracking-tight uppercase">Operational Health</h2>
-          <p className="text-slate-400 font-bold uppercase text-[11px] tracking-widest mt-1">Institutional Intelligence Audit</p>
+          <h2 className="text-4xl font-black text-slate-800 tracking-tight uppercase">Strategic Audit</h2>
+          <p className="text-slate-400 font-bold uppercase text-[11px] tracking-widest mt-1">Institutional Intelligence Analysis</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => window.print()} className="px-6 py-4 bg-white text-slate-900 border border-slate-200 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">Export Audit</button>
-          <button onClick={runAudit} className="px-6 py-4 bg-[#0f172a] text-indigo-400 border border-indigo-900/50 rounded-3xl text-[10px] font-black uppercase tracking-widest shadow-lg">Run Deep Refresh</button>
+          <button onClick={() => window.print()} className="px-6 py-4 bg-white text-slate-900 border border-slate-200 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">Export Report</button>
+          <button onClick={runAudit} className="px-6 py-4 bg-[#0f172a] text-indigo-400 border border-indigo-900/50 rounded-3xl text-[10px] font-black uppercase tracking-widest shadow-lg">Refresh Audit</button>
         </div>
       </header>
 
@@ -96,15 +104,21 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Health Score</span>
               </div>
             </div>
-            <div className="mt-8 flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase">Coverage Confidence:</span>
-              <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg font-black text-[10px] uppercase">{diagnostics?.coverageConfidence || 'N/A'}</span>
+            <div className="mt-8 flex flex-col gap-3">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-[9px] font-black text-slate-400 uppercase">Impact:</span>
+                <span className={`px-2 py-0.5 rounded-md font-black text-[9px] uppercase ${getImpactColor(diagnostics?.impactLevel)}`}>{diagnostics?.impactLevel || 'Low'}</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-[9px] font-black text-slate-400 uppercase">Confidence:</span>
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg font-black text-[9px] uppercase">{diagnostics?.coverageConfidence || 'Safe'}</span>
+              </div>
             </div>
         </div>
 
         <div className="lg:col-span-2 space-y-8">
            <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Faculty Burnout Risk</h3>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Faculty Sustainability Matrix</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Object.entries(diagnostics?.burnoutRisks || {}).map(([name, risk]: [string, any]) => (
                   <div key={name} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
@@ -117,15 +131,15 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
 
            <div className="bg-slate-900 p-10 rounded-[3.5rem] text-white relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 gradient-primary blur-[50px] opacity-20"></div>
-              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-6">Strategic Summary</h3>
-              <p className="text-xl font-bold text-slate-300 leading-relaxed italic">"{diagnostics?.summary || 'Audit pending complete system refresh.'}"</p>
+              <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-6">Guardian Perspective (Admin Explanation)</h3>
+              <p className="text-sm font-medium text-slate-300 leading-relaxed italic">"{diagnostics?.adminExplanation || diagnostics?.summary || 'Audit pending system refresh.'}"</p>
            </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col items-center">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10">Institutional Load Matrix</h3>
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10">Load & Balance Matrix</h3>
           <div className="w-full h-80">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
@@ -139,7 +153,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Actionable Insights</h3>
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Actionable Intelligence</h3>
           <div className="space-y-3">
             {diagnostics?.insights?.map((insight: string, idx: number) => (
               <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex gap-5 group hover:border-indigo-100 transition-all">

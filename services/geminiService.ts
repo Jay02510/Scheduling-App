@@ -28,13 +28,15 @@ async function callWithRetry(fn: () => Promise<any>, maxRetries = 3): Promise<an
       lastError = error;
       const errorMsg = error.message || "";
       const isRateLimit = errorMsg.includes("429") || error.status === 429 || errorMsg.includes("RESOURCE_EXHAUSTED");
+      
       if (isRateLimit && i < maxRetries - 1) {
-        const waitTime = Math.pow(2, i) * 6000 + Math.random() * 1000;
+        // Longer exponential backoff for quota issues
+        const waitTime = Math.pow(2, i) * 10000 + Math.random() * 2000;
         await delay(waitTime);
         continue;
       }
       if (i < maxRetries - 1) {
-        await delay(1500);
+        await delay(2000);
         continue;
       }
       throw error;
@@ -94,21 +96,22 @@ You are EduPlanner’s Institutional Intelligence Engine.
 Your role is to preserve, optimize, and evolve the school’s OPERATIONAL LOGIC.
 
 PRIMARY OBJECTIVES:
-1. Conflict-free schedules (teachers, rooms).
+1. Conflict-free schedules (teachers, rooms, resources).
 2. Human-sustainability (balanced workload, rest preservation).
-3. Minimal change: If constraints are added, modify ONLY the minimum required portion.
+3. Minimal change: Treat existing schedules as "Trusted State". Modify ONLY the minimum required.
 4. Preserve institutional memory: Assume prior patterns are intentional decisions.
 
 HARD CONSTRAINTS (NON-NEGOTIABLE):
-- No teacher double-booking.
+- No teacher/room double-booking.
 - Guaranteed Rest Slots must NEVER be violated.
 - Global Engagements are immutable.
+- Curriculum sequencing must be achievable by year-end.
 
-SOFT PRIORITIES (RANKED):
-1. Teacher fatigue reduction (Avoid long consecutive blocks).
-2. Cognitive load (Prefer subject variety).
-3. Stability (Preserve existing slots).
-4. Aesthetic clarity (Legible patterns).
+SOFT PRIORITIES (In Order):
+1. Teacher fatigue reduction.
+2. Cognitive load for students.
+3. Schedule stability.
+4. Aesthetic clarity.
 `;
 
 export const generateWeeklyMaster = async (
@@ -125,7 +128,7 @@ export const generateWeeklyMaster = async (
   const classesToProcess = isIncremental ? classes.filter(c => dirtyClassIds.includes(c.id)) : classes;
   const preservedSlots = isIncremental ? previousSlots.filter(s => !dirtyClassIds.includes(s.classId)) : [];
 
-  if (onProgress) onProgress(isIncremental ? `Preserving trusted state for ${classes.length - dirtyClassIds.length} classes...` : "Initializing Institutional Intelligence Engine...");
+  if (onProgress) onProgress(isIncremental ? "Accessing Institutional Memory..." : "Initializing Intelligence Engine...");
   
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -133,7 +136,7 @@ export const generateWeeklyMaster = async (
     return { slots: previousSlots, validation: { success: true, issues: [] } };
   }
 
-  // Phase 1: Drafting
+  // Phase 1: Drafting (High-quota model)
   const batches = [];
   for (let i = 0; i < classesToProcess.length; i += 4) {
     batches.push(classesToProcess.slice(i, i + 4));
@@ -142,17 +145,9 @@ export const generateWeeklyMaster = async (
   const draftPromises = batches.map(async (batch) => {
     const draftPrompt = `
       ${SYSTEM_DIRECTIVE}
-      
       TASK: Create/Update weekly schedule for: ${batch.map(c => c.name).join(", ")}.
-      
-      SPECIAL RULES:
-      ${profile.specialInstructions || "Keep it simple and balanced."}
-      
-      EXISTING STATE (TRUSTED):
-      ${JSON.stringify(preservedSlots.slice(0, 50))} (Avoid conflicts with these teachers)
-      
-      DATA:
-      ${JSON.stringify(batch.map(c => ({
+      EXISTING STATE: ${JSON.stringify(preservedSlots.slice(0, 50))} 
+      DATA: ${JSON.stringify(batch.map(c => ({
         id: c.id,
         name: c.name,
         subjects: c.assignments.map(a => ({
@@ -161,7 +156,6 @@ export const generateWeeklyMaster = async (
           timesPerWeek: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek
         }))
       })))}
-
       OUTPUT JSON ONLY: { "slots": Array<{day, period, classId, subjectId, teacherId}> }
     `;
 
@@ -178,53 +172,60 @@ export const generateWeeklyMaster = async (
   const draftResults = await Promise.all(draftPromises);
   const combinedSlots: ScheduleSlot[] = [...preservedSlots, ...draftResults.flat()];
 
-  // Phase 2: Guardian Audit
-  if (onProgress) onProgress("Performing internal Guardian audit...");
+  // Phase 2: Guardian Audit & Fix (Fallback logic for 429)
+  if (onProgress) onProgress("Performing Guardian Integrity Audit...");
   const issues = validateScheduleProgrammatically(combinedSlots, teachers, classes, profile, lockedSlots);
   
   if (issues.length === 0) {
-    if (onProgress) onProgress("Logic integrity verified.");
+    if (onProgress) onProgress("Logic integrity confirmed.");
     return { slots: combinedSlots, validation: { success: true, issues: [] } };
   }
 
-  if (onProgress) onProgress(`Evaluating trade-offs to fix ${issues.length} conflicts...`);
+  if (onProgress) onProgress(`Evaluating trade-offs for ${issues.length} conflicts...`);
 
   const weaverPrompt = `
     ${SYSTEM_DIRECTIVE}
-    
-    TASK: Resolve schedule conflicts while minimizing surface area change.
-    
-    PROBLEMS DETECTED:
-    ${issues.join("\n")}
-    
-    CURRENT UNTRUSTED PLAN:
-    ${JSON.stringify(combinedSlots)}
-    
-    INSTRUCTION: Apply the smallest possible correction. Prefer stability over perfect aesthetics.
+    TASK: Resolve schedule conflicts while preserving Teacher Routines and Sustainability.
+    PROBLEMS: ${issues.join("\n")}
+    CURRENT PLAN: ${JSON.stringify(combinedSlots)}
     OUTPUT JSON ONLY: { "slots": Array }.
   `;
 
-  const weaverResponse = await callWithRetry(() => ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: weaverPrompt,
-    config: { 
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 2000 }
+  let finalSlots = combinedSlots;
+  try {
+    // Attempt Pro first
+    const weaverResponse = await callWithRetry(() => ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: weaverPrompt,
+      config: { 
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingBudget: 2000 }
+      }
+    }));
+    const result = JSON.parse(sanitizeJson(weaverResponse.text || '{"slots":[]}'));
+    finalSlots = result.slots || combinedSlots;
+  } catch (error: any) {
+    // If Pro hits quota, fallback to Flash immediately
+    if (error.message?.includes("429") || error.status === 429) {
+      if (onProgress) onProgress("Switching to High-Performance Recovery Engine...");
+      const recoveryResponse = await callWithRetry(() => ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: weaverPrompt,
+        config: { responseMimeType: "application/json" }
+      }));
+      const result = JSON.parse(sanitizeJson(recoveryResponse.text || '{"slots":[]}'));
+      finalSlots = result.slots || combinedSlots;
+    } else {
+      throw error;
     }
-  }));
+  }
 
-  const finalResult = JSON.parse(sanitizeJson(weaverResponse.text || '{"slots":[]}'));
-  const finalSlots = finalResult.slots || combinedSlots;
   const finalIssues = validateScheduleProgrammatically(finalSlots, teachers, classes, profile, lockedSlots);
-
   if (onProgress) onProgress("Operational health optimized.");
 
   return {
     slots: finalSlots,
-    validation: {
-      success: finalIssues.length === 0,
-      issues: finalIssues
-    }
+    validation: { success: finalIssues.length === 0, issues: finalIssues }
   };
 };
 
@@ -237,18 +238,31 @@ export const analyzeSchedule = async (
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `
-      Review the current institutional schedule and produce:
-      - An Operational Health Score (0–100)
-      - A Burnout Risk Indicator per teacher (Low / Medium / High)
-      - Curriculum Coverage Confidence (Safe / Watch / Risk)
-      - 3 actionable insights for the administrator.
-
+      ${SYSTEM_DIRECTIVE}
+      
+      Review the current schedule and produce a structured Health Report:
+      1. Operational Health Score (0-100)
+      2. Burnout Risk per teacher (Low/Medium/High)
+      3. Curriculum Coverage Confidence (Safe/Watch/Risk)
+      4. System Health Impact (Low/Medium/High)
+      5. Admin Explanation: Explain trade-offs clearly in plain language.
+      
       DATA: ${JSON.stringify(schedule.weeklySlots.slice(0, 150))}
       FACULTY: ${JSON.stringify(teachers.map(t => ({id: t.id, name: t.name, role: t.role})))}
 
-      OUTPUT JSON ONLY with keys: score, insights (array), burnoutRisks (object {teacherName: risk}), coverageConfidence (string), summary.
+      OUTPUT JSON ONLY with keys: score, insights (array), burnoutRisks (object), coverageConfidence, summary, impactLevel, adminExplanation.
     `,
     config: { responseMimeType: "application/json" }
   });
   return JSON.parse(sanitizeJson(response.text || '{}'));
+};
+
+export const explainDecision = async (context: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `Explain this scheduling decision in plain language suitable for a non-technical school administrator. Avoid jargon.
+    CONTEXT: ${context}`,
+  });
+  return response.text || "No explanation available.";
 };
