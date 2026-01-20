@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolProfile, SubjectConfig, SchoolSchedule } from '../types';
 import { TEACHER_COLORS, CLASS_COLORS, TRANSLATIONS } from '../constants';
 
@@ -38,6 +38,8 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
   const [fillSource, setFillSource] = useState<{ day: number, period: number } | null>(null);
   const [fillTarget, setFillTarget] = useState<{ day: number, period: number } | null>(null);
 
+  const instructionsRef = useRef<HTMLTextAreaElement>(null);
+
   const t = (key: string) => TRANSLATIONS[language][key] || key;
 
   useEffect(() => {
@@ -70,6 +72,28 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     if (!profile) return;
     const current = profile.specialInstructions || "";
     setProfile({ ...profile, specialInstructions: current + (current ? "\n" : "") + text });
+  };
+
+  const handleDropTeacherInText = (e: React.DragEvent) => {
+    e.preventDefault();
+    const teacherName = e.dataTransfer.getData("teacherName");
+    if (teacherName && instructionsRef.current && profile) {
+      const textarea = instructionsRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const before = text.substring(0, start);
+      const after = text.substring(end, text.length);
+      const newText = `${before}[${teacherName}]${after}`;
+      
+      setProfile({ ...profile, specialInstructions: newText });
+      
+      // Reset focus and cursor
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + teacherName.length + 2, start + teacherName.length + 2);
+      }, 0);
+    }
   };
 
   const handleAddNewClass = () => {
@@ -441,46 +465,71 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           </div>
         )}
         {activeTab === 'tuning' && profile && (
-          <div className="max-w-4xl mx-auto space-y-12 animate-fadeIn py-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-              <div className="lg:col-span-2 space-y-6">
+          <div className="max-w-6xl mx-auto space-y-12 animate-fadeIn py-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+              <div className="lg:col-span-8 space-y-6">
                 <div>
                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t('special_considerations')}</h3>
                   <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mt-1">Guide the Optimization Engine with specific human constraints</p>
                 </div>
-                <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-200 shadow-inner relative group">
+                <div 
+                  className="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-slate-200 shadow-inner relative group min-h-[450px]"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDropTeacherInText}
+                >
                   <textarea 
-                    className="w-full min-h-[350px] bg-transparent border-0 p-0 focus:ring-0 text-sm font-bold text-slate-700 leading-relaxed placeholder:text-slate-300 custom-scrollbar resize-none outline-none"
-                    placeholder="Example: Teacher Evan leaves after lunch and can only teach morning blocks..."
+                    ref={instructionsRef}
+                    className="w-full h-full min-h-[350px] bg-transparent border-0 p-0 focus:ring-0 text-sm font-bold text-slate-700 leading-relaxed placeholder:text-slate-300 custom-scrollbar resize-none outline-none"
+                    placeholder="Drag faculty names here and type instructions... e.g. [Teacher Name] can only teach in the morning."
                     value={profile.specialInstructions || ''}
                     onChange={e => setProfile({...profile, specialInstructions: e.target.value})}
                   />
-                  <div className="absolute bottom-4 right-6 flex items-center gap-2 pointer-events-none opacity-40 group-focus-within:opacity-10 transition-opacity">
+                  <div className="absolute bottom-6 right-8 flex items-center gap-3 pointer-events-none opacity-40 group-focus-within:opacity-10 transition-opacity">
                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Natural Language Sync Active</span>
-                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                   </div>
                 </div>
-              </div>
-              <div className="space-y-6">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{language === 'ko' ? '제약 조건 템플릿' : 'Constraint Templates'}</h4>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {tuningTemplates.map((tmp, i) => (
                     <button 
                       key={i} 
                       onClick={() => addTemplateToPrompt(tmp.prompt)}
-                      className="p-5 bg-white border border-slate-100 rounded-3xl text-left hover:border-indigo-500 hover:shadow-xl transition-all group active:scale-95"
+                      className="p-4 bg-white border border-slate-100 rounded-2xl text-left hover:border-indigo-500 hover:shadow-lg transition-all group active:scale-95"
                     >
-                      <div className="flex items-center gap-3 mb-2">
-                         <span className="text-lg">{tmp.icon}</span>
-                         <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{tmp.title}</span>
+                      <div className="flex items-center gap-3 mb-1">
+                         <span className="text-base">{tmp.icon}</span>
+                         <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{tmp.title}</span>
                       </div>
-                      <p className="text-[10px] text-slate-400 font-medium leading-relaxed group-hover:text-indigo-600">"{tmp.prompt}"</p>
+                      <p className="text-[9px] text-slate-400 font-medium leading-relaxed group-hover:text-indigo-600">"{tmp.prompt}"</p>
                     </button>
                   ))}
                 </div>
-                <div className="p-6 bg-[#0f172a] rounded-[2rem] text-white">
-                   <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-2">AI Pro Tip</p>
-                   <p className="text-[10px] text-slate-300 font-medium italic leading-relaxed">"Specificity is speed. Name teachers and time slots directly to reduce optimization cycles."</p>
+              </div>
+              
+              <div className="lg:col-span-4 space-y-6">
+                <div className="p-8 bg-[#0f172a] rounded-[3rem] text-white shadow-xl h-full flex flex-col">
+                   <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-6">Faculty Reference</h4>
+                   <p className="text-[9px] text-slate-400 font-medium mb-6 leading-relaxed">Drag faculty below into the text box to link specific rules to them.</p>
+                   <div className="space-y-3 overflow-y-auto flex-1 custom-scrollbar pr-2">
+                     {teachers.map(t => (
+                       <div 
+                        key={t.id} 
+                        draggable 
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("teacherName", t.name);
+                          e.dataTransfer.effectAllowed = "copy";
+                        }}
+                        className="bg-white/5 border border-white/10 p-4 rounded-2xl cursor-grab active:cursor-grabbing hover:bg-white/10 transition-all group flex items-center gap-3"
+                       >
+                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-lg shrink-0" style={{ backgroundColor: t.color }}>{t.name[0]}</div>
+                         <div className="flex-1 overflow-hidden">
+                           <p className="text-[11px] font-black uppercase text-slate-200 truncate">{t.name}</p>
+                           <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t.role}</p>
+                         </div>
+                         <svg className="w-4 h-4 text-slate-700 group-hover:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 8h16M4 16h16" /></svg>
+                       </div>
+                     ))}
+                   </div>
                 </div>
               </div>
             </div>

@@ -3,7 +3,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Teacher, LockedSlot, ClassGroup, SchoolProfile, ScheduleSlot, SchoolSchedule } from "../types";
 
 const sanitizeJson = (text: string) => {
-  return text.replace(/```json/g, "").replace(/```/g, "").trim();
+  // Remove markdown code blocks
+  let cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+  // Attempt to fix trailing commas before closing braces/brackets
+  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
+  // Ensure property names are double-quoted if they aren't (basic fix for common AI quirks)
+  cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3');
+  return cleaned;
 };
 
 export const computeInputHash = (data: any): string => {
@@ -30,7 +36,6 @@ async function callWithRetry(fn: () => Promise<any>, maxRetries = 3): Promise<an
       const isRateLimit = errorMsg.includes("429") || error.status === 429 || errorMsg.includes("RESOURCE_EXHAUSTED");
       
       if (isRateLimit && i < maxRetries - 1) {
-        // Longer exponential backoff for quota issues
         const waitTime = Math.pow(2, i) * 10000 + Math.random() * 2000;
         await delay(waitTime);
         continue;
@@ -53,38 +58,41 @@ export const validateScheduleProgrammatically = (
   lockedSlots: LockedSlot[]
 ) => {
   const issues: string[] = [];
-  const teacherTimeMap: Record<string, string> = {}; 
+  const teacherTimeMap: Record<string, { classId: string, className: string }> = {}; 
   const classSubjectDailyMap: Record<string, number> = {}; 
 
   slots.forEach(slot => {
     const teacher = teachers.find(t => t.id === slot.teacherId);
-    const className = classes.find(c => c.id === slot.classId)?.name || "Unknown Class";
+    const classObj = classes.find(c => c.id === slot.classId);
+    const className = classObj?.name || "Unknown Class";
     const subName = profile.subjects.find(s => s.id === slot.subjectId)?.name || "Unknown Subject";
 
+    // 1. Teacher Overlap (Double Booking)
     const tKey = `${slot.day}:${slot.period}:${slot.teacherId}`;
-    if (teacherTimeMap[tKey] && teacherTimeMap[tKey] !== slot.classId) {
-      const otherClass = classes.find(c => c.id === teacherTimeMap[tKey])?.name || "another class";
-      issues.push(`OVERLAP: Teacher ${teacher?.name || 'Unknown'} is scheduled for ${className} and ${otherClass} at the same time (Day ${slot.day + 1}, Period ${slot.period + 1}).`);
+    if (teacherTimeMap[tKey] && teacherTimeMap[tKey].classId !== slot.classId) {
+      issues.push(`OVERLAP: ${teacher?.name} is double-booked for "${className}" and "${teacherTimeMap[tKey].className}" (Day ${slot.day + 1}, Period ${slot.period + 1}).`);
     } else {
-      teacherTimeMap[tKey] = slot.classId;
+      teacherTimeMap[tKey] = { classId: slot.classId, className };
     }
 
+    // 2. Class Subject Duplicates (Same class, same subject, same day)
     const subConfig = profile.subjects.find(s => s.id === slot.subjectId);
     if (subConfig && subConfig.frequencyPerWeek <= 5) {
       const sKey = `${slot.day}:${slot.classId}:${slot.subjectId}`;
       classSubjectDailyMap[sKey] = (classSubjectDailyMap[sKey] || 0) + 1;
       if (classSubjectDailyMap[sKey] > 1) {
-        issues.push(`DUPLICATE: ${className} has ${subName} more than once on Day ${slot.day + 1}.`);
+        issues.push(`DUPLICATE: ${className} has "${subName}" twice on Day ${slot.day + 1}.`);
       }
     }
 
+    // 3. Locked Slots Conflict
     const lock = lockedSlots.find(l => 
       l.dayOfWeek === slot.day && 
       l.period === slot.period && 
       (l.isSchoolWide || (l.classIds || []).includes(slot.classId))
     );
     if (lock) {
-      issues.push(`CONFLICT: ${className} has a lesson during the blocked time "${lock.name}" (Day ${slot.day + 1}, Period ${slot.period + 1}).`);
+      issues.push(`LOCK: ${className} scheduled during "${lock.name}" (Day ${slot.day + 1}, Period ${slot.period + 1}).`);
     }
   });
 
@@ -98,20 +106,13 @@ Your role is to preserve, optimize, and evolve the school’s OPERATIONAL LOGIC.
 PRIMARY OBJECTIVES:
 1. Conflict-free schedules (teachers, rooms, resources).
 2. Human-sustainability (balanced workload, rest preservation).
-3. Minimal change: Treat existing schedules as "Trusted State". Modify ONLY the minimum required.
-4. Preserve institutional memory: Assume prior patterns are intentional decisions.
+3. Complete Coverage: Ensure ALL periods of the day are utilized. 
+4. Post-Lunch Utilization: Lunch is a mid-day pause. You MUST continue scheduling lessons after lunch until the final Period is reached.
 
-HARD CONSTRAINTS (NON-NEGOTIABLE):
-- No teacher/room double-booking.
-- Guaranteed Rest Slots must NEVER be violated.
-- Global Engagements are immutable.
-- Curriculum sequencing must be achievable by year-end.
-
-SOFT PRIORITIES (In Order):
-1. Teacher fatigue reduction.
-2. Cognitive load for students.
-3. Schedule stability.
-4. Aesthetic clarity.
+HARD CONSTRAINTS:
+- No teacher can be in two places at once.
+- No class can have two lessons at once.
+- Subjects with frequency <= 5 should rarely appear twice in one day.
 `;
 
 export const generateWeeklyMaster = async (
@@ -128,7 +129,7 @@ export const generateWeeklyMaster = async (
   const classesToProcess = isIncremental ? classes.filter(c => dirtyClassIds.includes(c.id)) : classes;
   const preservedSlots = isIncremental ? previousSlots.filter(s => !dirtyClassIds.includes(s.classId)) : [];
 
-  if (onProgress) onProgress(isIncremental ? "Accessing Institutional Memory..." : "Initializing Intelligence Engine...");
+  if (onProgress) onProgress("Initializing Intelligence Engine...");
   
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -136,7 +137,6 @@ export const generateWeeklyMaster = async (
     return { slots: previousSlots, validation: { success: true, issues: [] } };
   }
 
-  // Phase 1: Drafting (High-quota model)
   const batches = [];
   for (let i = 0; i < classesToProcess.length; i += 4) {
     batches.push(classesToProcess.slice(i, i + 4));
@@ -145,18 +145,31 @@ export const generateWeeklyMaster = async (
   const draftPromises = batches.map(async (batch) => {
     const draftPrompt = `
       ${SYSTEM_DIRECTIVE}
+      
+      INSTITUTIONAL RHYTHM:
+      - Total Periods: ${profile.hours.totalPeriods}
+      - Lunch occurs AFTER Period ${profile.hours.lunchAfterPeriod}.
+      - IMPORTANT: You MUST schedule lessons for Periods ${profile.hours.lunchAfterPeriod + 1} through ${profile.hours.totalPeriods} unless a specific instruction forbids it.
+
+      SPECIAL INSTRUCTIONS (MANUAL TUNING):
+      "${profile.specialInstructions || "None."}"
+
       TASK: Create/Update weekly schedule for: ${batch.map(c => c.name).join(", ")}.
-      EXISTING STATE: ${JSON.stringify(preservedSlots.slice(0, 50))} 
+      EXISTING STATE (OTHER CLASSES): ${JSON.stringify(preservedSlots.slice(0, 30))} 
+      
       DATA: ${JSON.stringify(batch.map(c => ({
         id: c.id,
         name: c.name,
         subjects: c.assignments.map(a => ({
           subjectId: a.subjectId,
           teacherId: a.teacherId,
+          teacherName: teachers.find(t => t.id === a.teacherId)?.name || "Unassigned",
           timesPerWeek: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek
         }))
       })))}
+
       OUTPUT JSON ONLY: { "slots": Array<{day, period, classId, subjectId, teacherId}> }
+      Note: 'period' is 0-indexed (0 to ${profile.hours.totalPeriods - 1}).
     `;
 
     const response = await callWithRetry(() => ai.models.generateContent({
@@ -165,15 +178,15 @@ export const generateWeeklyMaster = async (
       config: { responseMimeType: "application/json" }
     }));
 
-    const result = JSON.parse(sanitizeJson(response.text || '{"slots":[]}'));
+    const cleaned = sanitizeJson(response.text || '{"slots":[]}');
+    const result = JSON.parse(cleaned);
     return (result.slots || []).map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
   });
 
   const draftResults = await Promise.all(draftPromises);
   const combinedSlots: ScheduleSlot[] = [...preservedSlots, ...draftResults.flat()];
 
-  // Phase 2: Guardian Audit & Fix (Fallback logic for 429)
-  if (onProgress) onProgress("Performing Guardian Integrity Audit...");
+  if (onProgress) onProgress("Performing Programmatic Validation...");
   const issues = validateScheduleProgrammatically(combinedSlots, teachers, classes, profile, lockedSlots);
   
   if (issues.length === 0) {
@@ -181,33 +194,39 @@ export const generateWeeklyMaster = async (
     return { slots: combinedSlots, validation: { success: true, issues: [] } };
   }
 
-  if (onProgress) onProgress(`Evaluating trade-offs for ${issues.length} conflicts...`);
+  if (onProgress) onProgress(`Resolving ${issues.length} identified conflicts...`);
 
   const weaverPrompt = `
     ${SYSTEM_DIRECTIVE}
-    TASK: Resolve schedule conflicts while preserving Teacher Routines and Sustainability.
-    PROBLEMS: ${issues.join("\n")}
-    CURRENT PLAN: ${JSON.stringify(combinedSlots)}
+    TASK: Fixing a schedule with specific programmatic errors.
+    ERRORS TO FIX:
+    ${issues.join("\n")}
+    
+    LUNCH BREAK: After Period ${profile.hours.lunchAfterPeriod}.
+    
+    CURRENT FAULTY PLAN: ${JSON.stringify(combinedSlots)}
+    
+    INSTRUCTION: Adjust ONLY the slots causing the errors above. Return the FULL corrected list of slots. 
+    Maintain schedule density after Period ${profile.hours.lunchAfterPeriod}.
+    
     OUTPUT JSON ONLY: { "slots": Array }.
   `;
 
   let finalSlots = combinedSlots;
   try {
-    // Attempt Pro first
     const weaverResponse = await callWithRetry(() => ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: weaverPrompt,
       config: { 
         responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 2000 }
+        thinkingConfig: { thinkingBudget: 4000 }
       }
     }));
     const result = JSON.parse(sanitizeJson(weaverResponse.text || '{"slots":[]}'));
     finalSlots = result.slots || combinedSlots;
   } catch (error: any) {
-    // If Pro hits quota, fallback to Flash immediately
     if (error.message?.includes("429") || error.status === 429) {
-      if (onProgress) onProgress("Switching to High-Performance Recovery Engine...");
+      if (onProgress) onProgress("Applying heuristic fallback...");
       const recoveryResponse = await callWithRetry(() => ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: weaverPrompt,
@@ -221,8 +240,6 @@ export const generateWeeklyMaster = async (
   }
 
   const finalIssues = validateScheduleProgrammatically(finalSlots, teachers, classes, profile, lockedSlots);
-  if (onProgress) onProgress("Operational health optimized.");
-
   return {
     slots: finalSlots,
     validation: { success: finalIssues.length === 0, issues: finalIssues }
@@ -238,31 +255,11 @@ export const analyzeSchedule = async (
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `
-      ${SYSTEM_DIRECTIVE}
-      
-      Review the current schedule and produce a structured Health Report:
-      1. Operational Health Score (0-100)
-      2. Burnout Risk per teacher (Low/Medium/High)
-      3. Curriculum Coverage Confidence (Safe/Watch/Risk)
-      4. System Health Impact (Low/Medium/High)
-      5. Admin Explanation: Explain trade-offs clearly in plain language.
-      
-      DATA: ${JSON.stringify(schedule.weeklySlots.slice(0, 150))}
-      FACULTY: ${JSON.stringify(teachers.map(t => ({id: t.id, name: t.name, role: t.role})))}
-
+      Analyze this institutional schedule for operational health.
+      DATA: ${JSON.stringify(schedule.weeklySlots.slice(0, 100))}
       OUTPUT JSON ONLY with keys: score, insights (array), burnoutRisks (object), coverageConfidence, summary, impactLevel, adminExplanation.
     `,
     config: { responseMimeType: "application/json" }
   });
   return JSON.parse(sanitizeJson(response.text || '{}'));
-};
-
-export const explainDecision = async (context: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Explain this scheduling decision in plain language suitable for a non-technical school administrator. Avoid jargon.
-    CONTEXT: ${context}`,
-  });
-  return response.text || "No explanation available.";
 };
