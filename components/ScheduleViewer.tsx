@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
 import { SchoolSchedule, ClassGroup, Teacher, SchoolProfile, SubjectConfig, ScheduleSlot, Textbook, LockedSlot, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
+import React, { useState, useEffect, useMemo } from 'react';
 
 interface ScheduleViewerProps {
   schedule: SchoolSchedule;
@@ -64,9 +64,8 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     [schedule?.weeklySlots, currentClass?.id]
   );
 
-  // Availability Mapping for "Ghosting"
   const teacherBusyMap = useMemo(() => {
-    const map: Record<string, boolean> = {}; // "teacherId:day:period" -> busy
+    const map: Record<string, boolean> = {}; 
     (schedule?.weeklySlots || []).forEach(s => {
       if (s.classId !== currentClass?.id) {
         map[`${s.teacherId}:${s.day}:${s.period}`] = true;
@@ -81,6 +80,13 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     const sub = subjects.find(s => s.id === subjectId);
     const book = textbooks.find(b => b.subject === sub?.name && b.classId === currentClass?.id);
     return book ? `${book.totalChapters} Units Pool` : null;
+  };
+
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = `Schedule_${currentClass?.name || 'Class'}_${new Date().toLocaleDateString()}`;
+    window.print();
+    document.title = originalTitle;
   };
 
   const clashes = useMemo(() => {
@@ -158,8 +164,14 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     <div className="space-y-8 animate-fadeIn max-w-full pb-32" onMouseUp={onFillEnd}>
       <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
         <div className="flex justify-between items-end">
-          <div><h1 className="text-3xl font-black uppercase tracking-tighter">{profile?.name}</h1><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Class Schedule: {currentClass.name} • {profile?.hours.totalPeriods} {t('period')}</p></div>
-          <div className="text-right"><span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">Institutional Master Grid</span><span className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</span></div>
+          <div>
+            <h1 className="text-3xl font-black uppercase tracking-tighter">{profile?.name}</h1>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Class Schedule: {currentClass.name} • {profile?.hours.totalPeriods} {t('period')}</p>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">Class Curricular Matrix</span>
+            <span className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</span>
+          </div>
         </div>
       </div>
 
@@ -201,7 +213,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">{t('institution_grid')} • {currentClass.name}</p>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>{t('export_pdf')}</button>
+          <button onClick={handlePrint} className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>{t('export_pdf')}</button>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
             {classes.map(c => (
               <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
@@ -237,7 +249,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     const isDragging = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
                     const hasClash = slot && clashes.some(c => c.day === dIdx && c.subjectId === slot.subjectId);
                     
-                    // Availability Logic
                     const isTeacherBusyElseWhere = draggingTeacherId && teacherBusyMap[`${draggingTeacherId}:${dIdx}:${pIdx}`];
                     const isOptimalSlot = draggingTeacherId && !isTeacherBusyElseWhere && !lock && !slot;
 

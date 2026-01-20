@@ -50,7 +50,10 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
   const assignedClasses = (classes || []).filter(c => c.homeroomTeacherId === currentTeacher.id || (c.assignments || []).some(a => a.teacherId === currentTeacher.id));
 
   const handleExportPDF = () => {
+    const originalTitle = document.title;
+    document.title = `Faculty_Schedule_${currentTeacher.name}_${new Date().toLocaleDateString()}`;
     window.print();
+    document.title = originalTitle;
   };
 
   return (
@@ -97,7 +100,6 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
       </div>
 
       <div className="xl:col-span-3 bg-white border-[2px] border-slate-900 rounded-[2rem] overflow-hidden shadow-sm max-w-full overflow-x-auto">
-        {/* Header for PDF only */}
         <div className="hidden print:block p-8 border-b-[2px] border-slate-900">
            <div className="flex justify-between items-end">
              <div>
@@ -105,7 +107,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Weekly Instructional Schedule • {currentTeacher.role}</p>
              </div>
              <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">EduPlanner Pro</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Faculty Resource Matrix</p>
                 <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</p>
              </div>
            </div>
