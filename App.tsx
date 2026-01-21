@@ -15,12 +15,14 @@ import Settings from './components/Settings';
 import Auth from './components/Auth';
 import CurriculumRoadmap from './components/CurriculumRoadmap';
 import SchoolCalendar from './components/SchoolCalendar';
+import LandingPage from './components/LandingPage';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
   const [language, setLanguage] = useState<Language>('ko');
+  const [hasEntered, setHasEntered] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
@@ -174,7 +176,6 @@ const App: React.FC = () => {
     const currentInputState = { teachers, classes, lockedSlots, subjects, hours: profile.hours, special: profile.specialInstructions || "" };
     const currentHash = computeInputHash(currentInputState);
     
-    // If not forced and no dirty IDs, ask for confirmation
     if (currentHash === lastInputHash && !forceFullSync && dirtyClassIds.size === 0) {
       if (!window.confirm(t('confirmation_resync'))) return;
     }
@@ -185,9 +186,6 @@ const App: React.FC = () => {
     
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
-      
-      // Determine which IDs to process. If forceFullSync is true, we pass an empty array to generateWeeklyMaster 
-      // but internal service logic treats empty as 'process all'. Actually, let's pass all class IDs to be explicit.
       const classesToProcess = forceFullSync ? classes.map(c => c.id) : Array.from(dirtyClassIds);
 
       const { slots, validation } = await generateWeeklyMaster(
@@ -216,6 +214,7 @@ const App: React.FC = () => {
 
   if (authLoading) return <div className="min-h-screen bg-[#020617] flex items-center justify-center"><div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div></div>;
   if (!user) return <Auth />;
+  if (!hasEntered) return <LandingPage onEnter={() => setHasEntered(true)} language={language} />;
   if (!profile) return <Onboarding onComplete={(p) => { setProfile(p); setTeachers(p.teachers); setClasses(p.classes); setSubjects(p.subjects); setForceFullSync(true); }} />;
 
   return (
