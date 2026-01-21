@@ -94,34 +94,39 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
 
           {/* 3D Workspace Device Mockup */}
           <div className="flex-1 relative flex justify-center items-center perspective-1000 group">
-            <div className="relative w-full max-w-xl aspect-[4/3] rounded-[3rem] overflow-hidden border-4 border-white/10 shadow-2xl transform rotate-y-[-10deg] rotate-x-[5deg] transition-all duration-1000 group-hover:rotate-y-[0deg] group-hover:rotate-x-[0deg] group-hover:scale-105">
-              <img 
-                src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop" 
-                alt="Workspace Schedule" 
-                className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 pointer-events-none" />
+            {/* Outer Container without overflow-hidden to allow labels to pop out */}
+            <div className="relative w-full max-w-xl aspect-[4/3] transform rotate-y-[-10deg] rotate-x-[5deg] transition-all duration-1000 group-hover:rotate-y-[0deg] group-hover:rotate-x-[0deg] group-hover:scale-105">
               
-              {/* Overlay UI elements to mimic a schedule interface */}
-              <div className="absolute inset-0 p-8 flex flex-col justify-end pointer-events-none">
-                <div className="bg-black/40 backdrop-blur-md border border-white/10 p-6 rounded-[2rem] space-y-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
-                   <div className="flex justify-between items-center">
-                     <div className="h-2 w-24 bg-sky-400 rounded-full" />
-                     <div className="h-4 w-4 bg-sky-500 rounded shadow-lg shadow-sky-500/50" />
-                   </div>
-                   <div className="grid grid-cols-4 gap-2">
-                     {Array.from({length: 8}).map((_, i) => (
-                       <div key={i} className="h-10 bg-white/10 rounded-lg border border-white/5" />
-                     ))}
-                   </div>
+              {/* Image Container */}
+              <div className="absolute inset-0 rounded-[3rem] overflow-hidden border-4 border-white/10 shadow-2xl">
+                <img 
+                  src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop" 
+                  alt="Workspace Schedule" 
+                  className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 pointer-events-none" />
+                
+                {/* Overlay UI elements to mimic a schedule interface */}
+                <div className="absolute inset-0 p-8 flex flex-col justify-end pointer-events-none">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 p-6 rounded-[2rem] space-y-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                     <div className="flex justify-between items-center">
+                       <div className="h-2 w-24 bg-sky-400 rounded-full" />
+                       <div className="h-4 w-4 bg-sky-500 rounded shadow-lg shadow-sky-500/50" />
+                     </div>
+                     <div className="grid grid-cols-4 gap-2">
+                       {Array.from({length: 8}).map((_, i) => (
+                         <div key={i} className="h-10 bg-white/10 rounded-lg border border-white/5" />
+                       ))}
+                     </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Float Labels */}
-              <div className="absolute top-12 right-[-20px] p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[8px] font-black uppercase tracking-widest text-sky-400 shadow-2xl animate-float group-hover:scale-110">
+              {/* Float Labels - Positioned for clarity and no-clip */}
+              <div className="absolute top-6 -right-6 z-20 p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[10px] font-black uppercase tracking-widest text-sky-400 shadow-2xl animate-float group-hover:scale-110 whitespace-nowrap">
                 CONFLICT-FREE LOGIC
               </div>
-              <div className="absolute bottom-24 left-[-20px] p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[8px] font-black uppercase tracking-widest text-teal-400 shadow-2xl animate-float group-hover:scale-110" style={{ animationDelay: '1s' }}>
+              <div className="absolute -bottom-6 -left-6 z-20 p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[10px] font-black uppercase tracking-widest text-teal-400 shadow-2xl animate-float group-hover:scale-110 whitespace-nowrap" style={{ animationDelay: '1s' }}>
                 BALANCED LOAD
               </div>
             </div>
@@ -226,7 +231,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
            {[
              { 
                plan: "Standard", 
-               price: "Gratis", 
+               price: "Free", 
                desc: "Ideal for individual department leads or smaller academies.",
                features: ["Cloud Synchronization", "Conflict Auditing", "Manual Grid Refinement"]
              },
