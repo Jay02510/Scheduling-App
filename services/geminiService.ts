@@ -3,11 +3,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Teacher, LockedSlot, ClassGroup, SchoolProfile, ScheduleSlot, SchoolSchedule } from "../types";
 
 const sanitizeJson = (text: string) => {
-  // Remove markdown code blocks
   let cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
-  // Attempt to fix trailing commas before closing braces/brackets
   cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
-  // Ensure property names are double-quoted if they aren't
   cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3');
   return cleaned;
 };
@@ -68,11 +65,15 @@ export const validateScheduleProgrammatically = (
     const subName = profile.subjects.find(s => s.id === slot.subjectId)?.name || "Unknown Subject";
 
     // 1. Teacher Overlap (Double Booking)
-    const tKey = `${slot.day}:${slot.period}:${slot.teacherId}`;
-    if (teacherTimeMap[tKey] && teacherTimeMap[tKey].classId !== slot.classId) {
-      issues.push(`OVERLAP: ${teacher?.name} is double-booked for "${className}" and "${teacherTimeMap[tKey].className}" (Day ${slot.day + 1}, Period ${slot.period + 1}).`);
+    if (!slot.teacherId || slot.teacherId === "undefined") {
+      issues.push(`ERROR: Missing teacher assignment for "${subName}" in "${className}".`);
     } else {
-      teacherTimeMap[tKey] = { classId: slot.classId, className };
+      const tKey = `${slot.day}:${slot.period}:${slot.teacherId}`;
+      if (teacherTimeMap[tKey] && teacherTimeMap[tKey].classId !== slot.classId) {
+        issues.push(`OVERLAP: ${teacher?.name || 'Teacher'} is double-booked for "${className}" and "${teacherTimeMap[tKey].className}" (Day ${slot.day + 1}, Period ${slot.period + 1}).`);
+      } else {
+        teacherTimeMap[tKey] = { classId: slot.classId, className };
+      }
     }
 
     // 2. Class Subject Duplicates (Same class, same subject, same day)
@@ -100,14 +101,15 @@ export const validateScheduleProgrammatically = (
 };
 
 const SYSTEM_DIRECTIVE = `
-You are EduPlanner’s Institutional Intelligence Engine. 
-You must generate a schedule that is operationally perfect and follows all human-sustainability rules.
+You are a master school scheduler. Generate a timetable that follows all rules.
 
-CRITICAL RULES:
-1. USE EXACT IDs: You MUST use the provided subjectId and teacherId. Never invent new IDs or use names as IDs.
-2. FULL DAY COVERAGE: You MUST fill all periods from 0 to [Total Periods - 1]. 
-3. POST-LUNCH MANDATE: Scheduling does NOT stop at lunch. Periods occurring after the lunch break are high-priority teaching slots. Fill them completely.
-4. ZERO-INDEXING: 'day' is 0 (Mon) to 4 (Fri). 'period' is 0 to [Total Periods - 1].
+RULES:
+1. USE EXACT IDs: Use subjectId and teacherId provided.
+2. TEMPORAL VARIETY: Subjects do NOT need to be at the same time every day. In fact, varying the time (e.g., Math at 9am Mon, 1pm Tue) is highly encouraged to solve teacher conflicts and fill the afternoon.
+3. FILL ALL SLOTS: populate all periods 0 to [Total Periods - 1]. 
+4. AFTER-LUNCH IS PRIORITY: Periods after lunch break (Period ${4}+1 etc) must be filled.
+5. NO DOUBLE-BOOKING: A teacherId cannot be in two classIds at the same day/period.
+6. RESPECT LOCKS: Do not place subjects in 'Global Locked Slots'.
 `;
 
 export const generateWeeklyMaster = async (
@@ -125,7 +127,6 @@ export const generateWeeklyMaster = async (
   const preservedSlots = isIncremental ? previousSlots.filter(s => !dirtyClassIds.includes(s.classId)) : [];
 
   if (onProgress) onProgress("Initializing Intelligence Engine...");
-  
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   if (classesToProcess.length === 0) {
@@ -143,39 +144,23 @@ export const generateWeeklyMaster = async (
       
       INSTITUTIONAL CONFIG:
       - Total Periods per Day: ${profile.hours.totalPeriods}
-      - Lunch occurs AFTER Period: ${profile.hours.lunchAfterPeriod} (Note: Next lesson starts at period ${profile.hours.lunchAfterPeriod + 1})
-      - Global Locked Slots (Do not schedule here): ${JSON.stringify(lockedSlots.filter(l => l.isSchoolWide))}
+      - Lunch occurs AFTER Period: ${profile.hours.lunchAfterPeriod}
+      - Global Locked Slots: ${JSON.stringify(lockedSlots.filter(l => l.isSchoolWide))}
 
-      SPECIAL INSTRUCTIONS:
-      "${profile.specialInstructions || "None."}"
-
-      TASK: Generate a 5-day schedule for these classes: ${batch.map(c => c.name).join(", ")}.
+      TASK: Generate a 5-day schedule for: ${batch.map(c => c.name).join(", ")}.
       
-      VALID SUBJECT POOL FOR THESE CLASSES:
+      SUBJECT POOL:
       ${JSON.stringify(batch.map(c => ({
         classId: c.id,
-        className: c.name,
         availableLessons: c.assignments.map(a => ({
           subjectId: a.subjectId,
-          subjectName: profile.subjects.find(s => s.id === a.subjectId)?.name,
           teacherId: a.teacherId,
-          teacherName: teachers.find(t => t.id === a.teacherId)?.name,
           weeklyFrequency: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek
         }))
       })))}
 
-      IMPORTANT: 
-      - Distribute the total weekly frequency for each subject across the 5 days.
-      - Ensure periods ${profile.hours.lunchAfterPeriod + 1} to ${profile.hours.totalPeriods - 1} are populated with lessons.
-      - Return ONLY a JSON object.
-
-      OUTPUT FORMAT:
-      {
-        "slots": [
-          { "day": 0, "period": 0, "classId": "...", "subjectId": "...", "teacherId": "..." },
-          ...
-        ]
-      }
+      IMPORTANT: Spread lessons across the day. DO NOT keep them at the same period every day.
+      Return JSON: { "slots": [{ "day": 0, "period": 0, "classId": "...", "subjectId": "...", "teacherId": "..." }] }
     `;
 
     const response = await callWithRetry(() => ai.models.generateContent({
@@ -189,7 +174,6 @@ export const generateWeeklyMaster = async (
       const result = JSON.parse(cleaned);
       return (result.slots || []).map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
     } catch (e) {
-      console.error("JSON Parse Error in Draft:", cleaned);
       return [];
     }
   });
@@ -197,32 +181,26 @@ export const generateWeeklyMaster = async (
   const draftResults = await Promise.all(draftPromises);
   const combinedSlots: ScheduleSlot[] = [...preservedSlots, ...draftResults.flat()];
 
-  if (onProgress) onProgress("Performing Programmatic Validation...");
+  if (onProgress) onProgress("Checking for conflicts...");
   const issues = validateScheduleProgrammatically(combinedSlots, teachers, classes, profile, lockedSlots);
   
   if (issues.length === 0) {
-    if (onProgress) onProgress("Logic integrity confirmed.");
     return { slots: combinedSlots, validation: { success: true, issues: [] } };
   }
 
-  if (onProgress) onProgress(`Resolving ${issues.length} conflicts with Deep Reasoning...`);
+  if (onProgress) onProgress(`Resolving ${issues.length} conflicts...`);
 
   const weaverPrompt = `
     ${SYSTEM_DIRECTIVE}
-    TASK: Correct the following schedule. It contains double-bookings or missing coverage.
-    
-    LUNCH BREAK: After Period ${profile.hours.lunchAfterPeriod}.
-    TOTAL PERIODS: ${profile.hours.totalPeriods}.
-    
-    ERRORS TO FIX:
+    FIX THESE ERRORS:
     ${issues.join("\n")}
     
     CURRENT FAULTY PLAN: ${JSON.stringify(combinedSlots)}
     
     INSTRUCTION: 
-    - Fix overlaps by moving lessons to empty slots (especially after lunch).
-    - Ensure EVERY subject reaches its required weekly frequency.
-    - Return the FULL corrected list of slots as JSON.
+    - Fix teacher overlaps immediately.
+    - Vary the time of day for subjects to fit them in.
+    - Return FULL corrected JSON list of slots.
   `;
 
   let finalSlots = combinedSlots;
@@ -232,14 +210,12 @@ export const generateWeeklyMaster = async (
       contents: weaverPrompt,
       config: { 
         responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 4000 }
+        thinkingConfig: { thinkingBudget: 8000 }
       }
     }));
     const result = JSON.parse(sanitizeJson(weaverResponse.text || '{"slots":[]}'));
     finalSlots = result.slots || combinedSlots;
   } catch (error: any) {
-    console.error("Weaver Failure:", error);
-    // Fallback if Pro fails
     finalSlots = combinedSlots;
   }
 
@@ -258,11 +234,7 @@ export const analyzeSchedule = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `
-      Analyze this institutional schedule for operational health.
-      DATA: ${JSON.stringify(schedule.weeklySlots.slice(0, 100))}
-      OUTPUT JSON ONLY with keys: score, insights (array), burnoutRisks (object), coverageConfidence, summary, impactLevel, adminExplanation.
-    `,
+    contents: `Analyze: ${JSON.stringify(schedule.weeklySlots.slice(0, 50))}. Output JSON with health score and insights.`,
     config: { responseMimeType: "application/json" }
   });
   return JSON.parse(sanitizeJson(response.text || '{}'));

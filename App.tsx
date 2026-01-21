@@ -115,10 +115,7 @@ const App: React.FC = () => {
     if (!sourceSlot) return;
 
     let newSlots = [...schedule.weeklySlots];
-    
-    // Target validation for manual swaps/moves
     newSlots = newSlots.filter(s => !(s.classId === classId && s.day === target.day && s.period === target.period));
-
     const newSlot = { ...sourceSlot, id: Math.random().toString(36).substr(2, 9), day: target.day, period: target.period };
     newSlots.push(newSlot);
 
@@ -153,18 +150,15 @@ const App: React.FC = () => {
       setForceFullSync(false);
       if (validation.issues.length > 0) setValidationIssues(validation.issues);
     } catch (e: any) {
-      setErrorMessage(`Infrastructure Sync Failure: ${e.message || "Parallel optimization failed."}`);
+      setErrorMessage(`Schedule Sync Failed: ${e.message || "Parallel optimization failed."}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   if (authLoading) return <div className="min-h-screen bg-[#020617] flex items-center justify-center"><div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div></div>;
-  
   if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} language={language} />;
-  
   if (!user) return <Auth onBack={() => setHasEntered(false)} />;
-  
   if (!profile) return <Onboarding onComplete={(p) => { setProfile(p); setTeachers(p.teachers); setClasses(p.classes); setSubjects(p.subjects); setForceFullSync(true); }} />;
 
   const changeCount = dirtyClassIds.size;
@@ -177,21 +171,21 @@ const App: React.FC = () => {
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
               {forceFullSync 
-                ? `GLOBAL RE-SYNC QUEUED`
+                ? `RE-SYNC IN PROGRESS`
                 : (changeCount > 0 
-                  ? `${changeCount} CLASS UPDATES DETECTED` 
-                  : `SYSTEM SYNCHRONIZED`)}
+                  ? `${changeCount} CLASS CHANGES PENDING` 
+                  : `SCHEDULE SAVED`)}
             </span>
             {changeCount > 0 && changeCount < 10 && (
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-tight">
-                  Low change volume detected.
+                  Few changes detected. 
                 </span>
                 <button 
                   onClick={() => setActiveTab('homerooms')}
                   className="text-[9px] font-black text-indigo-600 underline uppercase hover:text-indigo-800 transition-colors"
                 >
-                  Fix manually in Schedules for zero latency
+                  Click here to fix manually and skip AI sync wait
                 </button>
               </div>
             )}
@@ -208,7 +202,7 @@ const App: React.FC = () => {
             ) : (
                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             )}
-            {isLoading ? 'Optimizing...' : 'Sync AI Engine'}
+            {isLoading ? 'Updating...' : 'Sync AI Schedule'}
           </button>
         </div>
       </div>
@@ -218,8 +212,8 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></div>
             <div className="flex-1">
-              <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Logic Integrity Alerts</h4>
-              <div className="mt-2 space-y-1">
+              <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Schedule Alerts</h4>
+              <div className="mt-2 space-y-1 overflow-y-auto max-h-40 custom-scrollbar pr-2">
                 {errorMessage && <p className="text-rose-600 font-bold text-[10px] uppercase">{errorMessage}</p>}
                 {validationIssues.map((issue, idx) => (
                   <p key={idx} className="text-rose-600 font-bold text-[10px] uppercase flex items-center gap-2">
@@ -231,8 +225,8 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-4 pt-2">
-            <button onClick={() => setActiveTab('homerooms')} className="px-6 py-2.5 bg-[#0f172a] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg hover:bg-slate-800 transition-all">Manual Correct Mode</button>
-            <button onClick={() => { setErrorMessage(null); setValidationIssues([]); }} className="text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Dismiss Warnings</button>
+            <button onClick={() => setActiveTab('homerooms')} className="px-6 py-2.5 bg-[#0f172a] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg hover:bg-slate-800 transition-all">Manual Drag-and-Drop</button>
+            <button onClick={() => { setErrorMessage(null); setValidationIssues([]); }} className="text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Dismiss</button>
           </div>
         </div>
       )}
@@ -245,7 +239,7 @@ const App: React.FC = () => {
           </div>
           <div className="text-center space-y-3">
             <p className="text-[14px] font-black text-slate-900 uppercase tracking-[0.5em]">{loadingMsg}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optimizing faculty load and subject distribution...</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Generating clash-free timetable...</p>
           </div>
         </div>
       ) : (

@@ -23,8 +23,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
         <div className="absolute inset-0 bg-grid opacity-20" />
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-sky-900/10 blur-[150px] rounded-full" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-900/10 blur-[150px] rounded-full" />
-        
-        {/* Central Glow Orb */}
         <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-sky-500/5 blur-[120px] rounded-full animate-pulse-soft" />
       </div>
 
@@ -39,8 +37,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
               <span className="text-sm font-black tracking-tight text-white uppercase">EduPlanner</span>
             </div>
             <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              <button onClick={() => scrollTo('intelligence')} className="hover:text-white transition-colors">Intelligence</button>
-              <button onClick={() => scrollTo('health')} className="hover:text-white transition-colors">Operational Health</button>
+              <button onClick={() => scrollTo('features')} className="hover:text-white transition-colors">How it Works</button>
               <button onClick={() => scrollTo('pricing')} className="hover:text-white transition-colors">Pricing</button>
             </div>
           </div>
@@ -48,7 +45,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
             onClick={onEnter}
             className="bg-white text-slate-950 px-7 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-sky-400 transition-all flex items-center gap-2 group shadow-lg"
           >
-            Enter Engine
+            Go to App
             <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
             </svg>
@@ -62,18 +59,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
           <div className="flex-1 space-y-12 text-left">
             <div className="flex items-center gap-3 animate-fadeIn">
               <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-              <p className="text-sky-500 font-black tracking-[0.4em] uppercase text-[10px]">Institutional Intelligence v2.5</p>
+              <p className="text-sky-500 font-black tracking-[0.4em] uppercase text-[10px]">Smart School Scheduling</p>
             </div>
             
             <h1 className="text-6xl md:text-[6.5rem] font-medium tracking-tighter leading-[0.9] max-w-4xl uppercase">
-              The guardian of <br/>
-              <span className="font-serif italic text-glow-cyan text-sky-400 lowercase">institutional health</span> <br/>
-              and academic <br/>
-              <span className="font-serif italic text-glow-cyan text-sky-400 lowercase">excellence.</span>
+              Build your <br/>
+              <span className="font-serif italic text-glow-cyan text-sky-400 lowercase">perfect schedule</span> <br/>
+              in just a few <br/>
+              <span className="font-serif italic text-glow-cyan text-sky-400 lowercase">clicks.</span>
             </h1>
             
             <p className="text-lg md:text-xl text-slate-400 font-medium max-w-xl leading-relaxed">
-              EduPlanner eliminates scheduling bottlenecks using the Gemini 3 Pro reasoning engine. Optimize faculty workload, ensure curriculum coverage, and protect teacher well-being automatically.
+              Stop fighting with messy spreadsheets. EduPlanner uses AI to create clash-free timetables that balance teacher workloads and track your lesson progress automatically.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 pt-8">
@@ -81,13 +78,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                 onClick={onEnter}
                 className="px-10 py-5 bg-sky-600/10 border border-sky-500/40 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] backdrop-blur-md shadow-[0_0_30px_rgba(14,165,233,0.15)] hover:bg-sky-600/20 hover:shadow-[0_0_40px_rgba(14,165,233,0.3)] transition-all active:scale-95"
               >
-                Launch Intelligence Engine
+                Start Planning Free
               </button>
               <button 
-                onClick={() => scrollTo('intelligence')}
+                onClick={() => scrollTo('features')}
                 className="px-10 py-5 bg-white/5 border border-white/10 text-slate-300 rounded-full font-black text-xs uppercase tracking-[0.3em] hover:bg-white/10 transition-all flex items-center gap-3"
               >
-                View Protocol
+                Learn More
                 <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -105,39 +102,39 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                   <circle cx="100" cy="100" r="4" fill="#0ea5e9" />
                </svg>
                <div className="absolute top-0 right-0 p-5 border border-white/10 backdrop-blur-xl rounded-[2rem] bg-black/40 text-[9px] font-black uppercase tracking-widest text-sky-400 shadow-2xl">
-                 Conflict Resolution
+                 Auto-Optimization
                </div>
                <div className="absolute bottom-10 left-[-10%] p-5 border border-white/10 backdrop-blur-xl rounded-[2rem] bg-black/40 text-[9px] font-black uppercase tracking-widest text-teal-400 shadow-2xl">
-                 Sustainability Audit
+                 Balanced Workloads
                </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Intelligence Section */}
-      <section id="intelligence" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
+      {/* Features Section */}
+      <section id="features" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
         <div className="mb-20 text-center">
-          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Core Intelligence</h2>
-          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">The Guardian System</h3>
+          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Core Features</h2>
+          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Everything for your School</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            {[
              { 
-               title: "Guardian Weaver", 
-               desc: "Pro-tier AI reasoning that resolves complex scheduling overlaps while strictly adhering to your school's unique pedagogical rules.",
+               title: "AI Scheduling", 
+               desc: "Let our smart engine find the best time for every class. It handles teacher availability and room limits automatically.",
                icon: "M13 10V3L4 14h7v7l9-11h-7z",
                color: "text-sky-400"
              },
              { 
-               title: "Fatigue Reduction", 
-               desc: "Engineered to protect faculty from burnout by balancing transition times and ensuring fair distribution of high-load subjects.",
+               title: "Staff Wellbeing", 
+               desc: "Ensure every teacher has fair breaks and a manageable workload. Avoid burnout with built-in stress checks.",
                icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
                color: "text-teal-400"
              },
              { 
-               title: "Curriculum Roadmap", 
-               desc: "Dynamic textbook tracking that ensures your teaching pace stays synchronized with academic year targets across all grade levels.",
+               title: "Curriculum Tracking", 
+               desc: "Keep your teaching on pace. Connect textbooks to your timetable and watch progress across all grade levels.",
                icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253",
                color: "text-indigo-400"
              }
@@ -162,19 +159,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
         </div>
       </section>
 
-      {/* Health Section */}
-      <section id="health" className="relative z-10 py-32 bg-black/40 border-y border-white/5">
+      {/* About Section */}
+      <section id="about" className="relative z-10 py-32 bg-black/40 border-y border-white/5">
         <div className="max-w-screen-2xl mx-auto px-6 lg:px-16 flex flex-col lg:flex-row items-center gap-24">
           <div className="flex-1 space-y-12">
-            <h2 className="text-5xl lg:text-[6rem] font-medium font-serif italic text-sky-400 leading-none">Operational <br/> Integrity.</h2>
+            <h2 className="text-5xl lg:text-[6rem] font-medium font-serif italic text-sky-400 leading-none">Focus on <br/> Teaching.</h2>
             <p className="text-xl text-slate-300 font-medium leading-relaxed max-w-xl">
-              EduPlanner acts as a diagnostic hub for your school. Monitor cognitive load, faculty sustainability, and curriculum safety in real-time.
+              EduPlanner handles the heavy lifting of school administration. Create schedules that actually work for teachers and students, without the headache.
             </p>
             <div className="space-y-8">
               {[
-                { label: "Stability Index", val: "99%", desc: "Preservation of existing trusted schedule states." },
-                { label: "Optimization", val: "Deep", desc: "Powered by Gemini 3 Pro with strategic thinking budget." },
-                { label: "Safety", val: "High", desc: "Built-in auditing for teacher burnout and clashes." }
+                { label: "Stability", val: "100%", desc: "Reliable schedules you can trust." },
+                { label: "Efficiency", val: "Fast", desc: "Save weeks of administrative planning." },
+                { label: "Ease of Use", val: "Easy", desc: "No complex training required. Just start." }
               ].map((stat, i) => (
                 <div key={i} className="flex gap-10 items-center">
                   <span className="text-4xl font-black text-white/10">{stat.val}</span>
@@ -192,7 +189,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
               <div className="aspect-video bg-slate-800 relative overflow-hidden">
                 <img 
                   src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2070&auto=format&fit=crop" 
-                  alt="Operational HUD" 
+                  alt="Interface" 
                   className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 transition-all duration-1000"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
@@ -212,22 +209,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
       {/* Pricing Section */}
       <section id="pricing" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
         <div className="text-center mb-20">
-          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Access Protocol</h2>
-          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Deployment Tiers</h3>
+          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Pricing</h2>
+          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Ready to Start?</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-8">
            {[
              { 
-               plan: "Standard Node", 
+               plan: "Standard", 
                price: "Free", 
-               desc: "Perfect for single departments or specialized tutoring centers.",
-               features: ["Conflict Detection", "Static Weekly Grid", "Local Data Sync", "Standard Reasoning"]
+               desc: "Perfect for single departments or small schools.",
+               features: ["Conflict Checking", "Weekly Schedule View", "Cloud Storage", "Standard Support"]
              },
              { 
-               plan: "Institutional Hub", 
-               price: "Contact", 
-               desc: "The full Guardian Engine for K-12 schools needing deep reasoning and audits.",
-               features: ["Guardian Weaver (Pro AI)", "Sustainability Audits", "Textbook Roadmap Sync", "Full School Analytics", "Thinking Budget Support"]
+               plan: "Professional", 
+               price: "Contact Us", 
+               desc: "Full school management with advanced AI planning and curriculum audits.",
+               features: ["AI Auto-Scheduling", "Wellbeing Audits", "Textbook Tracking", "Full Analytics", "High-Priority Support"]
              }
            ].map((tier, i) => (
              <div key={i} className={`p-12 rounded-[3.5rem] border-2 flex flex-col gap-10 transition-all hover:scale-[1.02] ${i === 1 ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-[0_20px_50px_rgba(14,165,233,0.3)]' : 'bg-white/5 border-white/10'}`}>
@@ -250,7 +247,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                   onClick={onEnter}
                   className={`w-full py-5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${i === 1 ? 'bg-slate-950 text-white hover:bg-slate-900' : 'bg-white text-slate-950 hover:bg-sky-400'}`}
                 >
-                  Deploy Node
+                  Get Started
                 </button>
              </div>
            ))}
@@ -260,13 +257,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
       {/* Footer */}
       <footer className="relative z-10 py-16 px-6 lg:px-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 bg-black/60">
         <div className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
-          EduPlanner Pro • Institutional Intelligence Engine
+          EduPlanner Pro • Smarter School Planning
         </div>
         <div className="bg-black/80 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
           <div className="w-4 h-4 rounded bg-sky-500/20 flex items-center justify-center text-sky-400 text-[8px]">
             A
           </div>
-          Ready for Optimization
+          Ready for Planning
         </div>
       </footer>
 
