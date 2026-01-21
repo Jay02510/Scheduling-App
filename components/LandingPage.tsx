@@ -24,7 +24,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-sky-900/10 blur-[150px] rounded-full" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-900/10 blur-[150px] rounded-full" />
         
-        {/* The Guardian Orb */}
+        {/* Central Glow Orb */}
         <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-sky-500/5 blur-[120px] rounded-full animate-pulse-soft" />
       </div>
 
@@ -40,15 +40,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
             </div>
             <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
               <button onClick={() => scrollTo('features')} className="hover:text-white transition-colors">Features</button>
-              <button onClick={() => scrollTo('infrastructure')} className="hover:text-white transition-colors">Infrastructure</button>
-              <button onClick={() => scrollTo('protocol')} className="hover:text-white transition-colors">Protocol</button>
+              <button onClick={() => scrollTo('about')} className="hover:text-white transition-colors">How it works</button>
+              <button onClick={() => scrollTo('pricing')} className="hover:text-white transition-colors">Pricing</button>
             </div>
           </div>
           <button 
             onClick={onEnter}
             className="bg-white text-slate-950 px-7 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-sky-400 transition-all flex items-center gap-2 group shadow-lg"
           >
-            Start Engine
+            Start Planning
             <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
             </svg>
@@ -62,18 +62,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
           <div className="flex-1 space-y-12 text-left">
             <div className="flex items-center gap-3 animate-fadeIn">
               <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-              <p className="text-sky-500 font-black tracking-[0.4em] uppercase text-[10px]">Guardian Engine v2.5 Operational</p>
+              <p className="text-sky-500 font-black tracking-[0.4em] uppercase text-[10px]">Smart School Scheduling</p>
             </div>
             
-            <h1 className="text-6xl md:text-[7rem] font-medium tracking-tighter leading-[0.85] max-w-4xl uppercase">
-              Architect your <br/>
-              <span className="font-serif italic text-glow-cyan text-sky-400 lowercase">academic legacy</span> <br/>
-              with absolute <br/>
-              <span className="font-serif italic text-glow-cyan text-sky-400 lowercase">precision.</span>
+            <h1 className="text-6xl md:text-[6.5rem] font-medium tracking-tighter leading-[0.9] max-w-4xl uppercase">
+              Build your <br/>
+              <span className="font-serif italic text-glow-cyan text-sky-400 lowercase">perfect schedule</span> <br/>
+              in just a few <br/>
+              <span className="font-serif italic text-glow-cyan text-sky-400 lowercase">clicks.</span>
             </h1>
             
             <p className="text-lg md:text-xl text-slate-400 font-medium max-w-xl leading-relaxed">
-              The Intelligent Institutional Engine powered by Gemini 3 Pro. Transform static school management into a dynamic, AI-optimized ecosystem designed for human sustainability.
+              Stop struggling with messy timetables. Our AI-powered planner creates clash-free schedules, balances teacher workloads, and tracks your lesson progress automatically.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 pt-8">
@@ -81,13 +81,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                 onClick={onEnter}
                 className="px-10 py-5 bg-sky-600/10 border border-sky-500/40 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] backdrop-blur-md shadow-[0_0_30px_rgba(14,165,233,0.15)] hover:bg-sky-600/20 hover:shadow-[0_0_40px_rgba(14,165,233,0.3)] transition-all active:scale-95"
               >
-                Initialize Protocol
+                Create My Schedule
               </button>
               <button 
-                onClick={() => scrollTo('infrastructure')}
+                onClick={() => scrollTo('about')}
                 className="px-10 py-5 bg-white/5 border border-white/10 text-slate-300 rounded-full font-black text-xs uppercase tracking-[0.3em] hover:bg-white/10 transition-all flex items-center gap-3"
               >
-                View Infrastructure
+                Learn More
                 <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -103,14 +103,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                   <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(14, 165, 233, 0.2)" strokeWidth="1" />
                   <circle cx="100" cy="100" r="10" fill="none" stroke="#0ea5e9" strokeWidth="2" />
                   <circle cx="100" cy="100" r="4" fill="#0ea5e9" />
-                  <path d="M100,20 Q120,60 180,100" fill="none" stroke="rgba(14, 165, 233, 0.3)" strokeWidth="0.5" />
-                  <path d="M20,100 Q60,140 100,180" fill="none" stroke="rgba(14, 165, 233, 0.3)" strokeWidth="0.5" />
                </svg>
                <div className="absolute top-0 right-0 p-5 border border-white/10 backdrop-blur-xl rounded-[2rem] bg-black/40 text-[9px] font-black uppercase tracking-widest text-sky-400 shadow-2xl">
-                 Zero Latency Sync
+                 Auto-Optimization
                </div>
                <div className="absolute bottom-10 left-[-10%] p-5 border border-white/10 backdrop-blur-xl rounded-[2rem] bg-black/40 text-[9px] font-black uppercase tracking-widest text-teal-400 shadow-2xl">
-                 Institutional Guard
+                 Workload Balance
                </div>
             </div>
           </div>
@@ -120,26 +118,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
       {/* Features Section */}
       <section id="features" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
         <div className="mb-20 text-center">
-          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Core Capabilities</h2>
-          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Institutional Optimization</h3>
+          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Core Features</h2>
+          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Everything You Need</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            {[
              { 
-               title: "Guardian Weaver", 
-               desc: "Pro-tier reasoning that resolves complex scheduling overlaps while strictly adhering to human-sustainability rules.",
+               title: "AI Scheduler", 
+               desc: "Let our smart engine find the best time for every class. It handles teacher availability and room limits automatically.",
                icon: "M13 10V3L4 14h7v7l9-11h-7z",
                color: "text-sky-400"
              },
              { 
-               title: "Burnout Audit", 
-               desc: "Real-time diagnostic engine that identifies faculty fatigue risks and cognitive load imbalance across the institution.",
+               title: "Staff Happiness", 
+               desc: "Protect your teachers from burnout. Our system ensures every teacher gets fair breaks and a manageable workload.",
                icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
                color: "text-teal-400"
              },
              { 
-               title: "Curriculum Roadmap", 
-               desc: "Strategic sequence mapping for yearly curriculum goals, ensuring textbook pacing meets academic targets.",
+               title: "Lesson Planning", 
+               desc: "Track your curriculum progress across the whole year. Keep your teaching on pace with built-in textbook tracking.",
                icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253",
                color: "text-indigo-400"
              }
@@ -164,19 +162,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
         </div>
       </section>
 
-      {/* Infrastructure (About) Section */}
-      <section id="infrastructure" className="relative z-10 py-32 bg-black/40 border-y border-white/5">
+      {/* About Section */}
+      <section id="about" className="relative z-10 py-32 bg-black/40 border-y border-white/5">
         <div className="max-w-screen-2xl mx-auto px-6 lg:px-16 flex flex-col lg:flex-row items-center gap-24">
           <div className="flex-1 space-y-12">
-            <h2 className="text-5xl lg:text-[6rem] font-medium font-serif italic text-sky-400 leading-none">Institutional <br/> Guardian.</h2>
+            <h2 className="text-5xl lg:text-[6rem] font-medium font-serif italic text-sky-400 leading-none">Made for <br/> Teachers.</h2>
             <p className="text-xl text-slate-300 font-medium leading-relaxed max-w-xl">
-              EduPlanner acts as the Guardian of Institutional Health. It preserves your operational logic while optimizing for faculty well-being and curriculum excellence.
+              School administration shouldn't be a second job. EduPlanner takes the heavy lifting out of planning so you can focus on what matters most: your students.
             </p>
             <div className="space-y-8">
               {[
-                { label: "Conflict Resolution", val: "100%", desc: "Verified logic integrity across all staff blocks." },
-                { label: "AI Reasoning", val: "Gemini 3", desc: "Powered by deep contextual intelligence." },
-                { label: "Deployment", val: "Zero-Latency", desc: "Instant sync across the global school network." }
+                { label: "Reliability", val: "100%", desc: "Clash-free schedules every single time." },
+                { label: "Speed", val: "Seconds", desc: "Generate a whole year's plan instantly." },
+                { label: "Simplicity", val: "Easy", desc: "No training required. Drag, drop, and done." }
               ].map((stat, i) => (
                 <div key={i} className="flex gap-10 items-center">
                   <span className="text-4xl font-black text-white/10">{stat.val}</span>
@@ -205,40 +203,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                       </svg>
                    </div>
                 </div>
-                <div className="absolute bottom-10 left-10 right-10">
-                  <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                    <div className="w-[85%] h-full bg-sky-400 animate-[pulse_2s_infinite]" />
-                  </div>
-                  <div className="flex justify-between mt-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-sky-400">Institutional Protocol Active</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">98% OPTIMIZED</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Protocol (Pricing) Section */}
-      <section id="protocol" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
+      {/* Pricing Section */}
+      <section id="pricing" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
         <div className="text-center mb-20">
-          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Pricing Models</h2>
-          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Access Protocol</h3>
+          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Simple Pricing</h2>
+          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Choose Your Plan</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-8">
            {[
              { 
-               plan: "Standard Node", 
+               plan: "Standard", 
                price: "Free", 
-               desc: "Essential features for small institutions. Single-threaded optimization.",
-               features: ["Conflict Resolution", "Basic Schedule Grid", "Local Storage", "Email Support"]
+               desc: "Perfect for single teachers or small tutoring centers.",
+               features: ["Conflict Checking", "Basic Timetable", "Local Storage", "Standard Support"]
              },
              { 
-               plan: "Executive Hub", 
-               price: "Proprietary", 
-               desc: "Full Institutional Intelligence for leading academies. Multi-threaded Gemini 3 Pro reasoning.",
-               features: ["Guardian Weaver (Pro AI)", "Burnout Audit Diagnostic", "Curriculum Roadmap Sync", "Cloud Enterprise Storage", "Strategic Audit Reports"]
+               plan: "Professional", 
+               price: "Contact Us", 
+               desc: "For full K-12 schools needing complex workload balancing and curriculum tracking.",
+               features: ["AI Auto-Scheduling", "Workload Diagnostic", "Curriculum Tracking", "Cloud Sync", "Full School Audits"]
              }
            ].map((tier, i) => (
              <div key={i} className={`p-12 rounded-[3.5rem] border-2 flex flex-col gap-10 transition-all hover:scale-[1.02] ${i === 1 ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-[0_20px_50px_rgba(14,165,233,0.3)]' : 'bg-white/5 border-white/10'}`}>
@@ -261,23 +250,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                   onClick={onEnter}
                   className={`w-full py-5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${i === 1 ? 'bg-slate-950 text-white hover:bg-slate-900' : 'bg-white text-slate-950 hover:bg-sky-400'}`}
                 >
-                  Select Protocol
+                  Start Now
                 </button>
              </div>
            ))}
         </div>
       </section>
 
-      {/* Footer Branded Element */}
+      {/* Footer */}
       <footer className="relative z-10 py-16 px-6 lg:px-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 bg-black/60">
         <div className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
-          EduPlanner Institutional Protocol v2.5 • Institutional Intelligence Inc.
+          EduPlanner Pro • Smarter School Management
         </div>
         <div className="bg-black/80 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
           <div className="w-4 h-4 rounded bg-sky-500/20 flex items-center justify-center text-sky-400 text-[8px]">
             A
           </div>
-          System Status: Operational
+          Ready to Plan
         </div>
       </footer>
 
