@@ -9,9 +9,10 @@ interface LayoutProps {
   setActiveTab: (tab: string) => void;
   language: Language;
   setLanguage: (lang: Language) => void;
+  onOpenFeedback: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, language, setLanguage }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, language, setLanguage, onOpenFeedback }) => {
   const t = (key: string) => TRANSLATIONS[language][key] || key;
 
   const tabs = [
@@ -64,6 +65,25 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
               </button>
             );
           })}
+        </div>
+
+        <div className="mt-auto pt-8 border-t border-white/5 space-y-4">
+          <button
+            onClick={onOpenFeedback}
+            className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-indigo-400 hover:text-white hover:bg-indigo-600/10 transition-all group border border-indigo-500/10"
+          >
+            <div className="relative">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+              </svg>
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+            </div>
+            <span>Give Feedback</span>
+          </button>
+          
+          <div className="px-5 text-[8px] font-black text-slate-600 uppercase tracking-widest">
+            Guardian Core v2.5
+          </div>
         </div>
       </nav>
 

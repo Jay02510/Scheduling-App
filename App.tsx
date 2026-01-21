@@ -16,6 +16,7 @@ import Auth from './components/Auth';
 import CurriculumRoadmap from './components/CurriculumRoadmap';
 import SchoolCalendar from './components/SchoolCalendar';
 import LandingPage from './components/LandingPage';
+import FeedbackModal from './components/FeedbackModal';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -23,6 +24,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [language, setLanguage] = useState<Language>('ko');
   const [hasEntered, setHasEntered] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
@@ -166,7 +168,13 @@ const App: React.FC = () => {
   const changeCount = dirtyClassIds.size;
 
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab} language={language} setLanguage={setLanguage}>
+    <Layout 
+      activeTab={activeTab} 
+      setActiveTab={setActiveTab} 
+      language={language} 
+      setLanguage={setLanguage}
+      onOpenFeedback={() => setIsFeedbackOpen(true)}
+    >
       <div className="mb-8 no-print flex flex-col sm:flex-row items-center justify-between bg-white border border-slate-200 p-5 rounded-[2rem] shadow-sm gap-4">
         <div className="flex items-center gap-4 ml-2">
           <div className={`w-3 h-3 rounded-full ${changeCount === 0 && !forceFullSync ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.3)]'}`}></div>
@@ -276,6 +284,13 @@ const App: React.FC = () => {
           {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />}
         </>
       )}
+
+      <FeedbackModal 
+        isOpen={isFeedbackOpen} 
+        onClose={() => setIsFeedbackOpen(false)} 
+        userId={user?.uid || 'anonymous'} 
+        userEmail={user?.email || 'jsn.benjamin@gmail.com'} 
+      />
     </Layout>
   );
 };

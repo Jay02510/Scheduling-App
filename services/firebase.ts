@@ -1,6 +1,7 @@
+
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp, deleteDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBO2ui1QEa9vEHvpknfDJiB7N80hQGBjbk",
@@ -26,6 +27,24 @@ export const saveUserData = async (userId: string, data: any) => {
   } catch (error) {
     console.error("Cloud sync failed:", error);
     throw error;
+  }
+};
+
+export const saveFeedback = async (userId: string, email: string, category: string, message: string) => {
+  try {
+    const feedbackCol = collection(db, "feedback");
+    await addDoc(feedbackCol, {
+      userId,
+      userEmail: email,
+      category,
+      message,
+      timestamp: serverTimestamp(),
+      targetNotification: "jsn.benjamin@gmail.com" // Reference for backend notification triggers
+    });
+    return true;
+  } catch (error) {
+    console.error("Feedback submission failed:", error);
+    return false;
   }
 };
 
