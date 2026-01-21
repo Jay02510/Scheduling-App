@@ -64,9 +64,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
             </div>
             
             <h1 className="text-5xl md:text-[5.5rem] font-black tracking-tighter leading-[0.95] uppercase">
-              Build your <br/>
-              <span className="font-serif italic text-glow-cyan text-sky-400 normal-case">perfect schedule</span> <br/>
-              in just a few clicks.
+              BUILD YOUR <br/>
+              <span className="font-serif italic text-glow-cyan text-sky-400 normal-case">PERFECT SCHEDULE</span> <br/>
+              IN JUST A FEW CLICKS.
             </h1>
             
             <p className="text-lg md:text-xl text-slate-400 font-medium max-w-xl leading-relaxed">
@@ -92,34 +92,37 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
             </div>
           </div>
 
-          {/* 3D Schedule Device Mockup */}
+          {/* 3D Workspace Device Mockup */}
           <div className="flex-1 relative flex justify-center items-center perspective-1000 group">
-            <div className="relative w-full max-w-lg aspect-[4/3] bg-[#0f172a] rounded-[2.5rem] border-4 border-white/10 shadow-2xl overflow-hidden transform rotate-y-[-15deg] rotate-x-[5deg] transition-all duration-700 hover:rotate-y-[0deg] hover:rotate-x-[0deg] hover:scale-105 hover:grayscale-0 grayscale">
-              {/* Internal Screen UI */}
-              <div className="absolute inset-0 p-6 flex flex-col gap-4">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="h-4 w-24 bg-white/10 rounded-full" />
-                  <div className="h-6 w-6 bg-sky-500 rounded-lg shadow-lg shadow-sky-500/40" />
-                </div>
-                <div className="grid grid-cols-5 gap-2 flex-1">
-                  {Array.from({ length: 25 }).map((_, i) => (
-                    <div key={i} className={`rounded-xl border border-white/5 transition-all duration-500 ${
-                      i % 7 === 0 ? 'bg-indigo-500/20' : 
-                      i % 4 === 0 ? 'bg-sky-500/20' : 
-                      'bg-white/5'
-                    }`} />
-                  ))}
+            <div className="relative w-full max-w-xl aspect-[4/3] rounded-[3rem] overflow-hidden border-4 border-white/10 shadow-2xl transform rotate-y-[-10deg] rotate-x-[5deg] transition-all duration-1000 group-hover:rotate-y-[0deg] group-hover:rotate-x-[0deg] group-hover:scale-105">
+              <img 
+                src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop" 
+                alt="Workspace Schedule" 
+                className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 pointer-events-none" />
+              
+              {/* Overlay UI elements to mimic a schedule interface */}
+              <div className="absolute inset-0 p-8 flex flex-col justify-end pointer-events-none">
+                <div className="bg-black/40 backdrop-blur-md border border-white/10 p-6 rounded-[2rem] space-y-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                   <div className="flex justify-between items-center">
+                     <div className="h-2 w-24 bg-sky-400 rounded-full" />
+                     <div className="h-4 w-4 bg-sky-500 rounded shadow-lg shadow-sky-500/50" />
+                   </div>
+                   <div className="grid grid-cols-4 gap-2">
+                     {Array.from({length: 8}).map((_, i) => (
+                       <div key={i} className="h-10 bg-white/10 rounded-lg border border-white/5" />
+                     ))}
+                   </div>
                 </div>
               </div>
-              {/* Gloss effect */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-20 pointer-events-none" />
-              
+
               {/* Float Labels */}
               <div className="absolute top-12 right-[-20px] p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[8px] font-black uppercase tracking-widest text-sky-400 shadow-2xl animate-float group-hover:scale-110">
-                Conflict-Free Logic
+                CONFLICT-FREE LOGIC
               </div>
-              <div className="absolute bottom-12 left-[-20px] p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[8px] font-black uppercase tracking-widest text-teal-400 shadow-2xl animate-float group-hover:scale-110" style={{ animationDelay: '1s' }}>
-                Balanced Load
+              <div className="absolute bottom-24 left-[-20px] p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[8px] font-black uppercase tracking-widest text-teal-400 shadow-2xl animate-float group-hover:scale-110" style={{ animationDelay: '1s' }}>
+                BALANCED LOAD
               </div>
             </div>
           </div>
@@ -207,13 +210,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                   className="absolute inset-0 w-full h-full object-cover grayscale transition-all duration-1000 group-hover:grayscale-0"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                   <div onClick={onEnter} className="w-24 h-24 bg-sky-500/80 backdrop-blur-2xl rounded-full flex items-center justify-center border border-white/20 shadow-2xl cursor-pointer hover:scale-110 active:scale-95 transition-all">
-                      <svg className="w-10 h-10 text-white fill-current ml-1" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                   </div>
-                </div>
               </div>
             </div>
           </div>
@@ -283,7 +279,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
 
       <style dangerouslySetInnerHTML={{ __html: `
         .perspective-1000 { perspective: 1000px; }
-        .rotate-y-[-15deg] { transform: rotateY(-15deg); }
+        .rotate-y-[-10deg] { transform: rotateY(-10deg); }
         .rotate-x-[5deg] { transform: rotateX(5deg); }
         .group:hover .rotate-y-\[0deg\] { transform: rotateY(0deg) rotateX(0deg); }
       `}} />
