@@ -148,7 +148,9 @@ const App: React.FC = () => {
       }));
       setDirtyClassIds(new Set());
       setForceFullSync(false);
-      if (validation.issues.length > 0) setValidationIssues(validation.issues);
+      if (validation.issues.length > 0) {
+        setValidationIssues(validation.issues);
+      }
     } catch (e: any) {
       setErrorMessage(`Schedule Sync Failed: ${e.message || "Parallel optimization failed."}`);
     } finally {

@@ -55,7 +55,7 @@ export const validateScheduleProgrammatically = (
   lockedSlots: LockedSlot[]
 ) => {
   const issues: string[] = [];
-  const teacherTimeMap: Record<string, { classId: string, className: string }> = {}; 
+  const teacherTimeMap: Record<string, { classId: string, className: string, subName: string }> = {}; 
   const classSubjectDailyMap: Record<string, number> = {}; 
 
   slots.forEach(slot => {
@@ -64,19 +64,19 @@ export const validateScheduleProgrammatically = (
     const className = classObj?.name || "Unknown Class";
     const subName = profile.subjects.find(s => s.id === slot.subjectId)?.name || "Unknown Subject";
 
-    // 1. Teacher Overlap (Double Booking)
+    // 1. Teacher Overlap
     if (!slot.teacherId || slot.teacherId === "undefined") {
-      issues.push(`ERROR: Missing teacher assignment for "${subName}" in "${className}".`);
+      issues.push(`ERROR: Missing teacher for "${subName}" in "${className}" (Day ${slot.day + 1}, P${slot.period + 1}).`);
     } else {
       const tKey = `${slot.day}:${slot.period}:${slot.teacherId}`;
       if (teacherTimeMap[tKey] && teacherTimeMap[tKey].classId !== slot.classId) {
-        issues.push(`OVERLAP: ${teacher?.name || 'Teacher'} is double-booked for "${className}" and "${teacherTimeMap[tKey].className}" (Day ${slot.day + 1}, Period ${slot.period + 1}).`);
+        issues.push(`OVERLAP: ${teacher?.name || 'Teacher'} is double-booked for "${className}" and "${teacherTimeMap[tKey].className}" (Day ${slot.day + 1}, P${slot.period + 1}).`);
       } else {
-        teacherTimeMap[tKey] = { classId: slot.classId, className };
+        teacherTimeMap[tKey] = { classId: slot.classId, className, subName };
       }
     }
 
-    // 2. Class Subject Duplicates (Same class, same subject, same day)
+    // 2. Class Subject Duplicates
     const subConfig = profile.subjects.find(s => s.id === slot.subjectId);
     if (subConfig && subConfig.frequencyPerWeek <= 5) {
       const sKey = `${slot.day}:${slot.classId}:${slot.subjectId}`;
@@ -86,14 +86,14 @@ export const validateScheduleProgrammatically = (
       }
     }
 
-    // 3. Locked Slots Conflict
+    // 3. Locked Slots
     const lock = lockedSlots.find(l => 
       l.dayOfWeek === slot.day && 
       l.period === slot.period && 
       (l.isSchoolWide || (l.classIds || []).includes(slot.classId))
     );
     if (lock) {
-      issues.push(`LOCK: ${className} scheduled during "${lock.name}" (Day ${slot.day + 1}, Period ${slot.period + 1}).`);
+      issues.push(`LOCK: ${className} scheduled during "${lock.name}" (Day ${slot.day + 1}, P${slot.period + 1}).`);
     }
   });
 
@@ -101,15 +101,12 @@ export const validateScheduleProgrammatically = (
 };
 
 const SYSTEM_DIRECTIVE = `
-You are a master school scheduler. Generate a timetable that follows all rules.
-
-RULES:
-1. USE EXACT IDs: Use subjectId and teacherId provided.
-2. TEMPORAL VARIETY: Subjects do NOT need to be at the same time every day. In fact, varying the time (e.g., Math at 9am Mon, 1pm Tue) is highly encouraged to solve teacher conflicts and fill the afternoon.
-3. FILL ALL SLOTS: populate all periods 0 to [Total Periods - 1]. 
-4. AFTER-LUNCH IS PRIORITY: Periods after lunch break (Period ${4}+1 etc) must be filled.
-5. NO DOUBLE-BOOKING: A teacherId cannot be in two classIds at the same day/period.
-6. RESPECT LOCKS: Do not place subjects in 'Global Locked Slots'.
+You are a World-Class School Scheduler.
+Rules:
+1. NO-FLY ZONES: Do not schedule anything during "LOCKED" periods (Lunch, Gym, Morning Work).
+2. FACULTY PHYSICS: A teacher cannot be in two places at once. If they are busy in one class, they are unavailable for all others.
+3. TEMPORAL VARIETY (MANDATORY): Do NOT put subjects at the same time every day. Spread them across mornings and afternoons throughout the week.
+4. FILL THE GRID: Ensure every subject meets its frequency and the daily grid is full.
 `;
 
 export const generateWeeklyMaster = async (
@@ -124,106 +121,112 @@ export const generateWeeklyMaster = async (
   
   const isIncremental = dirtyClassIds.length > 0 && previousSlots.length > 0;
   const classesToProcess = isIncremental ? classes.filter(c => dirtyClassIds.includes(c.id)) : classes;
-  const preservedSlots = isIncremental ? previousSlots.filter(s => !dirtyClassIds.includes(s.classId)) : [];
+  let runningSlots: ScheduleSlot[] = isIncremental ? previousSlots.filter(s => !dirtyClassIds.includes(s.classId)) : [];
 
-  if (onProgress) onProgress("Initializing Intelligence Engine...");
+  if (onProgress) onProgress("Initializing Sequential Logic Engine...");
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  if (classesToProcess.length === 0) {
-    return { slots: previousSlots, validation: { success: true, issues: [] } };
-  }
+  // Process classes in small sequential chunks to maintain a "Global Busy Map"
+  const batchSize = 1; // Sequential is most reliable for conflict-free results
+  for (let i = 0; i < classesToProcess.length; i += batchSize) {
+    const currentBatch = classesToProcess.slice(i, i + batchSize);
+    const className = currentBatch[0].name;
+    
+    if (onProgress) onProgress(`Drafting schedule for ${className}...`);
 
-  const batches = [];
-  for (let i = 0; i < classesToProcess.length; i += 4) {
-    batches.push(classesToProcess.slice(i, i + 4));
-  }
+    const busyMap = runningSlots.reduce((acc: any, s) => {
+      const key = `Day${s.day}_P${s.period}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(s.teacherId);
+      return acc;
+    }, {});
 
-  const draftPromises = batches.map(async (batch) => {
+    const noFlyZones = lockedSlots.reduce((acc: any, l) => {
+      const key = `Day${l.dayOfWeek}_P${l.period}`;
+      if (l.isSchoolWide || currentBatch.some(c => l.classIds.includes(c.id))) {
+        acc[key] = l.name;
+      }
+      return acc;
+    }, {});
+
     const draftPrompt = `
       ${SYSTEM_DIRECTIVE}
       
-      INSTITUTIONAL CONFIG:
-      - Total Periods per Day: ${profile.hours.totalPeriods}
-      - Lunch occurs AFTER Period: ${profile.hours.lunchAfterPeriod}
-      - Global Locked Slots: ${JSON.stringify(lockedSlots.filter(l => l.isSchoolWide))}
+      INSTITUTIONAL BOUNDARIES:
+      - Total Periods: ${profile.hours.totalPeriods}
+      - NO-FLY ZONES (BLOCKED): ${JSON.stringify(noFlyZones)}
+      - TEACHER BUSY MAP (DO NOT ASSIGN THESE TEACHERS AT THESE TIMES): ${JSON.stringify(busyMap)}
 
-      TASK: Generate a 5-day schedule for: ${batch.map(c => c.name).join(", ")}.
+      TARGET CLASS: ${className} (ID: ${currentBatch[0].id})
       
-      SUBJECT POOL:
-      ${JSON.stringify(batch.map(c => ({
-        classId: c.id,
-        availableLessons: c.assignments.map(a => ({
-          subjectId: a.subjectId,
-          teacherId: a.teacherId,
-          weeklyFrequency: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek
-        }))
+      REQUIRED LESSONS (ID, TEACHER, WEEKLY FREQUENCY):
+      ${JSON.stringify(currentBatch[0].assignments.map(a => ({
+        subjectId: a.subjectId,
+        teacherId: a.teacherId,
+        freq: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 5
       })))}
 
-      IMPORTANT: Spread lessons across the day. DO NOT keep them at the same period every day.
-      Return JSON: { "slots": [{ "day": 0, "period": 0, "classId": "...", "subjectId": "...", "teacherId": "..." }] }
+      TASK: Provide a 5-day schedule (Day 0-4) for this class.
+      STAGGERED STARTS: Spread lessons. Don't start with Period 1 every day. Vary the times.
+      
+      Output JSON: { "slots": [{ "day": 0, "period": 0, "classId": "...", "subjectId": "...", "teacherId": "..." }] }
     `;
 
-    const response = await callWithRetry(() => ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: draftPrompt,
-      config: { responseMimeType: "application/json" }
-    }));
-
-    const cleaned = sanitizeJson(response.text || '{"slots":[]}');
     try {
-      const result = JSON.parse(cleaned);
-      return (result.slots || []).map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
+      const response = await callWithRetry(() => ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: draftPrompt,
+        config: { responseMimeType: "application/json" }
+      }));
+      const result = JSON.parse(sanitizeJson(response.text || '{"slots":[]}'));
+      const newSlots = (result.slots || []).map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
+      runningSlots = [...runningSlots, ...newSlots];
     } catch (e) {
-      return [];
+      console.error(`Failed to draft for ${className}`, e);
     }
-  });
-
-  const draftResults = await Promise.all(draftPromises);
-  const combinedSlots: ScheduleSlot[] = [...preservedSlots, ...draftResults.flat()];
-
-  if (onProgress) onProgress("Checking for conflicts...");
-  const issues = validateScheduleProgrammatically(combinedSlots, teachers, classes, profile, lockedSlots);
-  
-  if (issues.length === 0) {
-    return { slots: combinedSlots, validation: { success: true, issues: [] } };
   }
 
-  if (onProgress) onProgress(`Resolving ${issues.length} conflicts...`);
+  if (onProgress) onProgress("Running Final Conflict Resolution...");
+  
+  const issues = validateScheduleProgrammatically(runningSlots, teachers, classes, profile, lockedSlots);
+  if (issues.length === 0) {
+    return { slots: runningSlots, validation: { success: true, issues: [] } };
+  }
+
+  // Final Pass with Gemini Pro (The Weaver) to fix remaining global overlaps
+  if (onProgress) onProgress(`Resolving ${issues.length} logic overlaps...`);
 
   const weaverPrompt = `
     ${SYSTEM_DIRECTIVE}
-    FIX THESE ERRORS:
-    ${issues.join("\n")}
     
-    CURRENT FAULTY PLAN: ${JSON.stringify(combinedSlots)}
+    CRITICAL ERRORS IDENTIFIED:
+    ${issues.slice(0, 50).join("\n")}
+
+    CURRENT PLAN: ${JSON.stringify(runningSlots)}
     
-    INSTRUCTION: 
-    - Fix teacher overlaps immediately.
-    - Vary the time of day for subjects to fit them in.
-    - Return FULL corrected JSON list of slots.
+    TASK: Re-weave the schedule to fix all overlaps and lock violations. 
+    MANDATORY: You must shift lessons to different periods to ensure no teacher is in two places.
+    STAGGERING: Move subjects around so they aren't at the same period daily.
+    
+    Return the FULL corrected array of slots in JSON: { "slots": [...] }
   `;
 
-  let finalSlots = combinedSlots;
   try {
     const weaverResponse = await callWithRetry(() => ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: weaverPrompt,
       config: { 
         responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 8000 }
+        thinkingConfig: { thinkingBudget: 16000 }
       }
     }));
     const result = JSON.parse(sanitizeJson(weaverResponse.text || '{"slots":[]}'));
-    finalSlots = result.slots || combinedSlots;
-  } catch (error: any) {
-    finalSlots = combinedSlots;
+    const finalSlots = result.slots && result.slots.length > 0 ? result.slots : runningSlots;
+    const finalIssues = validateScheduleProgrammatically(finalSlots, teachers, classes, profile, lockedSlots);
+    return { slots: finalSlots, validation: { success: finalIssues.length === 0, issues: finalIssues } };
+  } catch (error) {
+    return { slots: runningSlots, validation: { success: false, issues: issues } };
   }
-
-  const finalIssues = validateScheduleProgrammatically(finalSlots, teachers, classes, profile, lockedSlots);
-  return {
-    slots: finalSlots,
-    validation: { success: finalIssues.length === 0, issues: finalIssues }
-  };
 };
 
 export const analyzeSchedule = async (
@@ -234,7 +237,7 @@ export const analyzeSchedule = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Analyze: ${JSON.stringify(schedule.weeklySlots.slice(0, 50))}. Output JSON with health score and insights.`,
+    contents: `Analyze schedule for burnout and coverage: ${JSON.stringify(schedule.weeklySlots.slice(0, 50))}. Output JSON with score and insights.`,
     config: { responseMimeType: "application/json" }
   });
   return JSON.parse(sanitizeJson(response.text || '{}'));
