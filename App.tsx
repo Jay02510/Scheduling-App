@@ -183,9 +183,17 @@ const App: React.FC = () => {
                   : `SYSTEM SYNCHRONIZED`)}
             </span>
             {changeCount > 0 && changeCount < 10 && (
-              <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-tight mt-0.5">
-                Low delta detected. Manual fix in 'Schedules' recommended for zero latency.
-              </span>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-tight">
+                  Low change volume detected.
+                </span>
+                <button 
+                  onClick={() => setActiveTab('homerooms')}
+                  className="text-[9px] font-black text-indigo-600 underline uppercase hover:text-indigo-800 transition-colors"
+                >
+                  Fix manually in Schedules for zero latency
+                </button>
+              </div>
             )}
           </div>
         </div>

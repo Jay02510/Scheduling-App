@@ -91,20 +91,20 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     const lock = (lockedSlots || []).find(f => 
       f.dayOfWeek === day && f.period === period && (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
     );
-    if (lock) return `Locked: ${lock.name}`;
+    if (lock) return `Locked Slot: ${lock.name}`;
 
-    // 2. Teacher Conflict
+    // 2. Teacher Conflict (Busy in another class)
     const busyInfo = teacherBusyMap[`${tId}:${day}:${period}`];
     if (busyInfo) return `Teacher busy in ${busyInfo.className}`;
 
-    // 3. Subject Distribution Audit
+    // 3. Subject Distribution Audit (Pedagogical limits)
     const slotToMove = classSlots.find(s => s.day === draggedItem?.day && s.period === draggedItem?.period);
     if (slotToMove) {
       const existingInDay = classSlots.find(s => s.day === day && s.subjectId === slotToMove.subjectId && s.period !== period);
       if (existingInDay) {
         const sub = subjects.find(s => s.id === slotToMove.subjectId);
         // Pedalogical rule: Don't double up common subjects on one day
-        if ((sub?.frequencyPerWeek || 0) <= 5) return `Daily Limit: ${sub?.name} exists`;
+        if ((sub?.frequencyPerWeek || 0) <= 5) return `Pedagogical Conflict: ${sub?.name} exists today`;
       }
     }
 
@@ -145,7 +145,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400">Scheduling Conflict</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400">Logic Violation</span>
             <span className="text-xs font-bold text-slate-100 uppercase tracking-tight">{errorToast.msg}</span>
           </div>
         </div>
@@ -156,7 +156,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{t('homeroom_portal')}</h2>
           <div className="flex items-center gap-3 mt-2">
             <span className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">{t('institution_grid')} • {currentClass.name}</span>
-            <div className="px-3 py-1 bg-indigo-50 text-indigo-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">Manual Optimization Mode</div>
+            <div className="px-3 py-1 bg-indigo-50 text-indigo-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">Real-time Conflict Checking Active</div>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -194,14 +194,16 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
                     const isDraggingOrig = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
                     
+                    // Detailed Conflict Mapping
                     const clashMsg = draggedItem ? checkClash(dIdx, pIdx, draggingTeacherId) : null;
-                    const isOptimalSlot = draggingTeacherId && !clashMsg && !lock && !slot;
+                    const isOccupiedBySameClass = slot && !isDraggingOrig;
+                    const isSafeSlot = draggingTeacherId && !clashMsg && !lock && !slot;
 
                     if (lock) return (
                       <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[120px] align-middle relative overflow-hidden bg-vivid-blocked">
                         <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
                           <span className="text-[10px] font-black uppercase tracking-tight text-slate-400 leading-none">{lock.name}</span>
-                          <span className="text-[7px] font-black text-slate-300 uppercase mt-1 tracking-widest">Global Lock</span>
+                          <span className="text-[7px] font-black text-slate-300 uppercase mt-1 tracking-widest">Locked Slot</span>
                         </div>
                       </td>
                     );
@@ -213,28 +215,29 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                         className={`border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[120px] transition-all relative align-top ${
                           isTarget && clashMsg ? 'bg-rose-50 ring-4 ring-rose-500 ring-inset z-50' : 
                           isTarget && !clashMsg ? 'bg-indigo-50 ring-4 ring-indigo-500 ring-inset z-50' : 
-                          isOptimalSlot ? 'bg-emerald-50/40 ring-2 ring-emerald-200 ring-inset' : 
+                          isSafeSlot ? 'bg-emerald-50/30 ring-2 ring-emerald-200 ring-inset' : 
                           'bg-white group hover:bg-slate-50'
                         }`}>
                         {slot ? (
-                          <div className={`h-full flex flex-col relative transition-all cursor-grab active:cursor-grabbing ${isDraggingOrig ? 'opacity-20 scale-95 blur-[1px]' : ''}`} draggable="true" onDragStart={() => handleDragStart(dIdx, pIdx)}>
+                          <div className={`h-full flex flex-col relative transition-all cursor-grab active:cursor-grabbing ${isDraggingOrig ? 'opacity-20 scale-95 blur-[1px]' : ''} ${isTarget && !clashMsg ? 'scale-90 rotate-1' : ''}`} draggable="true" onDragStart={() => handleDragStart(dIdx, pIdx)}>
                             <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden pointer-events-none">
                               <span className={`text-[13px] font-black uppercase leading-[1.1] line-clamp-2 tracking-tighter text-slate-900`}>{getSubjectName(slot.subjectId)}</span>
+                              {isTarget && !clashMsg && <span className="text-[8px] font-black text-indigo-600 uppercase mt-1">Ready to Swap</span>}
                             </div>
                             <div className="h-8 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0 pointer-events-auto" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
                               <span className="text-[9px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{teacher?.name}</span>
                             </div>
                           </div>
                         ) : (
-                          <div className={`h-full flex items-center justify-center relative ${isOptimalSlot ? 'bg-emerald-50/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,#000_6px,#000_7px)] opacity-[0.02]'}`}>
+                          <div className={`h-full flex items-center justify-center relative ${isSafeSlot ? 'bg-emerald-50/10' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,#000_6px,#000_7px)] opacity-[0.02]'}`}>
                              {isTarget && clashMsg && (
                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-500/20 p-2 text-center backdrop-blur-[2px]">
                                   <svg className="w-5 h-5 text-rose-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                                  <span className="text-[8px] font-black text-rose-700 uppercase tracking-tighter leading-none">{clashMsg}</span>
+                                  <span className="text-[8px] font-black text-rose-800 uppercase tracking-tighter leading-none px-2">{clashMsg}</span>
                                </div>
                              )}
-                             {isOptimalSlot && !isTarget && (
-                               <div className="w-4 h-4 rounded-full border-2 border-emerald-300 opacity-40"></div>
+                             {isSafeSlot && !isTarget && (
+                               <div className="w-5 h-5 rounded-full border-2 border-emerald-400/40 animate-pulse"></div>
                              )}
                           </div>
                         )}
