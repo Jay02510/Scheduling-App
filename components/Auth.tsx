@@ -3,7 +3,11 @@ import React, { useState } from 'react';
 import { auth } from '../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 
-const Auth: React.FC = () => {
+interface AuthProps {
+  onBack?: () => void;
+}
+
+const Auth: React.FC<AuthProps> = ({ onBack }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +32,7 @@ const Auth: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-6 overflow-hidden bg-slate-950 font-inter">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 overflow-hidden bg-slate-950 font-inter">
       {/* Background with overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center transition-transform duration-[60s] scale-110"
@@ -48,17 +52,28 @@ const Auth: React.FC = () => {
         </h1>
       </div>
 
-      <div className="w-full max-w-md relative z-10 animate-fadeInUp">
+      {/* Back Button */}
+      {onBack && (
+        <button 
+          onClick={onBack}
+          className="absolute top-8 left-8 z-[160] flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95 cursor-pointer"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
+          Back to Home
+        </button>
+      )}
+
+      <div className="w-full max-w-md relative z-[150] animate-fadeInUp">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center gap-3 mb-6">
-             <div className="w-16 h-16 gradient-primary rounded-3xl flex items-center justify-center shadow-[0_0_60px_rgba(99,102,241,0.4)] transform hover:rotate-3 transition-transform duration-500 ring-4 ring-white/10">
+             <div className="w-16 h-16 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-[0_0_60px_rgba(99,102,241,0.4)] transform hover:rotate-3 transition-transform duration-500 ring-4 ring-white/10">
                 <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
              </div>
           </div>
           <h1 className="text-6xl font-black text-white tracking-tighter uppercase mb-2 drop-shadow-2xl">EduPlanner</h1>
-          <p className="text-indigo-400 font-black tracking-[0.5em] uppercase text-[10px] opacity-100 drop-shadow-md">Simple School Planning</p>
+          <p className="text-indigo-400 font-black tracking-[0.5em] uppercase text-[10px] drop-shadow-md">Simple School Planning</p>
         </div>
 
         <div className="bg-slate-900/70 backdrop-blur-3xl border border-white/20 p-10 rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
@@ -110,7 +125,7 @@ const Auth: React.FC = () => {
 
             <button 
               disabled={loading}
-              className="w-full py-7 rounded-[2rem] gradient-primary text-white font-black text-[12px] uppercase tracking-[0.4em] shadow-[0_30px_60px_-15px_rgba(99,102,241,0.6)] hover:-translate-y-1 active:translate-y-0.5 transition-all duration-500 flex items-center justify-center gap-4 disabled:opacity-50"
+              className="w-full py-7 rounded-[2rem] bg-indigo-600 text-white font-black text-[12px] uppercase tracking-[0.4em] shadow-[0_30px_60px_-15px_rgba(99,102,241,0.6)] hover:-translate-y-1 active:translate-y-0.5 transition-all duration-500 flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
                 <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>

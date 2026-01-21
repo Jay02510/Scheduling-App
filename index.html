@@ -6,19 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EduPlanner Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
       :root {
-        --primary: #6366f1;
-        --primary-dark: #4f46e5;
+        --primary: #0ea5e9;
+        --primary-dark: #0284c7;
       }
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #f8fafc;
-        color: #0f172a;
+        background-color: #020617;
+        color: #f8fafc;
+        margin: 0;
+        overflow-x: hidden;
+      }
+      .font-serif {
+        font-family: 'Libre Baskerville', serif;
       }
       .gradient-primary {
-        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        background: linear-gradient(135deg, #0ea5e9 0%, #2dd4bf 100%);
       }
       .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
@@ -28,103 +33,53 @@
         background: transparent;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #e2e8f0;
+        background: #1e293b;
         border-radius: 10px;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #cbd5e1;
+        background: #334155;
       }
-      .bg-vivid-blocked {
-        background-color: #f1f5f9;
-        background-image: repeating-linear-gradient(
-          45deg,
-          transparent,
-          transparent 10px,
-          rgba(148, 163, 184, 0.05) 10px,
-          rgba(148, 163, 184, 0.05) 20px
-        );
-        border: 1px inset rgba(0,0,0,0.05);
+      
+      /* Benchmark Glow Effects */
+      .text-glow-cyan {
+        text-shadow: 0 0 20px rgba(14, 165, 233, 0.5), 0 0 40px rgba(14, 165, 233, 0.3);
       }
+      .border-glow-cyan {
+        box-shadow: 0 0 15px rgba(14, 165, 233, 0.2);
+        border: 1px solid rgba(14, 165, 233, 0.3);
+      }
+      .border-glow-cyan:hover {
+        box-shadow: 0 0 25px rgba(14, 165, 233, 0.4);
+        border: 1px solid rgba(14, 165, 233, 0.6);
+      }
+
       @keyframes pulse-soft {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.7; }
       }
       .animate-pulse-soft {
-        animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-      @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .animate-fadeInUp {
-        animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      .animate-fadeIn {
-        animation: fadeIn 0.4s ease-out forwards;
+        animation: pulse-soft 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
 
-      /* PDF/Print Optimization */
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+
+      /* Grid Pattern Background */
+      .bg-grid {
+        background-size: 40px 40px;
+        background-image: 
+          linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      }
+
       @media print {
-        nav, 
-        .no-print, 
-        button, 
-        .bg-slate-100, 
-        header .flex,
-        .xl\:col-span-1,
-        .mb-8.no-print {
-          display: none !important;
-        }
-        main {
-          padding: 0 !important;
-          margin: 0 !important;
-          width: 100% !important;
-          max-width: none !important;
-          height: auto !important;
-          overflow: visible !important;
-          position: static !important;
-          display: block !important;
-        }
-        .max-w-6xl {
-          max-width: 100% !important;
-          width: 100% !important;
-          margin: 0 !important;
-        }
-        .xl\:col-span-3 {
-          width: 100% !important;
-          grid-column: span 4 / span 4 !important;
-        }
-        body {
-          background-color: white !important;
-          overflow: visible !important;
-          height: auto !important;
-        }
-        .bg-white {
-          background-color: white !important;
-        }
-        .border-slate-900 {
-          border-color: #000 !important;
-        }
-        * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          box-shadow: none !important;
-        }
-        @page {
-          margin: 0.5cm;
-          size: landscape;
-        }
-        table {
-          page-break-inside: avoid;
-          width: 100% !important;
-          table-layout: fixed !important;
-        }
-        tr, td, th {
-          page-break-inside: avoid;
-        }
+        nav, .no-print, button { display: none !important; }
+        body { background: white !important; color: black !important; }
       }
     </style>
   <script type="importmap">
@@ -146,7 +101,7 @@
 }
 </script>
 </head>
-  <body>
+  <body class="bg-[#020617] text-white">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

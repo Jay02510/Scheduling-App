@@ -9,166 +9,187 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
   return (
-    <div className="fixed inset-0 z-[200] bg-[#020617] text-white overflow-y-auto overflow-x-hidden font-inter selection:bg-indigo-500/30">
-      {/* Background with Ambient Glow */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[150px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[200px] rounded-full" />
+    <div className="relative min-h-screen bg-[#020617] overflow-x-hidden font-inter selection:bg-sky-500/30">
+      
+      {/* Background Grid & Decorative Elements */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-grid opacity-20" />
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-sky-900/20 blur-[150px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-teal-900/10 blur-[150px] rounded-full" />
+        
+        {/* Abstract Lines & Nodes (Benchmar style) */}
+        <svg className="absolute inset-0 w-full h-full opacity-30" xmlns="http://www.w3.org/2000/svg">
+          <path d="M-100,500 Q400,300 800,500 T1800,500" fill="none" stroke="rgba(14, 165, 233, 0.2)" strokeWidth="1" />
+          <path d="M-100,600 Q600,400 1200,600 T2400,600" fill="none" stroke="rgba(45, 212, 191, 0.1)" strokeWidth="1" />
+          <circle cx="80%" cy="40%" r="4" fill="#0ea5e9" className="animate-pulse-soft" />
+          <circle cx="20%" cy="70%" r="3" fill="#2dd4bf" className="animate-pulse-soft" />
+        </svg>
       </div>
 
-      {/* Cinematic Hero Image (The Globe/Sphere Reference) */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
-        <div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] max-w-[1200px] max-h-[1200px] bg-center bg-no-repeat bg-contain animate-pulse-slow"
-          style={{ 
-            backgroundImage: 'url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop")',
-            maskImage: 'radial-gradient(circle, black 30%, transparent 70%)',
-            filter: 'hue-rotate(220deg) brightness(0.8)'
-          }}
-        />
-      </div>
-
-      {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-8 lg:px-16 max-w-screen-2xl mx-auto">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-[0_0_40px_rgba(99,102,241,0.5)]">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+      {/* Floating Pill Navigation */}
+      <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-2xl px-4">
+        <div className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-full py-2 px-3 flex items-center justify-between shadow-2xl">
+          <div className="flex items-center gap-6 px-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
+                 <div className="w-2 h-2 bg-sky-400 rounded-full" />
+              </div>
+              <span className="text-sm font-bold tracking-tight text-white uppercase">EduPlanner</span>
+            </div>
+            <div className="hidden md:flex items-center gap-6 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+              <a href="#" className="hover:text-white transition-colors">Infrastructure</a>
+              <a href="#" className="hover:text-white transition-colors">Protocol</a>
+              <a href="#" className="hover:text-white transition-colors">Network</a>
+            </div>
           </div>
-          <span className="text-base font-black tracking-[0.4em] uppercase">EduPlanner</span>
+          <button 
+            onClick={onEnter}
+            className="bg-white text-slate-950 px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-sky-400 transition-all flex items-center gap-2 group"
+          >
+            Start Engine
+            <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
-        <button 
-          onClick={onEnter}
-          className="bg-white/5 backdrop-blur-xl border border-white/10 px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-950 transition-all duration-700 active:scale-95"
-        >
-          {language === 'ko' ? '로그인' : 'Log In'}
-        </button>
       </nav>
 
-      {/* Hero Section */}
-      <main className="relative z-10 pt-20 pb-40 px-8 lg:px-16 max-w-screen-2xl mx-auto flex flex-col items-center text-center">
-        <div className="max-w-4xl space-y-8">
-          <p className="text-slate-400 font-black tracking-[0.6em] uppercase text-[10px] animate-fadeIn">Building Digital Excellence</p>
-          <h1 className="text-6xl md:text-8xl lg:text-[9rem] font-black tracking-tighter leading-[0.85] uppercase drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            Optimizing <br/> 
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-indigo-500">Institutional Flow</span>
-          </h1>
-          <p className="text-lg md:text-xl text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed pt-8">
-            Experience the intelligence engine that blends strategy, design, and institutional logic to craft seamless academic environments.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-6 justify-center pt-12">
-            <button 
-              onClick={onEnter}
-              className="group relative px-10 py-6 bg-indigo-600 rounded-full font-black text-xs uppercase tracking-[0.3em] overflow-hidden shadow-[0_20px_50px_rgba(99,102,241,0.4)] hover:shadow-[0_25px_60px_rgba(99,102,241,0.6)] transition-all duration-500 active:scale-95"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              <span className="relative flex items-center gap-4">
-                Start Your Engine
-                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+      {/* Hero Content */}
+      <main className="relative z-10 pt-44 pb-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center gap-20">
+          <div className="flex-1 space-y-12 text-left">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+              <p className="text-sky-500 font-black tracking-[0.3em] uppercase text-[10px]">System Operational</p>
+            </div>
+            
+            <h1 className="text-6xl md:text-8xl font-medium tracking-tighter leading-[0.9] max-w-3xl">
+              Architect your <br/>
+              <span className="font-serif italic text-glow-cyan text-sky-400">institution</span> <br/>
+              with absolute <br/>
+              <span className="font-serif italic text-glow-cyan text-sky-400">precision.</span>
+            </h1>
+            
+            <p className="text-lg md:text-xl text-slate-400 font-medium max-w-xl leading-relaxed">
+              Advanced administrative protocols merged with intuitive design. We provide the infrastructure to accelerate your educational legacy.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-6 pt-8">
+              <button 
+                onClick={onEnter}
+                className="px-10 py-5 bg-sky-600/10 border border-sky-500/40 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] backdrop-blur-md shadow-[0_0_30px_rgba(14,165,233,0.15)] hover:bg-sky-600/20 hover:shadow-[0_0_40px_rgba(14,165,233,0.3)] transition-all active:scale-95"
+              >
+                Initialize Engine
+              </button>
+              <button 
+                className="px-10 py-5 bg-white/5 border border-white/10 text-slate-300 rounded-full font-black text-xs uppercase tracking-[0.3em] hover:bg-white/10 transition-all flex items-center gap-3"
+              >
+                View Infrastructure
+                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
-              </span>
-            </button>
-            <button 
-              className="px-10 py-6 bg-transparent border border-white/20 hover:border-white/40 rounded-full font-black text-xs uppercase tracking-[0.3em] backdrop-blur-md transition-all duration-500"
-            >
-              Explore Infrastructure
-            </button>
+              </button>
+            </div>
           </div>
+
+          {/* Abstract HUD Element (Benchmark style) */}
+          <div className="flex-1 relative flex justify-center items-center">
+            <div className="absolute inset-0 bg-sky-500/5 blur-[100px] rounded-full" />
+            <div className="relative w-80 h-80 md:w-96 md:h-96">
+               <svg className="w-full h-full animate-pulse-soft" viewBox="0 0 200 200">
+                  <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(14, 165, 233, 0.1)" strokeWidth="0.5" strokeDasharray="4 4" />
+                  <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(14, 165, 233, 0.2)" strokeWidth="1" />
+                  <circle cx="100" cy="100" r="10" fill="none" stroke="#0ea5e9" strokeWidth="2" />
+                  <circle cx="100" cy="100" r="4" fill="#0ea5e9" />
+                  <line x1="100" y1="20" x2="100" y2="40" stroke="rgba(14, 165, 233, 0.5)" strokeWidth="1" />
+                  <line x1="100" y1="160" x2="100" y2="180" stroke="rgba(14, 165, 233, 0.5)" strokeWidth="1" />
+                  <line x1="20" y1="100" x2="40" y2="100" stroke="rgba(14, 165, 233, 0.5)" strokeWidth="1" />
+                  <line x1="160" y1="100" x2="180" y2="100" stroke="rgba(14, 165, 233, 0.5)" strokeWidth="1" />
+               </svg>
+               <div className="absolute top-0 right-0 p-4 border border-white/5 backdrop-blur-xl rounded-2xl bg-black/40 text-[9px] font-black uppercase tracking-widest text-sky-400">
+                 Zero Latency
+               </div>
+               <div className="absolute bottom-10 left-[-20%] p-4 border border-white/5 backdrop-blur-xl rounded-2xl bg-black/40 text-[9px] font-black uppercase tracking-widest text-teal-400">
+                 AI Native Engine
+               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Section (Benchmark cards) */}
+        <section className="pt-44 grid grid-cols-1 md:grid-cols-3 gap-8">
+           {[
+             { 
+               title: "Automated Optimization", 
+               desc: "Generate high-precision strategies and execute schedules in milliseconds with our custodial algorithms.",
+               icon: (
+                 <svg className="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                 </svg>
+               )
+             },
+             { 
+               title: "Dynamic Allocation", 
+               desc: "Connect to deep resource pools across departments to ensure zero-slippage execution on institutional orders.",
+               icon: (
+                 <svg className="w-6 h-6 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                 </svg>
+               )
+             },
+             { 
+               title: "Institutional Governance", 
+               desc: "Manage operations with institutional-grade security. Set permissions, approve plans, and audit logs.",
+               icon: (
+                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                 </svg>
+               )
+             }
+           ].map((feat, i) => (
+             <div key={i} className="bg-black/20 border-glow-cyan p-10 rounded-[2.5rem] backdrop-blur-xl transition-all flex flex-col gap-8">
+               <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                 {feat.icon}
+               </div>
+               <div className="space-y-4">
+                 <h3 className="text-2xl font-black text-white leading-tight">{feat.title}</h3>
+                 <p className="text-slate-400 text-sm leading-relaxed font-medium">{feat.desc}</p>
+               </div>
+               <div className="pt-4">
+                 <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                   <div className="h-full bg-sky-500/50 w-1/3 animate-pulse-soft" />
+                 </div>
+               </div>
+             </div>
+           ))}
+        </section>
+
+        <div className="mt-44 flex justify-center">
+          <button 
+            onClick={onEnter}
+            className="group px-12 py-5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-[0.3em] flex items-center gap-4 hover:bg-sky-400 transition-all shadow-[0_0_50px_rgba(255,255,255,0.1)] active:scale-95"
+          >
+            Explore Capabilities
+            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </button>
         </div>
       </main>
 
-      {/* Feature Highlights */}
-      <section className="relative z-10 px-8 lg:px-16 max-w-screen-2xl mx-auto pb-40 grid grid-cols-1 md:grid-cols-3 gap-12">
-        {[
-          {
-            title: "Predictive Sync",
-            desc: "AI-driven logic that eliminates scheduling overlaps before they occur.",
-            icon: "M13 10V3L4 14h7v7l9-11h-7z"
-          },
-          {
-            title: "Balance Matrix",
-            desc: "A powerful framework for teacher workload and sustainability.",
-            icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          },
-          {
-            title: "Global Overview",
-            desc: "One central hub for institutional pacing and resource mapping.",
-            icon: "M9 20l-5.447-2.724A2 2 0 013 15.447V5.553a2 2 0 011.553-1.944L9 2l6 3 5.447-2.724A2 2 0 0121 4.223v9.894a2 2 0 01-1.106 1.789L15 18l-6 2z"
-          }
-        ].map((feat, i) => (
-          <div key={i} className="group p-10 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[3rem] hover:bg-white/[0.08] transition-all duration-700">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 flex items-center justify-center mb-8 border border-indigo-500/20 group-hover:scale-110 transition-transform">
-              <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={feat.icon} />
-              </svg>
-            </div>
-            <h3 className="text-xl font-black uppercase tracking-tight mb-4">{feat.title}</h3>
-            <p className="text-slate-400 text-sm leading-relaxed font-medium">{feat.desc}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* How it Works / Video Replacement Section */}
-      <section className="relative z-10 bg-white/5 border-y border-white/10 py-40">
-        <div className="max-w-screen-2xl mx-auto px-8 lg:px-16 flex flex-col lg:flex-row items-center gap-24">
-          <div className="flex-1 space-y-12">
-            <h2 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter leading-none">
-              Institutional <br/> Control in <span className="text-indigo-400">Seconds</span>
-            </h2>
-            <div className="space-y-8">
-              {[
-                { n: "01", t: "Registry", d: "Add your faculty and institutional resources to the engine." },
-                { n: "02", t: "Logic", d: "Set the daily rhythm and core constraints for your campus." },
-                { n: "03", t: "Mastery", d: "Generate and refine a perfect operational sequence with one click." }
-              ].map((step, i) => (
-                <div key={i} className="flex gap-8 group">
-                  <span className="text-4xl font-black text-white/10 group-hover:text-indigo-500/50 transition-colors duration-500">{step.n}</span>
-                  <div>
-                    <h4 className="text-lg font-black uppercase tracking-widest mb-2">{step.t}</h4>
-                    <p className="text-slate-400 text-sm font-medium">{step.d}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 relative group">
-            <div className="absolute inset-0 bg-indigo-500/20 blur-[120px] rounded-full group-hover:bg-indigo-500/30 transition-all duration-1000" />
-            <div className="relative rounded-[4rem] border border-white/20 p-2 bg-slate-900 overflow-hidden shadow-2xl">
-              <img 
-                src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=2070&auto=format&fit=crop" 
-                alt="System Overview" 
-                className="w-full h-auto rounded-[3.5rem] opacity-80"
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                 <div className="w-24 h-24 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20 shadow-2xl cursor-pointer hover:scale-110 active:scale-95 transition-all">
-                    <svg className="w-10 h-10 text-white fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                 </div>
-              </div>
-            </div>
-          </div>
+      {/* Footer Branded Element (Benchmark style) */}
+      <footer className="relative z-10 py-16 px-6 lg:px-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+        <div className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
+          EduPlanner Institutional Protocol v2.5
         </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="relative z-10 py-20 border-t border-white/5 flex flex-col items-center gap-12">
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+        <div className="bg-black/60 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
+          <div className="w-4 h-4 rounded bg-sky-500/10 flex items-center justify-center text-sky-500">
+            A
           </div>
-          <span className="text-[10px] font-black tracking-[0.6em] uppercase">EduPlanner Systems</span>
+          Made in Aura
         </div>
-        <p className="text-slate-600 text-[9px] font-black uppercase tracking-widest">© 2024 Institutional Intelligence Inc. Built with Gemini AI.</p>
       </footer>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes pulse-slow { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; } 50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.8; } }
-        .animate-pulse-slow { animation: pulse-slow 15s ease-in-out infinite; }
-      `}} />
     </div>
   );
 };
