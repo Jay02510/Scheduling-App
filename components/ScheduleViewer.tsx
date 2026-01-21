@@ -31,12 +31,10 @@ const formatTime = (timeStr: string, minutesToAdd: number) => {
 
 const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teachers, subjects, textbooks, lockedSlots, profile, onGenerateRoadmap, onUpdateSlot, onMoveSlot, onFillSlots, onNavigate, onJump, onRegenerate, initialClassId, language }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [editingSlot, setEditingSlot] = useState<{ day: number, period: number } | null>(null);
   const [draggedItem, setDraggedItem] = useState<{ day: number, period: number } | null>(null);
   const [isAltPressed, setIsAltPressed] = useState(false);
   const [dropTarget, setDropTarget] = useState<{ day: number, period: number } | null>(null);
-  const [fillSource, setFillSource] = useState<{ day: number, period: number } | null>(null);
-  const [fillTarget, setFillTarget] = useState<{ day: number, period: number } | null>(null);
+  const [errorToast, setErrorToast] = useState<{ msg: string, id: number } | null>(null);
 
   const t = (key: string) => TRANSLATIONS[language][key] || key;
 
@@ -65,135 +63,117 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
   );
 
   const teacherBusyMap = useMemo(() => {
-    const map: Record<string, string> = {}; 
+    const map: Record<string, { className: string, classId: string }> = {}; 
     (schedule?.weeklySlots || []).forEach(s => {
       if (s.classId !== currentClass?.id) {
-        map[`${s.teacherId}:${s.day}:${s.period}`] = classes.find(c => c.id === s.classId)?.name || 'Other Class';
+        map[`${s.teacherId}:${s.day}:${s.period}`] = { 
+          className: classes.find(c => c.id === s.classId)?.name || 'Other Class',
+          classId: s.classId
+        };
       }
     });
     return map;
   }, [schedule, currentClass, classes]);
 
   const getSubjectName = (id: string) => subjects?.find(s => s.id === id)?.name || 'Unknown';
-  
-  const handlePrint = () => {
-    const originalTitle = document.title;
-    document.title = `Schedule_${currentClass?.name || 'Class'}_${new Date().toLocaleDateString()}`;
-    window.print();
-    document.title = originalTitle;
-  };
 
-  const clashes = useMemo(() => {
-    const foundClashes: { day: number, period: number, type: 'teacher' | 'duplicate', other?: string }[] = [];
-    if (!currentClass) return foundClashes;
-
-    // 1. Teacher double-booking check
-    classSlots.forEach(s => {
-      const busyInOtherClass = teacherBusyMap[`${s.teacherId}:${s.day}:${s.period}`];
-      if (busyInOtherClass) {
-        foundClashes.push({ day: s.day, period: s.period, type: 'teacher', other: busyInOtherClass });
-      }
-    });
-
-    // 2. Daily subject duplicate check
-    for (let d = 0; d < 5; d++) {
-      const daySlots = classSlots.filter(s => s.day === d);
-      const counts: Record<string, number> = {};
-      daySlots.forEach(s => { counts[s.subjectId] = (counts[s.subjectId] || 0) + 1; });
-      Object.entries(counts).forEach(([subId, count]) => {
-        const subConfig = subjects.find(s => s.id === subId);
-        if (count > 1 && (subConfig?.frequencyPerWeek || 0) <= 5) {
-          daySlots.filter(s => s.subjectId === subId).forEach(s => {
-            foundClashes.push({ day: s.day, period: s.period, type: 'duplicate' });
-          });
-        }
-      });
-    }
-    return foundClashes;
-  }, [classSlots, subjects, currentClass, teacherBusyMap]);
-
-  if (!currentClass) return null;
-
-  const handleApplyChange = (subjectId: string) => {
-    if (!editingSlot || !onUpdateSlot || !currentClass) return;
-    const assignment = currentClass.assignments.find(a => a.subjectId === subjectId);
-    onUpdateSlot({
-      id: Math.random().toString(36).substr(2, 9),
-      day: editingSlot.day,
-      period: editingSlot.period,
-      classId: currentClass.id,
-      subjectId,
-      teacherId: assignment?.teacherId || '',
-      isManualOverride: true
-    });
-    setEditingSlot(null);
+  const showClashError = (msg: string) => {
+    setErrorToast({ msg, id: Date.now() });
+    setTimeout(() => setErrorToast(null), 3500);
   };
 
   const handleDragStart = (day: number, period: number) => setDraggedItem({ day, period });
 
-  const handleDragOver = (e: React.DragEvent, day: number, period: number) => {
-    e.preventDefault();
-    const isLocked = (lockedSlots || []).some(f => 
+  const checkClash = (day: number, period: number, tId: string | null) => {
+    if (!tId) return null;
+    
+    // 1. Locked Slots (School-wide or Class-specific)
+    const lock = (lockedSlots || []).find(f => 
       f.dayOfWeek === day && f.period === period && (f.isSchoolWide || (f.classIds && f.classIds.includes(currentClass.id)))
     );
-    if (!isLocked) setDropTarget({ day, period });
+    if (lock) return `Locked: ${lock.name}`;
+
+    // 2. Teacher Conflict
+    const busyInfo = teacherBusyMap[`${tId}:${day}:${period}`];
+    if (busyInfo) return `Teacher busy in ${busyInfo.className}`;
+
+    // 3. Subject Distribution Audit
+    const slotToMove = classSlots.find(s => s.day === draggedItem?.day && s.period === draggedItem?.period);
+    if (slotToMove) {
+      const existingInDay = classSlots.find(s => s.day === day && s.subjectId === slotToMove.subjectId && s.period !== period);
+      if (existingInDay) {
+        const sub = subjects.find(s => s.id === slotToMove.subjectId);
+        // Pedalogical rule: Don't double up common subjects on one day
+        if ((sub?.frequencyPerWeek || 0) <= 5) return `Daily Limit: ${sub?.name} exists`;
+      }
+    }
+
+    return null;
+  };
+
+  const handleDragOver = (e: React.DragEvent, day: number, period: number) => {
+    e.preventDefault();
+    setDropTarget({ day, period });
   };
 
   const handleDrop = (e: React.DragEvent, day: number, period: number) => {
     e.preventDefault();
-    if (draggedItem && onMoveSlot) onMoveSlot(draggedItem, { day, period }, currentClass.id, isAltPressed);
+    if (draggedItem) {
+      const draggedSlot = classSlots.find(s => s.day === draggedItem.day && s.period === draggedItem.period);
+      const tId = draggedSlot?.teacherId || null;
+      const clashMsg = checkClash(day, period, tId);
+      
+      if (clashMsg) {
+        showClashError(clashMsg);
+      } else if (onMoveSlot) {
+        onMoveSlot(draggedItem, { day, period }, currentClass.id, isAltPressed);
+      }
+    }
     setDraggedItem(null);
     setDropTarget(null);
   };
 
-  const onFillStart = (e: React.MouseEvent, day: number, period: number) => {
-    e.stopPropagation(); e.preventDefault();
-    setFillSource({ day, period });
-    setFillTarget({ day, period });
-  };
-
-  const onFillMove = (day: number, period: number) => { if (fillSource) setFillTarget({ day, period }); };
-  const onFillEnd = () => {
-    if (fillSource && fillTarget && onFillSlots) {
-      const range = {
-        startDay: Math.min(fillSource.day, fillTarget.day),
-        endDay: Math.max(fillSource.day, fillTarget.day),
-        startPeriod: Math.min(fillSource.period, fillTarget.period),
-        endPeriod: Math.max(fillSource.period, fillTarget.period)
-      };
-      onFillSlots(fillSource, range, currentClass.id);
-    }
-    setFillSource(null); setFillTarget(null);
-  };
-
-  const draggingTeacherId = draggedItem ? classSlots.find(s => s.day === draggedItem.day && s.period === draggedItem.period)?.teacherId : null;
+  const draggedSlotData = draggedItem ? classSlots.find(s => s.day === draggedItem.day && s.period === draggedItem.period) : null;
+  const draggingTeacherId = draggedSlotData?.teacherId || null;
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-full pb-32" id="homeroom-schedule" onMouseUp={onFillEnd}>
+    <div className="space-y-8 animate-fadeIn max-w-full pb-32 relative" id="homeroom-schedule">
+      {/* Real-time Detailed Conflict Alert */}
+      {errorToast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-4 bg-[#0f172a] text-white px-8 py-4 rounded-[1.8rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-rose-500/50 animate-bounce-short">
+          <div className="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-white shrink-0">
+             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400">Scheduling Conflict</span>
+            <span className="text-xs font-bold text-slate-100 uppercase tracking-tight">{errorToast.msg}</span>
+          </div>
+        </div>
+      )}
+
       <header className="flex flex-col md:flex-row justify-between items-end gap-6 no-print">
         <div>
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{t('homeroom_portal')}</h2>
-          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">{t('institution_grid')} • {currentClass.name}</p>
+          <div className="flex items-center gap-3 mt-2">
+            <span className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">{t('institution_grid')} • {currentClass.name}</span>
+            <div className="px-3 py-1 bg-indigo-50 text-indigo-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">Manual Optimization Mode</div>
+          </div>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={handlePrint} className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            {t('export_pdf')}
-          </button>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-[300px] md:max-w-md bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
             {classes.map(c => (
-              <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
+              <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
             ))}
           </div>
         </div>
       </header>
 
-      <div className="bg-white border-[2px] border-slate-900 rounded-[2.5rem] overflow-hidden shadow-[12px_12px_0px_rgba(0,0,0,0.03)] max-w-full overflow-x-auto">
+      <div className="bg-white border-[3px] border-slate-900 rounded-[3rem] overflow-hidden shadow-[20px_20px_60px_-15px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
         <table className="w-full border-collapse table-fixed min-w-[1000px]">
           <thead>
-            <tr className="bg-slate-50 border-b-[2px] border-slate-900">
-              <th className="border-r-[2px] border-slate-900 p-4 text-[10px] font-black uppercase w-40">{t('period')}</th>
-              {days.map(d => <th key={d} className="border-r-[2px] last:border-r-0 border-slate-900 p-4 text-[10px] font-black uppercase tracking-widest">{d}</th>)}
+            <tr className="bg-slate-50 border-b-[3px] border-slate-900">
+              <th className="border-r-[3px] border-slate-900 p-6 text-[10px] font-black uppercase w-44">{t('period')}</th>
+              {days.map(d => <th key={d} className="border-r-[3px] last:border-r-0 border-slate-900 p-6 text-[10px] font-black uppercase tracking-widest">{d}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -201,60 +181,60 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
               const pStart = formatTime(startTime, pIdx * duration);
               const pEnd = formatTime(startTime, (pIdx + 1) * duration);
               return (
-                <tr key={pIdx} className="border-b-[2px] border-slate-900 last:border-b-0">
-                  <td className="border-r-[2px] border-slate-900 p-4 text-center font-black text-slate-900 bg-slate-50 h-[110px]">
-                    <div className="text-2xl tracking-tighter leading-none mb-1">{pIdx + 1}</div>
-                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">{pStart} — {pEnd}</div>
+                <tr key={pIdx} className="border-b-[3px] border-slate-900 last:border-b-0">
+                  <td className="border-r-[3px] border-slate-900 p-6 text-center font-black text-slate-900 bg-slate-50/50 h-[120px]">
+                    <div className="text-3xl tracking-tighter leading-none mb-1">{pIdx + 1}</div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{pStart} — {pEnd}</div>
                   </td>
                   {Array.from({ length: 5 }).map((_, dIdx) => {
                     const lock = (lockedSlots || []).find(f => f.dayOfWeek === dIdx && f.period === pIdx && (f.isSchoolWide || f.classIds.includes(currentClass.id)));
                     const slot = classSlots.find(s => s.day === dIdx && s.period === pIdx);
                     const teacher = teachers.find(t => t.id === slot?.teacherId);
                     
-                    const clash = clashes.find(c => c.day === dIdx && c.period === pIdx);
                     const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
-                    const isDragging = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
+                    const isDraggingOrig = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
                     
-                    const isTeacherBusyElseWhere = draggingTeacherId && teacherBusyMap[`${draggingTeacherId}:${dIdx}:${pIdx}`];
-                    const isOptimalSlot = draggingTeacherId && !isTeacherBusyElseWhere && !lock && !slot;
+                    const clashMsg = draggedItem ? checkClash(dIdx, pIdx, draggingTeacherId) : null;
+                    const isOptimalSlot = draggingTeacherId && !clashMsg && !lock && !slot;
 
                     if (lock) return (
-                      <td key={dIdx} className="border-r-[2px] last:border-r-0 border-slate-900 p-0 h-[110px] align-middle relative overflow-hidden bg-vivid-blocked">
+                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[120px] align-middle relative overflow-hidden bg-vivid-blocked">
                         <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
                           <span className="text-[10px] font-black uppercase tracking-tight text-slate-400 leading-none">{lock.name}</span>
+                          <span className="text-[7px] font-black text-slate-300 uppercase mt-1 tracking-widest">Global Lock</span>
                         </div>
                       </td>
                     );
 
                     return (
                       <td key={dIdx} 
-                        onMouseEnter={() => onFillMove(dIdx, pIdx)} 
                         onDragOver={(e) => handleDragOver(e, dIdx, pIdx)} 
                         onDrop={(e) => handleDrop(e, dIdx, pIdx)}
-                        className={`border-r-[2px] last:border-r-0 border-slate-900 p-0 h-[110px] transition-all relative align-top ${
-                          isTarget ? 'bg-indigo-50 ring-2 ring-indigo-500 ring-inset z-10' : 
-                          isTeacherBusyElseWhere ? 'bg-rose-50/40 opacity-40' : 
-                          isOptimalSlot ? 'bg-emerald-50/40 ring-1 ring-emerald-200 ring-inset' : 
+                        className={`border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[120px] transition-all relative align-top ${
+                          isTarget && clashMsg ? 'bg-rose-50 ring-4 ring-rose-500 ring-inset z-50' : 
+                          isTarget && !clashMsg ? 'bg-indigo-50 ring-4 ring-indigo-500 ring-inset z-50' : 
+                          isOptimalSlot ? 'bg-emerald-50/40 ring-2 ring-emerald-200 ring-inset' : 
                           'bg-white group hover:bg-slate-50'
                         }`}>
                         {slot ? (
-                          <div className={`h-full flex flex-col relative transition-all ${isDragging ? 'opacity-30 scale-95' : ''} ${clash ? 'ring-2 ring-rose-500 ring-inset bg-rose-50' : ''}`} draggable="true" onDragStart={() => handleDragStart(dIdx, pIdx)}>
-                            <button onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden pointer-events-none">
-                              <span className={`text-[12px] font-black uppercase leading-tight line-clamp-1 tracking-tight ${clash ? 'text-rose-600' : 'text-slate-900'}`}>{getSubjectName(slot.subjectId)}</span>
-                              {clash?.type === 'teacher' && <span className="text-[7px] font-black uppercase text-rose-500 tracking-widest mt-1 animate-pulse">Overlap with {clash.other}</span>}
-                              {clash?.type === 'duplicate' && <span className="text-[7px] font-black uppercase text-rose-500 tracking-widest mt-1 animate-pulse">Daily Duplicate</span>}
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); if(onJump) onJump(slot.teacherId, 'teacher'); }} className="h-8 flex items-center justify-center border-t-[2px] border-slate-900 shrink-0 hover:brightness-95 transition-all pointer-events-auto" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
+                          <div className={`h-full flex flex-col relative transition-all cursor-grab active:cursor-grabbing ${isDraggingOrig ? 'opacity-20 scale-95 blur-[1px]' : ''}`} draggable="true" onDragStart={() => handleDragStart(dIdx, pIdx)}>
+                            <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden pointer-events-none">
+                              <span className={`text-[13px] font-black uppercase leading-[1.1] line-clamp-2 tracking-tighter text-slate-900`}>{getSubjectName(slot.subjectId)}</span>
+                            </div>
+                            <div className="h-8 flex items-center justify-center border-t-[3px] border-slate-900 shrink-0 pointer-events-auto" style={{ backgroundColor: teacher?.color || '#cbd5e1' }}>
                               <span className="text-[9px] font-black uppercase text-slate-900 truncate px-4 tracking-tighter">{teacher?.name}</span>
-                            </button>
-                            <div onMouseDown={(e) => onFillStart(e, dIdx, pIdx)} className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-blue-600 border border-white cursor-crosshair z-30 hover:scale-125 transition-transform no-print" title="Replicate"></div>
+                            </div>
                           </div>
                         ) : (
-                          <div onClick={() => setEditingSlot({ day: dIdx, period: pIdx })} className={`h-full cursor-pointer flex items-center justify-center ${isOptimalSlot ? 'bg-emerald-50/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)] opacity-[0.03]'}`}>
-                             {isTeacherBusyElseWhere && (
-                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                  <svg className="w-5 h-5 text-rose-300 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                          <div className={`h-full flex items-center justify-center relative ${isOptimalSlot ? 'bg-emerald-50/20' : 'bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,#000_6px,#000_7px)] opacity-[0.02]'}`}>
+                             {isTarget && clashMsg && (
+                               <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-500/20 p-2 text-center backdrop-blur-[2px]">
+                                  <svg className="w-5 h-5 text-rose-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                                  <span className="text-[8px] font-black text-rose-700 uppercase tracking-tighter leading-none">{clashMsg}</span>
                                </div>
+                             )}
+                             {isOptimalSlot && !isTarget && (
+                               <div className="w-4 h-4 rounded-full border-2 border-emerald-300 opacity-40"></div>
                              )}
                           </div>
                         )}
@@ -267,6 +247,16 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </tbody>
         </table>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes bounce-short {
+          0%, 100% { transform: translate(-50%, 0); }
+          50% { transform: translate(-50%, -8px); }
+        }
+        .animate-bounce-short {
+          animation: bounce-short 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1;
+        }
+      `}} />
     </div>
   );
 };
