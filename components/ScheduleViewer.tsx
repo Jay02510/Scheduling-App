@@ -133,6 +133,13 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     setDropTarget(null);
   };
 
+  const handleExportPDF = () => {
+    const originalTitle = document.title;
+    document.title = `Class_Schedule_${currentClass.name}_${new Date().toLocaleDateString()}`;
+    window.print();
+    document.title = originalTitle;
+  };
+
   const draggedSlotData = draggedItem ? classSlots.find(s => s.day === draggedItem.day && s.period === draggedItem.period) : null;
   const draggingTeacherId = draggedSlotData?.teacherId || null;
 
@@ -160,6 +167,13 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <button 
+            onClick={handleExportPDF}
+            className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            {t('export_pdf')}
+          </button>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-[300px] md:max-w-md bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
             {classes.map(c => (
               <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
@@ -167,6 +181,20 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </div>
         </div>
       </header>
+
+      {/* Print-only Header Section */}
+      <div className="hidden print:block p-8 border-b-[3px] border-slate-900 bg-white mb-6">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-black uppercase tracking-tighter">{currentClass.name}</h1>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Class Schedule Grid • {profile?.name || 'Academic Institution'}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Weekly Performance Cycle</p>
+            <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+      </div>
 
       <div className="bg-white border-[3px] border-slate-900 rounded-[3rem] overflow-hidden shadow-[20px_20px_60px_-15px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
         <table className="w-full border-collapse table-fixed min-w-[1000px]">
@@ -196,7 +224,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     
                     // Detailed Conflict Mapping
                     const clashMsg = draggedItem ? checkClash(dIdx, pIdx, draggingTeacherId) : null;
-                    const isOccupiedBySameClass = slot && !isDraggingOrig;
                     const isSafeSlot = draggingTeacherId && !clashMsg && !lock && !slot;
 
                     if (lock) return (
