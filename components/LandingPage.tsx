@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Language } from '../types';
 
@@ -94,7 +93,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
 
           {/* 3D Workspace Device Mockup */}
           <div className="flex-1 relative flex justify-center items-center perspective-1000 group">
-            {/* Outer Container without overflow-hidden to allow labels to pop out */}
             <div className="relative w-full max-w-xl aspect-[4/3] transform rotate-y-[-10deg] rotate-x-[5deg] transition-all duration-1000 group-hover:rotate-y-[0deg] group-hover:rotate-x-[0deg] group-hover:scale-105">
               
               {/* Image Container */}
@@ -114,19 +112,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                        <div className="h-4 w-4 bg-sky-500 rounded shadow-lg shadow-sky-500/50" />
                      </div>
                      <div className="grid grid-cols-4 gap-2">
-                       {Array.from({length: 8}).map((_, i) => (
-                         <div key={i} className="h-10 bg-white/10 rounded-lg border border-white/5" />
+                       {['MATH', 'ART', 'SCI', 'ENG', 'HIST', 'PHYS', 'MUS', 'LAB'].map((name, i) => (
+                         <div key={i} className="h-10 bg-white/10 rounded-lg border border-white/5 flex items-center justify-center text-[8px] font-black text-slate-300">
+                            {name}
+                         </div>
                        ))}
                      </div>
                   </div>
                 </div>
               </div>
 
-              {/* Float Labels - Positioned for clarity and no-clip */}
-              <div className="absolute top-6 -right-6 z-20 p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[10px] font-black uppercase tracking-widest text-sky-400 shadow-2xl animate-float group-hover:scale-110 whitespace-nowrap">
+              {/* Floating "Draggable" Class Chips */}
+              <div className="absolute -top-10 left-10 z-20 px-4 py-2 bg-indigo-600 rounded-full border border-white/20 shadow-2xl text-[10px] font-black uppercase tracking-widest text-white animate-float cursor-move" style={{ animationDelay: '0.5s' }}>
+                Math G1
+              </div>
+              <div className="absolute top-1/2 -right-16 z-20 px-4 py-2 bg-teal-500 rounded-full border border-white/20 shadow-2xl text-[10px] font-black uppercase tracking-widest text-white animate-float cursor-move" style={{ animationDelay: '1.5s' }}>
+                Science G3
+              </div>
+              <div className="absolute -bottom-8 right-12 z-20 px-4 py-2 bg-amber-500 rounded-full border border-white/20 shadow-2xl text-[10px] font-black uppercase tracking-widest text-white animate-float cursor-move" style={{ animationDelay: '2.5s' }}>
+                History G2
+              </div>
+
+              {/* Float Labels - Adjusted for visible positioning */}
+              <div className="absolute top-8 right-0 z-30 p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[9px] font-black uppercase tracking-widest text-sky-400 shadow-2xl group-hover:scale-110 transition-transform">
                 CONFLICT-FREE LOGIC
               </div>
-              <div className="absolute -bottom-6 -left-6 z-20 p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[10px] font-black uppercase tracking-widest text-teal-400 shadow-2xl animate-float group-hover:scale-110 whitespace-nowrap" style={{ animationDelay: '1s' }}>
+              <div className="absolute bottom-16 left-0 z-30 p-4 border border-white/10 backdrop-blur-xl rounded-[1.5rem] bg-black/60 text-[9px] font-black uppercase tracking-widest text-teal-400 shadow-2xl group-hover:scale-110 transition-transform">
                 BALANCED LOAD
               </div>
             </div>
@@ -205,16 +216,34 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
               ))}
             </div>
           </div>
+          {/* About Section Visual: Computer Screen Schedule */}
           <div className="flex-1 relative group">
             <div className="absolute inset-0 bg-sky-500/20 blur-[120px] rounded-full group-hover:bg-sky-500/30 transition-all duration-1000" />
             <div className="relative rounded-[4rem] overflow-hidden border border-white/20 p-2 bg-slate-900 shadow-2xl transition-all duration-700 group-hover:scale-[1.02]">
               <div className="aspect-[16/10] bg-slate-800 relative overflow-hidden">
                 <img 
-                  src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2070&auto=format&fit=crop" 
-                  alt="Modern Institutional Environment" 
+                  src="https://images.unsplash.com/photo-1547082299-de196ea013d6?q=80&w=2070&auto=format&fit=crop" 
+                  alt="Institutional Schedule Display" 
                   className="absolute inset-0 w-full h-full object-cover grayscale transition-all duration-1000 group-hover:grayscale-0"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
+                
+                {/* Visual Schedule Overlay on the screen */}
+                <div className="absolute inset-0 flex flex-col p-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
+                   <div className="flex justify-between items-center mb-6">
+                      <div className="h-4 w-32 bg-sky-400/30 rounded-full" />
+                      <div className="flex gap-2">
+                        {[1,2,3].map(i => <div key={i} className="h-3 w-3 rounded-full bg-white/20" />)}
+                      </div>
+                   </div>
+                   <div className="grid grid-cols-5 gap-3 flex-1">
+                      {Array.from({length: 15}).map((_, i) => (
+                        <div key={i} className="bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
+                          <div className={`h-1/2 w-3/4 rounded-lg ${i % 3 === 0 ? 'bg-indigo-500/20' : 'bg-sky-500/10'}`} />
+                        </div>
+                      ))}
+                   </div>
+                </div>
               </div>
             </div>
           </div>
