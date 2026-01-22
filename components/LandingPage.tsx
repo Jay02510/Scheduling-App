@@ -1,5 +1,7 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Language } from '../types';
+import LegalModal from './LegalModal';
 
 interface LandingPageProps {
   onEnter: () => void;
@@ -7,11 +9,20 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
+  const [legalView, setLegalView] = useState<{ isOpen: boolean, type: 'privacy' | 'terms' | 'compliance' }>({
+    isOpen: false,
+    type: 'privacy'
+  });
+
   const scrollTo = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const openLegal = (type: 'privacy' | 'terms' | 'compliance') => {
+    setLegalView({ isOpen: true, type });
   };
 
   return (
@@ -286,17 +297,63 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 py-16 px-6 lg:px-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 bg-black/60">
-        <div className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
-          EduPlanner Pro • Smarter Institutional Infrastructure
-        </div>
-        <div className="bg-black/80 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
-          <div className="w-4 h-4 rounded bg-sky-500/20 flex items-center justify-center text-sky-400 text-[8px]">
-            AI
+      <footer className="relative z-10 py-24 px-6 lg:px-16 border-t border-white/5 bg-black/60">
+        <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-start gap-16">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
+                 <div className="w-3 h-3 bg-sky-400 rounded-full" />
+              </div>
+              <span className="text-lg font-black tracking-tight text-white uppercase">EduPlanner Pro</span>
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 max-w-xs leading-relaxed">
+              Smarter Institutional Infrastructure. Leveraging Gemini Intelligence for Educational Excellence.
+            </p>
           </div>
-          Active Optimization Engaged
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-16">
+            <div className="space-y-6">
+              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Platform</h4>
+              <div className="flex flex-col gap-4">
+                <button onClick={() => scrollTo('features')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Intelligence</button>
+                <button onClick={() => scrollTo('pricing')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Pricing</button>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Legal</h4>
+              <div className="flex flex-col gap-4">
+                <button onClick={() => openLegal('privacy')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Privacy Policy</button>
+                <button onClick={() => openLegal('terms')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Terms of Service</button>
+                <button onClick={() => openLegal('compliance')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Compliance</button>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Institutional</h4>
+              <div className="bg-black/80 border border-white/10 px-6 py-4 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
+                <div className="w-4 h-4 rounded bg-sky-500/20 flex items-center justify-center text-sky-400 text-[8px]">AI</div>
+                Optimization Active
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">
+            © {new Date().getFullYear()} EduPlanner Pro. All Rights Reserved.
+          </div>
+          <div className="flex gap-8">
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">Guardian Core v2.5</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">Optimized for Enterprise</span>
+          </div>
         </div>
       </footer>
+
+      <LegalModal 
+        isOpen={legalView.isOpen} 
+        onClose={() => setLegalView({ ...legalView, isOpen: false })} 
+        language={language}
+        type={legalView.type}
+      />
 
       <style dangerouslySetInnerHTML={{ __html: `
         .perspective-1000 { perspective: 1000px; }

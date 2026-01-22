@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
+import LegalModal from './LegalModal';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +14,16 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, language, setLanguage, onOpenFeedback }) => {
+  const [legalView, setLegalView] = useState<{ isOpen: boolean, type: 'privacy' | 'terms' | 'compliance' }>({
+    isOpen: false,
+    type: 'privacy'
+  });
+
   const t = (key: string) => TRANSLATIONS[language][key] || key;
+
+  const openLegal = (type: 'privacy' | 'terms' | 'compliance') => {
+    setLegalView({ isOpen: true, type });
+  };
 
   const tabs = [
     { id: 'home', label: t('dashboard'), icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -81,8 +91,14 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
             <span>Give Feedback</span>
           </button>
           
-          <div className="px-5 text-[8px] font-black text-slate-600 uppercase tracking-widest">
-            Guardian Core v2.5
+          <div className="px-5 pt-4 flex flex-col gap-3">
+            <div className="flex gap-4">
+              <button onClick={() => openLegal('privacy')} className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Privacy</button>
+              <button onClick={() => openLegal('terms')} className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Terms</button>
+            </div>
+            <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest">
+              Guardian Core v2.5
+            </div>
           </div>
         </div>
       </nav>
@@ -92,6 +108,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
           {children}
         </div>
       </main>
+
+      <LegalModal 
+        isOpen={legalView.isOpen} 
+        onClose={() => setLegalView({ ...legalView, isOpen: false })} 
+        language={language}
+        type={legalView.type}
+      />
     </div>
   );
 };

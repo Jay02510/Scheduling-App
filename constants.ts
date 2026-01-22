@@ -88,7 +88,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     synchronized: "Saved",
     local_changes: "Editing (Unsaved)",
     audit_engine: "Plan Review",
-    strategic_report: "Report"
+    strategic_report: "Report",
+    privacy_policy: "Privacy Policy",
+    terms_of_service: "Terms of Service",
+    compliance: "Compliance",
+    legal: "Legal"
   },
   ko: {
     dashboard: "홈",
@@ -152,6 +156,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     synchronized: "저장됨",
     local_changes: "수정 중 (저장 안 됨)",
     audit_engine: "계획 검토",
-    strategic_report: "보고서"
+    strategic_report: "보고서",
+    privacy_policy: "개인정보 처리방침",
+    terms_of_service: "이용약관",
+    compliance: "법적 준수",
+    legal: "법적 고지"
   }
 };
