@@ -25,6 +25,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
     setLegalView({ isOpen: true, type });
   };
 
+  const isKo = language === 'ko';
+
   return (
     <div className="relative min-h-screen bg-[#020617] text-white overflow-x-hidden font-inter selection:bg-sky-500/30">
       
@@ -47,16 +49,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
               <span className="text-sm font-black tracking-tight text-white uppercase">EduPlanner</span>
             </div>
             <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              <button onClick={() => scrollTo('features')} className="hover:text-white transition-colors">Intelligence</button>
-              <button onClick={() => scrollTo('about')} className="hover:text-white transition-colors">Our Vision</button>
-              <button onClick={() => scrollTo('pricing')} className="hover:text-white transition-colors">Enterprise</button>
+              <button onClick={() => scrollTo('features')} className="hover:text-white transition-colors">{isKo ? '인텔리전스' : 'Intelligence'}</button>
+              <button onClick={() => scrollTo('about')} className="hover:text-white transition-colors">{isKo ? '우리의 비전' : 'Our Vision'}</button>
+              <button onClick={() => scrollTo('pricing')} className="hover:text-white transition-colors">{isKo ? '가격' : 'Pricing'}</button>
             </div>
           </div>
           <button 
             onClick={onEnter}
             className="bg-white text-slate-950 px-7 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-sky-400 transition-all flex items-center gap-2 group shadow-lg"
           >
-            Launch Platform
+            {isKo ? '플랫폼 시작하기' : 'Launch Platform'}
             <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
             </svg>
@@ -70,17 +72,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
           <div className="flex-1 space-y-8 text-left max-w-3xl">
             <div className="flex items-center gap-3 animate-fadeIn">
               <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-              <p className="text-sky-500 font-black tracking-[0.5em] uppercase text-[10px]">Institutional Grade Automation</p>
+              <p className="text-sky-500 font-black tracking-[0.5em] uppercase text-[10px]">{isKo ? '기관급 자동화 시스템' : 'Institutional Grade Automation'}</p>
             </div>
             
             <h1 className="text-5xl md:text-[5.5rem] font-black tracking-tighter leading-[0.95] uppercase">
-              BUILD YOUR <br/>
-              <span className="font-serif italic text-glow-cyan text-sky-400 normal-case">PERFECT SCHEDULE</span> <br/>
-              IN JUST A FEW CLICKS.
+              {isKo ? <>가장 완벽한 <br/><span className="font-serif italic text-glow-cyan text-sky-400 normal-case">시간표</span>를 <br/>단 몇 번의 클릭으로.</> : <>BUILD YOUR <br/><span className="font-serif italic text-glow-cyan text-sky-400 normal-case">PERFECT SCHEDULE</span> <br/>IN JUST A FEW CLICKS.</>}
             </h1>
             
             <p className="text-lg md:text-xl text-slate-400 font-medium max-w-xl leading-relaxed">
-              Design your institutional flow with precision. Stop fighting spreadsheets—EduPlanner leverages Gemini AI to generate balanced, human-centric schedules.
+              {isKo 
+                ? '정밀한 기관 운영 흐름을 설계하세요. 더 이상 복잡한 스프레드시트와 씨름할 필요가 없습니다. EduPlanner는 Gemini AI를 활용하여 균형 잡힌 인간 중심의 시간표를 생성합니다.' 
+                : 'Design your institutional flow with precision. Stop fighting spreadsheets—EduPlanner leverages Gemini AI to generate balanced, human-centric schedules.'}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 pt-8">
@@ -88,13 +90,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                 onClick={onEnter}
                 className="px-10 py-5 bg-sky-500 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-[0_20px_40px_-10px_rgba(14,165,233,0.5)] hover:scale-105 transition-all active:scale-95"
               >
-                Access Dashboard
+                {isKo ? '대시보드 접속' : 'Access Dashboard'}
               </button>
               <button 
                 onClick={() => scrollTo('features')}
                 className="px-10 py-5 bg-white/5 border border-white/10 text-slate-300 rounded-full font-black text-xs uppercase tracking-[0.3em] hover:bg-white/10 transition-all flex items-center gap-3"
               >
-                View Analytics
+                {isKo ? '분석 도구 보기' : 'View Analytics'}
                 <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -106,7 +108,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
           <div className="flex-1 relative flex justify-center items-center perspective-1000 group">
             <div className="relative w-full max-w-xl aspect-[4/3] transform rotate-y-[-10deg] rotate-x-[5deg] transition-all duration-1000 group-hover:rotate-y-[0deg] group-hover:rotate-x-[0deg] group-hover:scale-105">
               
-              {/* Image Container - Screen with Schedule */}
               <div className="absolute inset-0 rounded-[3rem] overflow-hidden border-4 border-white/10 shadow-2xl">
                 <img 
                   src="https://images.unsplash.com/photo-1542744094-3a31f272c490?q=80&w=2070&auto=format&fit=crop" 
@@ -115,7 +116,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 pointer-events-none" />
                 
-                {/* Overlay UI elements to mimic a schedule interface on the monitor */}
                 <div className="absolute inset-0 p-12 flex flex-col justify-center items-center pointer-events-none">
                   <div className="w-full max-w-md bg-black/40 backdrop-blur-md border border-white/10 p-6 rounded-[2rem] space-y-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
                      <div className="flex justify-between items-center">
@@ -129,15 +129,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                          </div>
                        ))}
                      </div>
-                     {/* Empty Slot Highlight */}
                      <div className="h-12 border-2 border-dashed border-sky-500/50 rounded-xl bg-sky-500/5 flex items-center justify-center">
-                        <span className="text-[8px] font-black text-sky-400 tracking-widest uppercase">Drop Class Here</span>
+                        <span className="text-[8px] font-black text-sky-400 tracking-widest uppercase">{isKo ? '여기에 수업을 드롭하세요' : 'Drop Class Here'}</span>
                      </div>
                   </div>
                 </div>
               </div>
 
-              {/* Floating "Draggable" Class Chips - Positioned near the screen */}
               <div className="absolute top-1/4 -left-8 z-20 px-5 py-2.5 bg-indigo-600 rounded-full border border-white/20 shadow-2xl text-[10px] font-black uppercase tracking-widest text-white animate-float cursor-move" style={{ animationDelay: '0.5s' }}>
                 Math G1
               </div>
@@ -148,151 +146,95 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                 History G2
               </div>
 
-              {/* Float Labels - Tighter to the container */}
               <div className="absolute top-4 right-4 z-30 p-3.5 border border-white/10 backdrop-blur-xl rounded-[1.2rem] bg-black/70 text-[9px] font-black uppercase tracking-widest text-sky-400 shadow-2xl group-hover:scale-105 transition-transform">
-                CONFLICT-FREE LOGIC
+                {isKo ? '충돌 없는 로직' : 'CONFLICT-FREE LOGIC'}
               </div>
               <div className="absolute bottom-8 left-4 z-30 p-3.5 border border-white/10 backdrop-blur-xl rounded-[1.2rem] bg-black/70 text-[9px] font-black uppercase tracking-widest text-teal-400 shadow-2xl group-hover:scale-105 transition-transform">
-                BALANCED LOAD
+                {isKo ? '균형 잡힌 부하' : 'BALANCED LOAD'}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
-        <div className="mb-20 text-center space-y-4">
-          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em]">System Architecture</h2>
-          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Institutional Stability</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-           {[
-             { 
-               title: "AI Optimization", 
-               desc: "Gemini 3 Flash reasoning resolves teacher conflicts and ensures subject variety automatically across 5-day cycles.",
-               icon: "M13 10V3L4 14h7v7l9-11h-7z",
-               color: "text-sky-400"
-             },
-             { 
-               title: "Health Audits", 
-               desc: "Real-time diagnostics monitor faculty burnout risks and institutional operational integrity scores.",
-               icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-               color: "text-teal-400"
-             },
-             { 
-               title: "Resource Maps", 
-               desc: "Sync textbooks and curriculum targets directly to your timetable for 100% pacing transparency.",
-               icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253",
-               color: "text-indigo-400"
-             }
-           ].map((feat, i) => (
-             <div key={i} className="bg-white/[0.03] border-glow-cyan p-12 rounded-[3.5rem] backdrop-blur-xl transition-all hover:translate-y-[-8px] flex flex-col gap-8 group">
-               <div className="w-16 h-16 rounded-[1.8rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-sky-500/10 transition-colors">
-                 <svg className={`w-8 h-8 ${feat.color}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={feat.icon} />
-                 </svg>
-               </div>
-               <div className="space-y-4">
-                 <h3 className="text-2xl font-black text-white leading-tight uppercase tracking-tight">{feat.title}</h3>
-                 <p className="text-slate-400 text-sm leading-relaxed font-medium">{feat.desc}</p>
-               </div>
-               <div className="pt-4 mt-auto">
-                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                   <div className="h-full bg-sky-500/40 w-1/4 animate-pulse-soft" />
-                 </div>
-               </div>
-             </div>
-           ))}
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="relative z-10 py-32 bg-black/40 border-y border-white/5">
-        <div className="max-w-screen-2xl mx-auto px-6 lg:px-16 flex flex-col lg:flex-row items-center gap-24">
-          <div className="flex-1 space-y-12">
-            <h2 className="text-5xl lg:text-[6rem] font-medium font-serif italic text-sky-400 leading-none">The Future of <br/> Pedagogy.</h2>
-            <p className="text-xl text-slate-300 font-medium leading-relaxed max-w-xl">
-              EduPlanner handles the technical complexity of school governance. We believe administrators should focus on curriculum and culture, while we manage the logic.
-            </p>
-            <div className="space-y-8">
-              {[
-                { label: "Stability", val: "Enterprise", desc: "Military-grade data synchronization." },
-                { label: "Efficiency", val: "Optimal", desc: "Automate months of manual entry." },
-                { label: "UI Experience", val: "Elite", desc: "Designed for high-performance leadership." }
-              ].map((stat, i) => (
-                <div key={i} className="flex gap-10 items-center">
-                  <span className="text-4xl font-black text-white/10">{stat.val}</span>
-                  <div>
-                    <h4 className="text-sm font-black uppercase text-white tracking-widest">{stat.label}</h4>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">{stat.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* About Section Visual: Monitor displaying a complex schedule */}
-          <div className="flex-1 relative group">
-            <div className="absolute inset-0 bg-sky-500/20 blur-[120px] rounded-full group-hover:bg-sky-500/30 transition-all duration-1000" />
-            <div className="relative rounded-[4rem] overflow-hidden border border-white/20 p-2 bg-slate-900 shadow-2xl transition-all duration-700 group-hover:scale-[1.02]">
-              <div className="aspect-[16/10] bg-slate-800 relative overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1547082299-de196ea013d6?q=80&w=2070&auto=format&fit=crop" 
-                  alt="Institutional Schedule Display" 
-                  className="absolute inset-0 w-full h-full object-cover grayscale transition-all duration-1000 group-hover:grayscale-0"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
+      {/* Pricing Section - REDESIGNED */}
       <section id="pricing" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
-        <div className="text-center mb-20">
-          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em] mb-4">Pricing Model</h2>
-          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Enterprise Scaling</h3>
+        <div className="text-center mb-20 space-y-4">
+          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em]">{isKo ? '가격 모델' : 'Pricing Model'}</h2>
+          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">{isKo ? '기관 규모별 맞춤 솔루션' : 'Enterprise Scaling'}</h3>
+          <p className="text-slate-400 font-medium max-w-2xl mx-auto">{isKo ? '개인 관리자를 위한 무료 도구부터 대규모 교육기관을 위한 AI 자동화까지.' : 'From manual tools for individual admins to full-scale AI automation for global campuses.'}</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-8">
-           {[
-             { 
-               plan: "Standard", 
-               price: "Free", 
-               desc: "Ideal for individual department leads or smaller academies.",
-               features: ["Cloud Synchronization", "Conflict Auditing", "Manual Grid Refinement"]
-             },
-             { 
-               plan: "Institutional", 
-               price: "Inquire", 
-               desc: "Full-scale administrative oversight for large campuses.",
-               features: ["Gemini AI Scheduling", "Faculty Burnout Diagnostics", "Curriculum Roadmap Sync", "Premium Infrastructure"]
-             }
-           ].map((tier, i) => (
-             <div key={i} className={`p-12 rounded-[3.5rem] border-2 flex flex-col gap-10 transition-all hover:scale-[1.02] ${i === 1 ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-[0_20px_50px_rgba(14,165,233,0.3)]' : 'bg-white/5 border-white/10'}`}>
-                <div className="space-y-2">
-                  <h4 className={`text-[11px] font-black uppercase tracking-[0.3em] ${i === 1 ? 'text-slate-900' : 'text-sky-500'}`}>{tier.plan}</h4>
-                  <div className="text-4xl font-black uppercase tracking-tighter">{tier.price}</div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 max-w-6xl mx-auto gap-8">
+           {/* FREE TIER */}
+           <div className="bg-white/5 border border-white/10 p-12 rounded-[3.5rem] flex flex-col gap-10 transition-all hover:bg-white/[0.08] group">
+              <div className="space-y-4">
+                <div className="inline-flex px-4 py-1.5 rounded-full bg-slate-800 text-slate-400 text-[9px] font-black uppercase tracking-widest">
+                  {isKo ? '수동 관리' : 'Manual Management'}
                 </div>
-                <p className={`text-sm font-medium leading-relaxed ${i === 1 ? 'text-slate-800' : 'text-slate-400'}`}>{tier.desc}</p>
-                <div className="space-y-4 flex-1">
-                  {tier.features.map((f, j) => (
-                    <div key={j} className="flex items-center gap-3">
-                      <svg className={`w-4 h-4 ${i === 1 ? 'text-slate-900' : 'text-sky-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-[10px] font-black uppercase tracking-widest">{f}</span>
+                <h4 className="text-4xl font-black uppercase tracking-tighter">{isKo ? '무료' : 'Free'}</h4>
+                <p className="text-sm font-medium text-slate-400 leading-relaxed">{isKo ? '개별 학과장이나 소규모 아카데미에 적합한 강력한 시간표 편집 도구입니다.' : 'Powerful manual grid tools for individual department leads or small local academies.'}</p>
+              </div>
+
+              <div className="space-y-4 flex-1">
+                <h5 className="text-[10px] font-black text-white uppercase tracking-widest mb-4 opacity-50">{isKo ? '포함 사항:' : 'Includes:'}</h5>
+                {[
+                  { en: "Manual Drag-and-Drop Editor", ko: "수동 드래그 앤 드롭 편집기" },
+                  { en: "Basic Conflict Red Flags", ko: "기초적인 충돌 경고 시스템" },
+                  { en: "Cloud Profile Sync", ko: "클라우드 프로필 동기화" },
+                  { en: "Standard PDF Export", ko: "표준 PDF 내보내기" },
+                  { en: "Single School Profile", ko: "단일 학교 프로필 관리" }
+                ].map((f, j) => (
+                  <div key={j} className="flex items-center gap-4">
+                    <div className="w-5 h-5 rounded-full bg-sky-500/10 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                     </div>
-                  ))}
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={onEnter} className="w-full py-5 rounded-full bg-white text-slate-950 text-[11px] font-black uppercase tracking-widest hover:bg-sky-400 transition-all">
+                {isKo ? '지금 시작하기' : 'Start Designing'}
+              </button>
+           </div>
+
+           {/* INSTITUTIONAL TIER */}
+           <div className="bg-sky-500 text-slate-950 border-2 border-sky-400 p-12 rounded-[3.5rem] flex flex-col gap-10 transition-all shadow-[0_40px_80px_-20px_rgba(14,165,233,0.4)] relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8">
+                 <div className="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center text-sky-400 font-black text-xs shadow-2xl animate-pulse">AI</div>
+              </div>
+              
+              <div className="space-y-4 relative z-10">
+                <div className="inline-flex px-4 py-1.5 rounded-full bg-slate-950 text-white text-[9px] font-black uppercase tracking-widest">
+                  {isKo ? 'AI 자동화' : 'AI Autonomous'}
                 </div>
-                <button 
-                  onClick={onEnter}
-                  className={`w-full py-5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${i === 1 ? 'bg-slate-950 text-white hover:bg-slate-900' : 'bg-white text-slate-950 hover:bg-sky-400'}`}
-                >
-                  Request Onboarding
-                </button>
-             </div>
-           ))}
+                <h4 className="text-4xl font-black uppercase tracking-tighter">{isKo ? '문의' : 'Inquire'}</h4>
+                <p className="text-sm font-medium text-slate-900 leading-relaxed">{isKo ? '대규모 캠퍼스를 위한 완전한 행정 감독 및 지능형 최적화 인프라입니다.' : 'Full administrative oversight and intelligent optimization infrastructure for large campuses.'}</p>
+              </div>
+
+              <div className="space-y-4 flex-1 relative z-10">
+                <h5 className="text-[10px] font-black text-slate-950 uppercase tracking-widest mb-4 opacity-50">{isKo ? '프리미엄 기능:' : 'Premium Logic:'}</h5>
+                {[
+                  { en: "Gemini AI Master Scheduling", ko: "Gemini AI 마스터 스케줄링" },
+                  { en: "Faculty Burnout Diagnostics", ko: "교직원 번아웃 정밀 진단" },
+                  { en: "Natural Language Sync (Tuning)", ko: "자연어 기반 세부 규칙 설정" },
+                  { en: "Curriculum Roadmap Automation", ko: "교과과정 진도 자동 로드맵" },
+                  { en: "Multi-User Campus Access", ko: "다중 사용자 캠퍼스 접근 권한" }
+                ].map((f, j) => (
+                  <div key={j} className="flex items-center gap-4">
+                    <div className="w-5 h-5 rounded-full bg-slate-950/10 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{isKo ? f.ko : f.en}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={onEnter} className="w-full py-5 rounded-full bg-slate-950 text-white text-[11px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all relative z-10">
+                {isKo ? '온보딩 요청' : 'Request Enterprise Demo'}
+              </button>
+           </div>
         </div>
       </section>
 
@@ -313,25 +255,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-16">
             <div className="space-y-6">
-              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Platform</h4>
+              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{isKo ? '플랫폼' : 'Platform'}</h4>
               <div className="flex flex-col gap-4">
-                <button onClick={() => scrollTo('features')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Intelligence</button>
-                <button onClick={() => scrollTo('pricing')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Pricing</button>
+                <button onClick={() => scrollTo('features')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '인텔리전스' : 'Intelligence'}</button>
+                <button onClick={() => scrollTo('pricing')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '가격' : 'Pricing'}</button>
               </div>
             </div>
             <div className="space-y-6">
-              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Legal</h4>
+              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{isKo ? '법적 고지' : 'Legal'}</h4>
               <div className="flex flex-col gap-4">
-                <button onClick={() => openLegal('privacy')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Privacy Policy</button>
-                <button onClick={() => openLegal('terms')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Terms of Service</button>
-                <button onClick={() => openLegal('compliance')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">Compliance</button>
+                <button onClick={() => openLegal('privacy')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '개인정보 처리방침' : 'Privacy Policy'}</button>
+                <button onClick={() => openLegal('terms')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '이용약관' : 'Terms of Service'}</button>
+                <button onClick={() => openLegal('compliance')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '법적 준수' : 'Compliance'}</button>
               </div>
             </div>
             <div className="space-y-6">
-              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Institutional</h4>
+              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{isKo ? '기관용' : 'Institutional'}</h4>
               <div className="bg-black/80 border border-white/10 px-6 py-4 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
                 <div className="w-4 h-4 rounded bg-sky-500/20 flex items-center justify-center text-sky-400 text-[8px]">AI</div>
-                Optimization Active
+                {isKo ? '최적화 활성화됨' : 'Optimization Active'}
               </div>
             </div>
           </div>
