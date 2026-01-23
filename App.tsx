@@ -17,6 +17,7 @@ import CurriculumRoadmap from './components/CurriculumRoadmap';
 import SchoolCalendar from './components/SchoolCalendar';
 import LandingPage from './components/LandingPage';
 import FeedbackModal from './components/FeedbackModal';
+import MasterRhythm from './components/MasterRhythm';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -137,7 +138,6 @@ const App: React.FC = () => {
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     
-    // PREMIUM GATE
     if (!isPremium) {
       alert(language === 'ko' 
         ? "AI 스케줄링은 기관용(프리미엄) 기능입니다. 가격 페이지에서 베타 코드를 입력하거나 온보딩을 요청하세요." 
@@ -295,9 +295,10 @@ const App: React.FC = () => {
             />
           )}
           {activeTab === 'curriculum' && <CurriculumRoadmap textbooks={textbooks} onUpdateTextbooks={setTextbooks} subjects={subjects} classes={classes} language={language} />}
-          {activeTab === 'calendar' && <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => setProfile(p => p ? {...p, specialEvents: evs} : null)} />}
+          {activeTab === 'calendar' && <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => setProfile(p => p ? {...p, specialEvents: evs} : null)} language={language} />}
           {activeTab === 'faculty' && <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} lockedSlots={lockedSlots} profile={profile} />}
-          {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} isPremium={isPremium} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />}
+          {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} isPremium={isPremium} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} language={language} />}
+          {activeTab === 'rhythm' && <MasterRhythm profile={profile} language={language} />}
         </>
       )}
 
