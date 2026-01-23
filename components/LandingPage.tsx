@@ -2,17 +2,20 @@
 import React, { useState } from 'react';
 import { Language } from '../types';
 import LegalModal from './LegalModal';
+import BetaCodeModal from './BetaCodeModal';
 
 interface LandingPageProps {
   onEnter: () => void;
   language: Language;
+  userId?: string;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) => {
   const [legalView, setLegalView] = useState<{ isOpen: boolean, type: 'privacy' | 'terms' | 'compliance' }>({
     isOpen: false,
     type: 'privacy'
   });
+  const [isBetaModalOpen, setIsBetaModalOpen] = useState(false);
 
   const scrollTo = (id: string) => {
     const element = document.getElementById(id);
@@ -231,9 +234,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
                 ))}
               </div>
 
-              <button onClick={onEnter} className="w-full py-5 rounded-full bg-slate-950 text-white text-[11px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all relative z-10">
-                {isKo ? '온보딩 요청' : 'Request Enterprise Demo'}
-              </button>
+              <div className="space-y-4 mt-auto">
+                <button onClick={onEnter} className="w-full py-5 rounded-full bg-slate-950 text-white text-[11px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all relative z-10">
+                  {isKo ? '온보딩 요청' : 'Request Enterprise Demo'}
+                </button>
+                <button 
+                  onClick={() => setIsBetaModalOpen(true)}
+                  className="w-full text-[9px] font-black text-slate-900 uppercase tracking-widest hover:underline transition-all"
+                >
+                  {isKo ? '초대 코드가 있으신가요? (베타)' : 'Have an invite code? (Beta)'}
+                </button>
+              </div>
            </div>
         </div>
       </section>
@@ -296,6 +307,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language }) => {
         language={language}
         type={legalView.type}
       />
+
+      {userId && (
+        <BetaCodeModal 
+          isOpen={isBetaModalOpen} 
+          onClose={() => setIsBetaModalOpen(false)} 
+          userId={userId} 
+          language={language} 
+          onSuccess={() => {
+            alert(isKo ? "베타 액세스가 활성화되었습니다!" : "Beta access activated!");
+            onEnter();
+          }}
+        />
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         .perspective-1000 { perspective: 1000px; }

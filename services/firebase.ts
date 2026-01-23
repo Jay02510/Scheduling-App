@@ -1,7 +1,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp, deleteDoc, updateDoc, runTransaction } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBO2ui1QEa9vEHvpknfDJiB7N80hQGBjbk",
@@ -22,10 +22,40 @@ export const saveUserData = async (userId: string, data: any) => {
     await setDoc(userDoc, { 
       ...data, 
       lastSynced: serverTimestamp() 
-    });
+    }, { merge: true });
     return true;
   } catch (error) {
     console.error("Cloud sync failed:", error);
+    throw error;
+  }
+};
+
+export const redeemBetaCode = async (userId: string, code: string) => {
+  try {
+    const result = await runTransaction(db, async (transaction) => {
+      const configDocRef = doc(db, "metadata", "beta_config");
+      const configSnap = await transaction.get(configDocRef);
+
+      // Default fallback if doc doesn't exist yet (for first run)
+      if (!configSnap.exists()) {
+        const initialData = { validCode: "GUARDIAN-2025", currentUses: 0, maxUses: 40 };
+        transaction.set(configDocRef, initialData);
+        if (code !== initialData.validCode) throw new Error("Invalid Code");
+      } else {
+        const data = configSnap.data();
+        if (code.toUpperCase() !== data.validCode) throw new Error("Invalid Code");
+        if (data.currentUses >= data.maxUses) throw new Error("Beta Full");
+      }
+
+      const userDocRef = doc(db, "users", userId);
+      transaction.update(userDocRef, { isPremium: true });
+      transaction.update(configDocRef, { currentUses: (configSnap.data()?.currentUses || 0) + 1 });
+      
+      return true;
+    });
+    return result;
+  } catch (error: any) {
+    console.error("Redemption failed:", error.message);
     throw error;
   }
 };
@@ -39,7 +69,7 @@ export const saveFeedback = async (userId: string, email: string, category: stri
       category,
       message,
       timestamp: serverTimestamp(),
-      targetNotification: "jsn.benjamin@gmail.com" // Reference for backend notification triggers
+      targetNotification: "jsn.benjamin@gmail.com" 
     });
     return true;
   } catch (error) {

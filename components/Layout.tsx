@@ -11,9 +11,10 @@ interface LayoutProps {
   language: Language;
   setLanguage: (lang: Language) => void;
   onOpenFeedback: () => void;
+  isPremium?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, language, setLanguage, onOpenFeedback }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, language, setLanguage, onOpenFeedback, isPremium }) => {
   const [legalView, setLegalView] = useState<{ isOpen: boolean, type: 'privacy' | 'terms' | 'compliance' }>({
     isOpen: false,
     type: 'privacy'
@@ -53,6 +54,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
              <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-md transition-all ${language === 'en' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>EN</button>
           </div>
         </div>
+
+        {isPremium && (
+          <div className="mb-6 px-5 py-2.5 bg-sky-500/10 border border-sky-500/30 rounded-2xl flex items-center justify-center gap-2 animate-pulse-soft">
+             <div className="w-2 h-2 rounded-full bg-sky-400"></div>
+             <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest">BETA ACCESS ACTIVE</span>
+          </div>
+        )}
         
         <div className="space-y-1 flex-1">
           {tabs.map((tab) => {

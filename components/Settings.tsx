@@ -1,19 +1,25 @@
 
 import React, { useState } from 'react';
-import { SchoolProfile, Teacher, SchoolSchedule } from '../types';
+import { SchoolProfile, Teacher, SchoolSchedule, Language } from '../types';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import BetaCodeModal from './BetaCodeModal';
 
 interface SettingsProps {
   user: any;
   profile: SchoolProfile | null;
   teachers: Teacher[];
   schedule: SchoolSchedule | null;
+  isPremium: boolean;
   onReset: () => void;
   onLogout: () => void;
+  language: Language;
 }
 
-const Settings: React.FC<SettingsProps> = ({ user, profile, teachers, schedule, onReset, onLogout }) => {
+const Settings: React.FC<SettingsProps> = ({ user, profile, teachers, schedule, isPremium, onReset, onLogout, language }) => {
   const [view, setView] = useState<'account' | 'audit'>('account');
+  const [isBetaModalOpen, setIsBetaModalOpen] = useState(false);
+
+  const isKo = language === 'ko';
 
   return (
     <div className="space-y-12 animate-fadeIn max-w-full overflow-hidden pb-20">
@@ -31,18 +37,36 @@ const Settings: React.FC<SettingsProps> = ({ user, profile, teachers, schedule, 
       {view === 'account' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8 flex flex-col justify-between">
-            <div>
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Administrator</h3>
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/20">
-                  {user.email?.[0].toUpperCase() || 'A'}
-                </div>
-                <div>
-                  <p className="font-black text-slate-900 text-lg truncate max-w-[200px]">{user.email}</p>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Master Auth Level</p>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Administrator</h3>
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/20">
+                    {user.email?.[0].toUpperCase() || 'A'}
+                  </div>
+                  <div>
+                    <p className="font-black text-slate-900 text-lg truncate max-w-[200px]">{user.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Auth Level:</p>
+                       <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${isPremium ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-500'}`}>{isPremium ? 'Institutional' : 'Standard'}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {!isPremium && (
+                <div className="p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight mb-3">Upgrade to Institutional Tier</p>
+                  <button 
+                    onClick={() => setIsBetaModalOpen(true)}
+                    className="w-full py-3 bg-white border-2 border-dashed border-sky-400 text-sky-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-sky-50 transition-all"
+                  >
+                    Redeem Beta Invite Code
+                  </button>
+                </div>
+              )}
             </div>
+
             <button 
               onClick={onLogout} 
               className="w-full py-4 rounded-2xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl"
@@ -76,6 +100,14 @@ const Settings: React.FC<SettingsProps> = ({ user, profile, teachers, schedule, 
           )}
         </div>
       )}
+
+      <BetaCodeModal 
+        isOpen={isBetaModalOpen} 
+        onClose={() => setIsBetaModalOpen(false)} 
+        userId={user.uid} 
+        language={language} 
+        onSuccess={() => window.location.reload()} 
+      />
     </div>
   );
 };

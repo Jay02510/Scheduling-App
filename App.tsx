@@ -20,6 +20,7 @@ import FeedbackModal from './components/FeedbackModal';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
   const [language, setLanguage] = useState<Language>('ko');
@@ -53,15 +54,18 @@ const App: React.FC = () => {
         setUser(u);
         try {
           const cloudData = await fetchUserData(u.uid);
-          if (cloudData && cloudData.profile) {
-            setProfile(cloudData.profile);
-            setTeachers(cloudData.teachers || []);
-            setClasses(cloudData.classes || []);
-            setTextbooks(cloudData.textbooks || []);
-            setLockedSlots(cloudData.lockedSlots || []);
-            setSubjects(cloudData.subjects || []);
-            setSchedule(cloudData.schedule || null);
-            setLastInputHash(cloudData.lastInputHash || '');
+          if (cloudData) {
+            if (cloudData.profile) {
+              setProfile(cloudData.profile);
+              setTeachers(cloudData.teachers || []);
+              setClasses(cloudData.classes || []);
+              setTextbooks(cloudData.textbooks || []);
+              setLockedSlots(cloudData.lockedSlots || []);
+              setSubjects(cloudData.subjects || []);
+              setSchedule(cloudData.schedule || null);
+              setLastInputHash(cloudData.lastInputHash || '');
+            }
+            if (cloudData.isPremium) setIsPremium(true);
             if (cloudData.language) setLanguage(cloudData.language);
           }
         } catch (e) {
@@ -69,6 +73,7 @@ const App: React.FC = () => {
         }
       } else {
         setUser(null);
+        setIsPremium(false);
       }
       setAuthLoading(false);
     });
@@ -78,12 +83,12 @@ const App: React.FC = () => {
   useEffect(() => {
     if (user && profile && !isLoading) {
       const dataToSave = {
-        profile, teachers, classes, textbooks, lockedSlots, subjects, schedule, lastInputHash, language
+        profile, teachers, classes, textbooks, lockedSlots, subjects, schedule, lastInputHash, language, isPremium
       };
       const timeoutId = setTimeout(() => { saveUserData(user.uid, dataToSave); }, 5000);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading, lastInputHash, language]);
+  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading, lastInputHash, language, isPremium]);
 
   const markClassDirty = (classId: string) => {
     setDirtyClassIds(prev => new Set(prev).add(classId));
@@ -131,6 +136,16 @@ const App: React.FC = () => {
 
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
+    
+    // PREMIUM GATE
+    if (!isPremium) {
+      alert(language === 'ko' 
+        ? "AI 스케줄링은 기관용(프리미엄) 기능입니다. 가격 페이지에서 베타 코드를 입력하거나 온보딩을 요청하세요." 
+        : "AI Scheduling is an Institutional feature. Please enter a Beta code or request onboarding via the Pricing page.");
+      setActiveTab('settings');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage(null);
     setValidationIssues([]);
@@ -161,7 +176,7 @@ const App: React.FC = () => {
   };
 
   if (authLoading) return <div className="min-h-screen bg-[#020617] flex items-center justify-center"><div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div></div>;
-  if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} language={language} />;
+  if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} language={language} userId={user?.uid} />;
   if (!user) return <Auth onBack={() => setHasEntered(false)} />;
   if (!profile) return <Onboarding onComplete={(p) => { setProfile(p); setTeachers(p.teachers); setClasses(p.classes); setSubjects(p.subjects); setForceFullSync(true); }} />;
 
@@ -174,6 +189,7 @@ const App: React.FC = () => {
       language={language} 
       setLanguage={setLanguage}
       onOpenFeedback={() => setIsFeedbackOpen(true)}
+      isPremium={isPremium}
     >
       <div className="mb-8 no-print flex flex-col sm:flex-row items-center justify-between bg-white border border-slate-200 p-5 rounded-[2rem] shadow-sm gap-4">
         <div className="flex items-center gap-4 ml-2">
@@ -205,14 +221,14 @@ const App: React.FC = () => {
           <button 
             disabled={isLoading}
             onClick={() => { setForceFullSync(true); handleGenerateMaster(); }} 
-            className="px-8 py-3 bg-[#0f172a] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 disabled:opacity-50 transition-all shadow-xl shadow-indigo-500/10 flex items-center gap-3"
+            className={`px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-50 transition-all shadow-xl flex items-center gap-3 ${isPremium ? 'bg-[#0f172a] text-white hover:bg-indigo-600 shadow-indigo-500/10' : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'}`}
           >
             {isLoading ? (
                <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
             ) : (
                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             )}
-            {isLoading ? 'Updating...' : 'Sync AI Schedule'}
+            {isLoading ? 'Updating...' : (isPremium ? 'Sync AI Schedule' : 'Sync AI (Pro Only)')}
           </button>
         </div>
       </div>
@@ -281,7 +297,7 @@ const App: React.FC = () => {
           {activeTab === 'curriculum' && <CurriculumRoadmap textbooks={textbooks} onUpdateTextbooks={setTextbooks} subjects={subjects} classes={classes} language={language} />}
           {activeTab === 'calendar' && <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => setProfile(p => p ? {...p, specialEvents: evs} : null)} />}
           {activeTab === 'faculty' && <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} lockedSlots={lockedSlots} profile={profile} />}
-          {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />}
+          {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} isPremium={isPremium} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} />}
         </>
       )}
 
