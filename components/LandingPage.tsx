@@ -7,10 +7,11 @@ import BetaCodeModal from './BetaCodeModal';
 interface LandingPageProps {
   onEnter: () => void;
   language: Language;
+  setLanguage: (lang: Language) => void;
   userId?: string;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, setLanguage, userId }) => {
   const [legalView, setLegalView] = useState<{ isOpen: boolean, type: 'privacy' | 'terms' | 'compliance' }>({
     isOpen: false,
     type: 'privacy'
@@ -30,6 +31,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) 
 
   const isKo = language === 'ko';
 
+  const features = [
+    {
+      title: isKo ? "AI 위버 로직" : "AI Weaver Logic",
+      desc: isKo ? "Gemini Pro의 추론력을 사용하여 단 몇 초 만에 수만 가지의 시간표 조합을 분석하고 최적의 결과를 도출합니다." : "Leverage Gemini Pro's reasoning to analyze thousands of permutations and deliver a conflict-free master schedule in seconds.",
+      icon: "M13 10V3L4 14h7v7l9-11h-7z"
+    },
+    {
+      title: isKo ? "전략적 감사 엔진" : "Strategic Audit Engine",
+      desc: isKo ? "단순한 시간표를 넘어, 교사 번아웃 위험도와 교육과정 달성 가능성을 수치화하여 기관의 건강도를 측정합니다." : "Go beyond slots. Measure institutional health by quantifying faculty burnout risks and curriculum pacing confidence.",
+      icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+    },
+    {
+      title: isKo ? "커리큘럼 로드맵" : "Curriculum Roadmap",
+      desc: isKo ? "교과서 단원과 주간 진도를 자동으로 매칭하여 연간 학사 일정에 맞춘 완벽한 교육 흐름을 설계합니다." : "Automatically match textbook units and weekly progress to create a seamless instructional flow across the academic year.",
+      icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+    },
+    {
+      title: isKo ? "기관용 인프라" : "Enterprise Infra",
+      desc: isKo ? "대규모 캠퍼스와 다수의 교직원을 관리할 수 있는 클라우드 기반의 통합 행정 감독 시스템을 제공합니다." : "A cloud-native oversight system built to scale for multi-campus management and diverse faculty populations.",
+      icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+    }
+  ];
+
   return (
     <div className="relative min-h-screen bg-[#020617] text-white overflow-x-hidden font-inter selection:bg-sky-500/30">
       
@@ -38,11 +62,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) 
         <div className="absolute inset-0 bg-grid opacity-20" />
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-sky-900/10 blur-[150px] rounded-full" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-900/10 blur-[150px] rounded-full" />
-        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-sky-500/5 blur-[120px] rounded-full animate-pulse-soft" />
       </div>
 
       {/* Floating Pill Navigation */}
-      <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-4xl px-4">
+      <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-5xl px-4">
         <div className="bg-black/60 backdrop-blur-2xl border border-white/10 rounded-full py-2.5 px-3 flex items-center justify-between shadow-2xl">
           <div className="flex items-center gap-6 px-4">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
@@ -53,27 +76,33 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) 
             </div>
             <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
               <button onClick={() => scrollTo('features')} className="hover:text-white transition-colors">{isKo ? '인텔리전스' : 'Intelligence'}</button>
-              <button onClick={() => scrollTo('about')} className="hover:text-white transition-colors">{isKo ? '우리의 비전' : 'Our Vision'}</button>
               <button onClick={() => scrollTo('pricing')} className="hover:text-white transition-colors">{isKo ? '가격' : 'Pricing'}</button>
             </div>
           </div>
-          <button 
-            onClick={onEnter}
-            className="bg-white text-slate-950 px-7 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-sky-400 transition-all flex items-center gap-2 group shadow-lg"
-          >
-            {isKo ? '플랫폼 시작하기' : 'Launch Platform'}
-            <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex bg-white/5 p-1 rounded-full border border-white/10">
+               <button onClick={() => setLanguage('ko')} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase transition-all ${language === 'ko' ? 'bg-white text-slate-950 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>KR</button>
+               <button onClick={() => setLanguage('en')} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase transition-all ${language === 'en' ? 'bg-white text-slate-950 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>EN</button>
+            </div>
+            <button 
+              onClick={onEnter}
+              className="bg-white text-slate-950 px-7 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-sky-400 transition-all flex items-center gap-2 group shadow-lg"
+            >
+              {isKo ? '플랫폼 시작하기' : 'Launch Platform'}
+              <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </nav>
 
       {/* Hero Content */}
-      <section id="hero" className="relative z-10 pt-56 pb-32 px-6 lg:px-16 max-w-screen-2xl mx-auto min-h-screen flex flex-col justify-center">
+      <section id="hero" className="relative z-10 pt-56 pb-20 px-6 lg:px-16 max-w-screen-2xl mx-auto min-h-[90vh] flex flex-col justify-center">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-32">
           <div className="flex-1 space-y-8 text-left max-w-3xl">
-            <div className="flex items-center gap-3 animate-fadeIn">
+            <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
               <p className="text-sky-500 font-black tracking-[0.5em] uppercase text-[10px]">{isKo ? '기관급 자동화 시스템' : 'Institutional Grade Automation'}</p>
             </div>
@@ -99,73 +128,86 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) 
                 onClick={() => scrollTo('features')}
                 className="px-10 py-5 bg-white/5 border border-white/10 text-slate-300 rounded-full font-black text-xs uppercase tracking-[0.3em] hover:bg-white/10 transition-all flex items-center gap-3"
               >
-                {isKo ? '분석 도구 보기' : 'View Analytics'}
+                {isKo ? '기능 살펴보기' : 'Explore Features'}
                 <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* 3D Workspace Device Mockup */}
-          <div className="flex-1 relative flex justify-center items-center perspective-1000 group">
-            <div className="relative w-full max-w-xl aspect-[4/3] transform rotate-y-[-10deg] rotate-x-[5deg] transition-all duration-1000 group-hover:rotate-y-[0deg] group-hover:rotate-x-[0deg] group-hover:scale-105">
-              
-              <div className="absolute inset-0 rounded-[3rem] overflow-hidden border-4 border-white/10 shadow-2xl">
+          {/* Device Mockup */}
+          <div className="flex-1 relative perspective-1000 group hidden lg:block">
+            <div className="relative w-full max-w-xl aspect-[4/3] transform rotate-y-[-10deg] rotate-x-[5deg] transition-all duration-1000 group-hover:rotate-y-[0deg] group-hover:rotate-x-[0deg]">
+              <div className="absolute inset-0 rounded-[3rem] overflow-hidden border-4 border-white/10 shadow-2xl bg-slate-900/50 backdrop-blur-xl">
                 <img 
                   src="https://images.unsplash.com/photo-1542744094-3a31f272c490?q=80&w=2070&auto=format&fit=crop" 
-                  alt="Workspace Dashboard" 
-                  className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0"
+                  alt="Dashboard Preview" 
+                  className="w-full h-full object-cover grayscale opacity-40"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 pointer-events-none" />
-                
-                <div className="absolute inset-0 p-12 flex flex-col justify-center items-center pointer-events-none">
-                  <div className="w-full max-w-md bg-black/40 backdrop-blur-md border border-white/10 p-6 rounded-[2rem] space-y-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
-                     <div className="flex justify-between items-center">
-                       <div className="h-2 w-24 bg-sky-400/50 rounded-full" />
-                       <div className="h-4 w-4 bg-sky-500/40 rounded shadow-lg" />
-                     </div>
-                     <div className="grid grid-cols-4 gap-2 opacity-30">
-                       {['MATH', 'ART', 'SCI', 'ENG', 'HIST', 'PHYS', 'MUS', 'LAB'].map((name, i) => (
-                         <div key={i} className="h-10 bg-white/10 rounded-lg border border-white/5 flex items-center justify-center text-[8px] font-black text-slate-300">
-                            {name}
-                         </div>
-                       ))}
-                     </div>
-                     <div className="h-12 border-2 border-dashed border-sky-500/50 rounded-xl bg-sky-500/5 flex items-center justify-center">
-                        <span className="text-[8px] font-black text-sky-400 tracking-widest uppercase">{isKo ? '여기에 수업을 드롭하세요' : 'Drop Class Here'}</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                <div className="absolute inset-0 p-12 flex flex-col justify-end">
+                  <div className="space-y-4">
+                     <div className="h-2 w-32 bg-sky-400/50 rounded-full" />
+                     <div className="h-4 w-64 bg-white/10 rounded-full" />
+                     <div className="grid grid-cols-4 gap-2 pt-4">
+                       {[1,2,3,4].map(i => <div key={i} className="h-12 bg-white/5 rounded-xl border border-white/5" />)}
                      </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="absolute top-1/4 -left-8 z-20 px-5 py-2.5 bg-indigo-600 rounded-full border border-white/20 shadow-2xl text-[10px] font-black uppercase tracking-widest text-white animate-float cursor-move" style={{ animationDelay: '0.5s' }}>
-                Math G1
-              </div>
-              <div className="absolute top-1/2 -right-4 z-20 px-5 py-2.5 bg-teal-500 rounded-full border border-white/20 shadow-2xl text-[10px] font-black uppercase tracking-widest text-white animate-float cursor-move" style={{ animationDelay: '1.5s' }}>
-                Science G3
-              </div>
-              <div className="absolute bottom-1/3 -left-12 z-20 px-5 py-2.5 bg-amber-500 rounded-full border border-white/20 shadow-2xl text-[10px] font-black uppercase tracking-widest text-white animate-float cursor-move" style={{ animationDelay: '2.5s' }}>
-                History G2
-              </div>
-
-              <div className="absolute top-4 right-4 z-30 p-3.5 border border-white/10 backdrop-blur-xl rounded-[1.2rem] bg-black/70 text-[9px] font-black uppercase tracking-widest text-sky-400 shadow-2xl group-hover:scale-105 transition-transform">
-                {isKo ? '충돌 없는 로직' : 'CONFLICT-FREE LOGIC'}
-              </div>
-              <div className="absolute bottom-8 left-4 z-30 p-3.5 border border-white/10 backdrop-blur-xl rounded-[1.2rem] bg-black/70 text-[9px] font-black uppercase tracking-widest text-teal-400 shadow-2xl group-hover:scale-105 transition-transform">
-                {isKo ? '균형 잡힌 부하' : 'BALANCED LOAD'}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section - REDESIGNED */}
+      {/* Trust Ledger */}
+      <section className="relative z-10 py-12 border-y border-white/5 bg-black/20">
+        <div className="max-w-screen-2xl mx-auto px-6 lg:px-16 flex flex-wrap justify-center md:justify-between items-center gap-12 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+           <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded bg-sky-500/20 flex items-center justify-center text-sky-400 font-black text-[10px]">AI</div>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Guardian Core v2.5</span>
+           </div>
+           <div className="flex items-center gap-4">
+              <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">GDPR & PIPA Compliant</span>
+           </div>
+           <div className="flex items-center gap-4">
+              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Secure Google Cloud Infra</span>
+           </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section id="features" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
+        <div className="text-center mb-24 space-y-4">
+          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em]">{isKo ? '주요 인텔리전스' : 'Key Intelligence'}</h2>
+          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">{isKo ? '행정의 한계를 넘어서' : 'Transcending Admin Limits'}</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {features.map((f, i) => (
+            <div key={i} className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] space-y-6 hover:bg-white/[0.08] transition-all group">
+              <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={f.icon} />
+                </svg>
+              </div>
+              <div className="space-y-3">
+                <h4 className="text-lg font-black uppercase tracking-tight text-white">{f.title}</h4>
+                <p className="text-sm font-medium text-slate-400 leading-relaxed">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pricing Section */}
       <section id="pricing" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto">
         <div className="text-center mb-20 space-y-4">
           <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em]">{isKo ? '가격 모델' : 'Pricing Model'}</h2>
           <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">{isKo ? '기관 규모별 맞춤 솔루션' : 'Enterprise Scaling'}</h3>
-          <p className="text-slate-400 font-medium max-w-2xl mx-auto">{isKo ? '개인 관리자를 위한 무료 도구부터 대규모 교육기관을 위한 AI 자동화까지.' : 'From manual tools for individual admins to full-scale AI automation for global campuses.'}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 max-w-6xl mx-auto gap-8">
@@ -180,13 +222,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) 
               </div>
 
               <div className="space-y-4 flex-1">
-                <h5 className="text-[10px] font-black text-white uppercase tracking-widest mb-4 opacity-50">{isKo ? '포함 사항:' : 'Includes:'}</h5>
                 {[
                   { en: "Manual Drag-and-Drop Editor", ko: "수동 드래그 앤 드롭 편집기" },
                   { en: "Basic Conflict Red Flags", ko: "기초적인 충돌 경고 시스템" },
                   { en: "Cloud Profile Sync", ko: "클라우드 프로필 동기화" },
-                  { en: "Standard PDF Export", ko: "표준 PDF 내보내기" },
-                  { en: "Single School Profile", ko: "단일 학교 프로필 관리" }
+                  { en: "Standard PDF Export", ko: "표준 PDF 내보내기" }
                 ].map((f, j) => (
                   <div key={j} className="flex items-center gap-4">
                     <div className="w-5 h-5 rounded-full bg-sky-500/10 flex items-center justify-center">
@@ -217,13 +257,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) 
               </div>
 
               <div className="space-y-4 flex-1 relative z-10">
-                <h5 className="text-[10px] font-black text-slate-950 uppercase tracking-widest mb-4 opacity-50">{isKo ? '프리미엄 기능:' : 'Premium Logic:'}</h5>
                 {[
                   { en: "Gemini AI Master Scheduling", ko: "Gemini AI 마스터 스케줄링" },
                   { en: "Faculty Burnout Diagnostics", ko: "교직원 번아웃 정밀 진단" },
                   { en: "Natural Language Sync (Tuning)", ko: "자연어 기반 세부 규칙 설정" },
-                  { en: "Curriculum Roadmap Automation", ko: "교과과정 진도 자동 로드맵" },
-                  { en: "Multi-User Campus Access", ko: "다중 사용자 캠퍼스 접근 권한" }
+                  { en: "Curriculum Roadmap Automation", ko: "교과과정 진도 자동 로드맵" }
                 ].map((f, j) => (
                   <div key={j} className="flex items-center gap-4">
                     <div className="w-5 h-5 rounded-full bg-slate-950/10 flex items-center justify-center">
@@ -280,13 +318,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) 
                 <button onClick={() => openLegal('compliance')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '법적 준수' : 'Compliance'}</button>
               </div>
             </div>
-            <div className="space-y-6">
-              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{isKo ? '기관용' : 'Institutional'}</h4>
-              <div className="bg-black/80 border border-white/10 px-6 py-4 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
-                <div className="w-4 h-4 rounded bg-sky-500/20 flex items-center justify-center text-sky-400 text-[8px]">AI</div>
-                {isKo ? '최적화 활성화됨' : 'Optimization Active'}
-              </div>
-            </div>
           </div>
         </div>
         
@@ -296,7 +327,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, language, userId }) 
           </div>
           <div className="flex gap-8">
             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">Guardian Core v2.5</span>
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">Optimized for Enterprise</span>
           </div>
         </div>
       </footer>

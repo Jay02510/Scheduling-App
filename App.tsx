@@ -176,7 +176,7 @@ const App: React.FC = () => {
   };
 
   if (authLoading) return <div className="min-h-screen bg-[#020617] flex items-center justify-center"><div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div></div>;
-  if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} language={language} userId={user?.uid} />;
+  if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} language={language} setLanguage={setLanguage} userId={user?.uid} />;
   if (!user) return <Auth onBack={() => setHasEntered(false)} />;
   if (!profile) return <Onboarding onComplete={(p) => { setProfile(p); setTeachers(p.teachers); setClasses(p.classes); setSubjects(p.subjects); setForceFullSync(true); }} />;
 
