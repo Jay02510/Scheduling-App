@@ -64,7 +64,6 @@ export const validateScheduleProgrammatically = (
     const className = classObj?.name || "Unknown Class";
     const subName = profile.subjects.find(s => s.id === slot.subjectId)?.name || "Unknown Subject";
 
-    // 1. Teacher Overlap
     if (!slot.teacherId || slot.teacherId === "undefined") {
       issues.push(`ERROR: Missing teacher for "${subName}" in "${className}" (Day ${slot.day + 1}, P${slot.period + 1}).`);
     } else {
@@ -76,7 +75,6 @@ export const validateScheduleProgrammatically = (
       }
     }
 
-    // 2. Class Subject Duplicates
     const subConfig = profile.subjects.find(s => s.id === slot.subjectId);
     if (subConfig && subConfig.frequencyPerWeek <= 5) {
       const sKey = `${slot.day}:${slot.classId}:${slot.subjectId}`;
@@ -86,7 +84,6 @@ export const validateScheduleProgrammatically = (
       }
     }
 
-    // 3. Locked Slots
     const lock = lockedSlots.find(l => 
       l.dayOfWeek === slot.day && 
       l.period === slot.period && 
@@ -116,7 +113,8 @@ export const generateWeeklyMaster = async (
   profile: SchoolProfile,
   previousSlots: ScheduleSlot[] = [],
   dirtyClassIds: string[] = [], 
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  isDemo: boolean = false
 ): Promise<{ slots: ScheduleSlot[], validation: { success: boolean, issues: string[] } }> => {
   
   const isIncremental = dirtyClassIds.length > 0 && previousSlots.length > 0;
@@ -126,8 +124,7 @@ export const generateWeeklyMaster = async (
   if (onProgress) onProgress("Initializing Sequential Logic Engine...");
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Process classes in small sequential chunks to maintain a "Global Busy Map"
-  const batchSize = 1; // Sequential is most reliable for conflict-free results
+  const batchSize = 1; 
   for (let i = 0; i < classesToProcess.length; i += batchSize) {
     const currentBatch = classesToProcess.slice(i, i + batchSize);
     const className = currentBatch[0].name;
@@ -155,20 +152,18 @@ export const generateWeeklyMaster = async (
       INSTITUTIONAL BOUNDARIES:
       - Total Periods: ${profile.hours.totalPeriods}
       - NO-FLY ZONES (BLOCKED): ${JSON.stringify(noFlyZones)}
-      - TEACHER BUSY MAP (DO NOT ASSIGN THESE TEACHERS AT THESE TIMES): ${JSON.stringify(busyMap)}
+      - TEACHER BUSY MAP: ${JSON.stringify(busyMap)}
 
       TARGET CLASS: ${className} (ID: ${currentBatch[0].id})
       
-      REQUIRED LESSONS (ID, TEACHER, WEEKLY FREQUENCY):
+      REQUIRED LESSONS:
       ${JSON.stringify(currentBatch[0].assignments.map(a => ({
         subjectId: a.subjectId,
         teacherId: a.teacherId,
         freq: profile.subjects.find(s => s.id === a.subjectId)?.frequencyPerWeek || 5
       })))}
 
-      TASK: Provide a 5-day schedule (Day 0-4) for this class.
-      STAGGERED STARTS: Spread lessons. Don't start with Period 1 every day. Vary the times.
-      
+      TASK: Provide a 5-day schedule (Day 0-4). Spread lessons. Don't start with Period 1 every day.
       Output JSON: { "slots": [{ "day": 0, "period": 0, "classId": "...", "subjectId": "...", "teacherId": "..." }] }
     `;
 
@@ -186,38 +181,27 @@ export const generateWeeklyMaster = async (
     }
   }
 
-  if (onProgress) onProgress("Running Final Conflict Resolution...");
-  
   const issues = validateScheduleProgrammatically(runningSlots, teachers, classes, profile, lockedSlots);
   if (issues.length === 0) {
     return { slots: runningSlots, validation: { success: true, issues: [] } };
   }
 
-  // Final Pass with Gemini Pro (The Weaver) to fix remaining global overlaps
   if (onProgress) onProgress(`Resolving ${issues.length} logic overlaps...`);
 
   const weaverPrompt = `
     ${SYSTEM_DIRECTIVE}
-    
-    CRITICAL ERRORS IDENTIFIED:
-    ${issues.slice(0, 50).join("\n")}
-
+    ERRORS IDENTIFIED: ${issues.slice(0, 50).join("\n")}
     CURRENT PLAN: ${JSON.stringify(runningSlots)}
-    
-    TASK: Re-weave the schedule to fix all overlaps and lock violations. 
-    MANDATORY: You must shift lessons to different periods to ensure no teacher is in two places.
-    STAGGERING: Move subjects around so they aren't at the same period daily.
-    
-    Return the FULL corrected array of slots in JSON: { "slots": [...] }
+    TASK: Re-weave to fix overlaps and lock violations. Return { "slots": [...] }
   `;
 
   try {
     const weaverResponse = await callWithRetry(() => ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: isDemo ? 'gemini-3-flash-preview' : 'gemini-3-pro-preview',
       contents: weaverPrompt,
       config: { 
         responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 16000 }
+        thinkingConfig: { thinkingBudget: isDemo ? 2000 : 16000 }
       }
     }));
     const result = JSON.parse(sanitizeJson(weaverResponse.text || '{"slots":[]}'));

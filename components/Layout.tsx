@@ -55,10 +55,15 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
           </div>
         </div>
 
-        {isPremium && (
-          <div className="mb-6 px-5 py-2.5 bg-sky-500/10 border border-sky-500/30 rounded-2xl flex items-center justify-center gap-2 animate-pulse-soft">
+        {isPremium ? (
+          <div className="mb-6 px-5 py-2.5 bg-sky-500/10 border border-sky-500/30 rounded-2xl flex items-center justify-center gap-2">
              <div className="w-2 h-2 rounded-full bg-sky-400"></div>
-             <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest">BETA ACCESS ACTIVE</span>
+             <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest">PRO ACCESS ACTIVE</span>
+          </div>
+        ) : (
+          <div className="mb-6 px-5 py-2.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+             <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">FREE STARTER MODE</span>
           </div>
         )}
         
@@ -98,16 +103,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
             </div>
             <span>Give Feedback</span>
           </button>
-          
-          <div className="px-5 pt-4 flex flex-col gap-3">
-            <div className="flex gap-4">
-              <button onClick={() => openLegal('privacy')} className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Privacy</button>
-              <button onClick={() => openLegal('terms')} className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Terms</button>
-            </div>
-            <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest">
-              Guardian Core v2.5
-            </div>
-          </div>
         </div>
       </nav>
 

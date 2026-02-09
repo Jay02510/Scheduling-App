@@ -138,11 +138,11 @@ const App: React.FC = () => {
   const handleGenerateMaster = async () => {
     if (!user || !profile) return;
     
-    if (!isPremium) {
+    // DEMO CAP CHECK
+    if (!isPremium && classes.length > 3) {
       alert(language === 'ko' 
-        ? "AI 스케줄링은 기관용(프리미엄) 기능입니다. 가격 페이지에서 베타 코드를 입력하거나 온보딩을 요청하세요." 
-        : "AI Scheduling is an Institutional feature. Please enter a Beta code or request onboarding via the Pricing page.");
-      setActiveTab('settings');
+        ? "체험판에서는 최대 3개 학급까지만 AI 동기화가 가능합니다. 더 많은 학급을 위해 기관용 버전을 문의하세요." 
+        : "Free Demo is limited to 3 classes for AI Sync. Contact us for institutional access to scale your school.");
       return;
     }
 
@@ -152,11 +152,16 @@ const App: React.FC = () => {
     try {
       const currentProfile: SchoolProfile = { ...profile, teachers, classes, textbooks, lockedSlots, subjects };
       const classesToProcess = forceFullSync ? classes.map(c => c.id) : Array.from(dirtyClassIds);
+      
+      // If demo, limit classesToProcess to 3
+      const cappedClasses = !isPremium ? classesToProcess.slice(0, 3) : classesToProcess;
+
       const { slots, validation } = await generateWeeklyMaster(
         teachers, lockedSlots, classes, currentProfile, 
         forceFullSync ? [] : (schedule?.weeklySlots || []),
-        classesToProcess,
-        (msg) => setLoadingMsg(msg)
+        cappedClasses,
+        (msg) => setLoadingMsg(msg),
+        !isPremium // Pass "isDemo" flag
       );
       setSchedule(prev => ({ 
         ...prev, 
@@ -169,7 +174,7 @@ const App: React.FC = () => {
         setValidationIssues(validation.issues);
       }
     } catch (e: any) {
-      setErrorMessage(`Schedule Sync Failed: ${e.message || "Parallel optimization failed."}`);
+      setErrorMessage(`Schedule Sync Failed: ${e.message || "Logic engine timeout."}`);
     } finally {
       setIsLoading(false);
     }
@@ -202,18 +207,10 @@ const App: React.FC = () => {
                   ? `${changeCount} CLASS CHANGES PENDING` 
                   : `SCHEDULE SAVED`)}
             </span>
-            {changeCount > 0 && changeCount < 10 && (
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-tight">
-                  Few changes detected. 
-                </span>
-                <button 
-                  onClick={() => setActiveTab('homerooms')}
-                  className="text-[9px] font-black text-indigo-600 underline uppercase hover:text-indigo-800 transition-colors"
-                >
-                  Click here to fix manually and skip AI sync wait
-                </button>
-              </div>
+            {changeCount > 0 && !isPremium && (
+              <span className="text-[8px] font-bold text-amber-600 uppercase tracking-tight">
+                Demo Mode: Up to 3 classes synced by AI.
+              </span>
             )}
           </div>
         </div>
@@ -221,41 +218,17 @@ const App: React.FC = () => {
           <button 
             disabled={isLoading}
             onClick={() => { setForceFullSync(true); handleGenerateMaster(); }} 
-            className={`px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-50 transition-all shadow-xl flex items-center gap-3 ${isPremium ? 'bg-[#0f172a] text-white hover:bg-indigo-600 shadow-indigo-500/10' : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'}`}
+            className="px-8 py-3 rounded-2xl bg-[#0f172a] text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl flex items-center gap-3"
           >
             {isLoading ? (
                <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
             ) : (
                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             )}
-            {isLoading ? 'Updating...' : (isPremium ? 'Sync AI Schedule' : 'Sync AI (Pro Only)')}
+            {isLoading ? 'Updating...' : 'Sync AI Schedule'}
           </button>
         </div>
       </div>
-
-      {(errorMessage || validationIssues.length > 0) && (
-        <div className="mb-8 p-6 bg-rose-50 border-2 border-rose-200 rounded-[2.5rem] space-y-4 animate-fadeIn no-print shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></div>
-            <div className="flex-1">
-              <h4 className="font-black text-rose-900 uppercase text-xs tracking-tight">Schedule Alerts</h4>
-              <div className="mt-2 space-y-1 overflow-y-auto max-h-40 custom-scrollbar pr-2">
-                {errorMessage && <p className="text-rose-600 font-bold text-[10px] uppercase">{errorMessage}</p>}
-                {validationIssues.map((issue, idx) => (
-                  <p key={idx} className="text-rose-600 font-bold text-[10px] uppercase flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-rose-400 rounded-full shrink-0"></span>
-                    {issue}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-4 pt-2">
-            <button onClick={() => setActiveTab('homerooms')} className="px-6 py-2.5 bg-[#0f172a] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg hover:bg-slate-800 transition-all">Manual Drag-and-Drop</button>
-            <button onClick={() => { setErrorMessage(null); setValidationIssues([]); }} className="text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Dismiss</button>
-          </div>
-        </div>
-      )}
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-10 animate-pulse">
