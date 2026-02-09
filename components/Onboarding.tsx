@@ -11,7 +11,9 @@ const DEFAULT_SUBJECTS: SubjectConfig[] = [
   { id: 'sub-math', name: 'Mathematics', frequencyPerWeek: 5, gradeLevels: ['G1'] },
   { id: 'sub-eng', name: 'English', frequencyPerWeek: 5, gradeLevels: ['G1'] },
   { id: 'sub-sci', name: 'Science', frequencyPerWeek: 3, gradeLevels: ['G1'] },
-  { id: 'sub-art', name: 'Art', frequencyPerWeek: 2, gradeLevels: ['G1'] }
+  { id: 'sub-art', name: 'Art', frequencyPerWeek: 2, gradeLevels: ['G1'] },
+  { id: 'sub-pe', name: 'Physical Ed', frequencyPerWeek: 2, gradeLevels: ['G1'] },
+  { id: 'sub-mus', name: 'Music', frequencyPerWeek: 2, gradeLevels: ['G1'] }
 ];
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
@@ -26,12 +28,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     subjects: DEFAULT_SUBJECTS, 
     textbooks: [],
     teachers: [
-      { id: 't-1', name: 'Main Teacher', role: 'homeroom', subjects: [], maxDailyPeriods: 8, breaksNeededPerWeek: 5, color: TEACHER_COLORS[0], assignedClasses: [], employmentType: 'Full-Time' }
+      { id: 't-1', name: 'Sarah Miller', role: 'homeroom', subjects: [], maxDailyPeriods: 8, breaksNeededPerWeek: 5, color: TEACHER_COLORS[0], assignedClasses: [], employmentType: 'Full-Time' }
     ],
     classes: [
       { id: 'c-1', name: 'Class 1A', grade: 'G1', homeroomTeacherId: 't-1', assignments: [], color: CLASS_COLORS[0] }
     ],
-    lockedSlots: [], 
+    lockedSlots: [
+      { id: 'lock-lunch', name: 'Lunch Break', dayOfWeek: 0, period: 3, classIds: [], isSchoolWide: true }
+    ], 
     specialEvents: []
   });
 
@@ -40,6 +44,38 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     setStep(s => s + 1); 
   };
   const back = () => setStep(s => s - 1);
+
+  const startQuickDemo = () => {
+    const demoProfile: SchoolProfile = {
+      ...profile,
+      name: "Westside Academy (Demo)",
+      teachers: [
+        { id: 't-1', name: 'Dr. Aris', role: 'homeroom', subjects: ['sub-math'], maxDailyPeriods: 6, breaksNeededPerWeek: 5, color: TEACHER_COLORS[0], assignedClasses: ['c-1'], employmentType: 'Full-Time' },
+        { id: 't-2', name: 'Prof. Kim', role: 'subject', subjects: ['sub-sci', 'sub-mus'], maxDailyPeriods: 7, breaksNeededPerWeek: 4, color: TEACHER_COLORS[1], assignedClasses: [], employmentType: 'Full-Time' },
+        { id: 't-3', name: 'Ms. Lopez', role: 'homeroom', subjects: ['sub-eng'], maxDailyPeriods: 6, breaksNeededPerWeek: 5, color: TEACHER_COLORS[2], assignedClasses: ['c-2'], employmentType: 'Full-Time' },
+        { id: 't-4', name: 'Coach Ben', role: 'specialist', subjects: ['sub-pe'], maxDailyPeriods: 8, breaksNeededPerWeek: 3, color: TEACHER_COLORS[3], assignedClasses: [], employmentType: 'Full-Time' }
+      ],
+      classes: [
+        { id: 'c-1', name: 'Grade 1A', grade: 'G1', homeroomTeacherId: 't-1', color: CLASS_COLORS[0], assignments: [
+          { subjectId: 'sub-math', teacherId: 't-1' }, { subjectId: 'sub-sci', teacherId: 't-2' }, { subjectId: 'sub-pe', teacherId: 't-4' }
+        ]},
+        { id: 'c-2', name: 'Grade 1B', grade: 'G1', homeroomTeacherId: 't-3', color: CLASS_COLORS[1], assignments: [
+          { subjectId: 'sub-eng', teacherId: 't-3' }, { subjectId: 'sub-mus', teacherId: 't-2' }, { subjectId: 'sub-pe', teacherId: 't-4' }
+        ]},
+        { id: 'c-3', name: 'Grade 1C', grade: 'G1', homeroomTeacherId: 't-2', color: CLASS_COLORS[2], assignments: [
+          { subjectId: 'sub-sci', teacherId: 't-2' }, { subjectId: 'sub-math', teacherId: 't-1' }, { subjectId: 'sub-pe', teacherId: 't-4' }
+        ]}
+      ],
+      lockedSlots: [
+        { id: 'l-1', name: 'LUNCH', dayOfWeek: 0, period: 3, isSchoolWide: true, classIds: [] },
+        { id: 'l-2', name: 'LUNCH', dayOfWeek: 1, period: 3, isSchoolWide: true, classIds: [] },
+        { id: 'l-3', name: 'LUNCH', dayOfWeek: 2, period: 3, isSchoolWide: true, classIds: [] },
+        { id: 'l-4', name: 'LUNCH', dayOfWeek: 3, period: 3, isSchoolWide: true, classIds: [] },
+        { id: 'l-5', name: 'LUNCH', dayOfWeek: 4, period: 3, isSchoolWide: true, classIds: [] }
+      ]
+    };
+    onComplete(demoProfile);
+  };
 
   const addClass = () => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -77,6 +113,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <span className="text-[9px] font-black uppercase tracking-widest">{['School Info', 'Classes', 'Teachers', 'Break Times', 'Lessons'][s-1]}</span>
               </div>
             ))}
+          </div>
+          <div className="pt-8 border-t border-white/5">
+             <button 
+              onClick={startQuickDemo}
+              className="w-full py-4 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 group"
+             >
+               Quick Start Demo
+               <svg className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+             </button>
+             <p className="text-[7px] text-slate-500 font-bold uppercase text-center mt-3 tracking-widest">Populate with sample school data</p>
           </div>
         </div>
 

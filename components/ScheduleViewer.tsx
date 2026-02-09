@@ -103,7 +103,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
       const existingInDay = classSlots.find(s => s.day === day && s.subjectId === slotToMove.subjectId && s.period !== period);
       if (existingInDay) {
         const sub = subjects.find(s => s.id === slotToMove.subjectId);
-        // Pedalogical rule: Don't double up common subjects on one day
         if ((sub?.frequencyPerWeek || 0) <= 5) return `Pedagogical Conflict: ${sub?.name} exists today`;
       }
     }
@@ -163,7 +162,12 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{t('homeroom_portal')}</h2>
           <div className="flex items-center gap-3 mt-2">
             <span className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">{t('institution_grid')} • {currentClass.name}</span>
-            <div className="px-3 py-1 bg-indigo-50 text-indigo-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">Real-time Conflict Checking Active</div>
+            <div className="px-3 py-1 bg-indigo-50 text-indigo-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm group relative cursor-help">
+               Real-time Conflict Checking Active
+               <div className="absolute top-full left-0 mt-2 w-64 p-4 bg-slate-900 text-white rounded-2xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50">
+                 The Guardian engine monitors every move. Try dragging a slot onto a lunch break to see it in action.
+               </div>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -174,7 +178,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             {t('export_pdf')}
           </button>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-[300px] md:max-w-md bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
+          <div className="flex gap-2 bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
             {classes.map(c => (
               <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
             ))}
@@ -182,18 +186,15 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         </div>
       </header>
 
-      {/* Print-only Header Section */}
-      <div className="hidden print:block p-8 border-b-[3px] border-slate-900 bg-white mb-6">
-        <div className="flex justify-between items-end">
-          <div>
-            <h1 className="text-3xl font-black uppercase tracking-tighter">{currentClass.name}</h1>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Class Schedule Grid • {profile?.name || 'Academic Institution'}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Weekly Performance Cycle</p>
-            <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</p>
-          </div>
-        </div>
+      {/* Demo Tip Card */}
+      <div className="bg-white border-[3px] border-indigo-500 rounded-[2.5rem] p-6 no-print flex flex-col md:flex-row items-center gap-6 shadow-xl">
+         <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-500 shrink-0">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 013 0m-6 3V11m0 5.5v-1a1.5 1.5 0 013 0v1" /></svg>
+         </div>
+         <div className="flex-1">
+            <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">Interactive Learning</p>
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Try dragging any slot below to a new period. Hold <span className="text-indigo-600">ALT/Option</span> while dragging to CLONE instead of MOVE.</p>
+         </div>
       </div>
 
       <div className="bg-white border-[3px] border-slate-900 rounded-[3rem] overflow-hidden shadow-[20px_20px_60px_-15px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
@@ -222,15 +223,14 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                     const isTarget = dropTarget?.day === dIdx && dropTarget?.period === pIdx;
                     const isDraggingOrig = draggedItem?.day === dIdx && draggedItem?.period === pIdx;
                     
-                    // Detailed Conflict Mapping
                     const clashMsg = draggedItem ? checkClash(dIdx, pIdx, draggingTeacherId) : null;
                     const isSafeSlot = draggingTeacherId && !clashMsg && !lock && !slot;
 
                     if (lock) return (
-                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[120px] align-middle relative overflow-hidden bg-vivid-blocked">
+                      <td key={dIdx} className="border-r-[3px] last:border-r-0 border-slate-900 p-0 h-[120px] align-middle relative overflow-hidden bg-slate-950">
                         <div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
-                          <span className="text-[10px] font-black uppercase tracking-tight text-slate-400 leading-none">{lock.name}</span>
-                          <span className="text-[7px] font-black text-slate-300 uppercase mt-1 tracking-widest">Locked Slot</span>
+                          <span className="text-[10px] font-black uppercase tracking-tight text-white leading-none">{lock.name}</span>
+                          <span className="text-[7px] font-black text-slate-500 uppercase mt-1 tracking-widest">Locked Slot</span>
                         </div>
                       </td>
                     );
@@ -263,9 +263,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
                                   <span className="text-[8px] font-black text-rose-800 uppercase tracking-tighter leading-none px-2">{clashMsg}</span>
                                </div>
                              )}
-                             {isSafeSlot && !isTarget && (
-                               <div className="w-5 h-5 rounded-full border-2 border-emerald-400/40 animate-pulse"></div>
-                             )}
                           </div>
                         )}
                       </td>
@@ -277,16 +274,6 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           </tbody>
         </table>
       </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes bounce-short {
-          0%, 100% { transform: translate(-50%, 0); }
-          50% { transform: translate(-50%, -8px); }
-        }
-        .animate-bounce-short {
-          animation: bounce-short 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1;
-        }
-      `}} />
     </div>
   );
 };

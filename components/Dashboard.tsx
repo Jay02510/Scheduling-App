@@ -36,7 +36,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
   const stats = [
     { name: t('staff'), value: teachers.length, color: '#6366f1', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
     { name: t('classes'), value: classes.length, color: '#a855f7', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-    { name: t('books'), value: textbooks.length, color: '#3b82f6', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+    { name: t('books'), value: textbooks.length, color: '#3b82f6', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" },
     { name: t('readiness'), value: readiness, unit: '%', color: '#2dd4bf', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
   ];
 
@@ -55,6 +55,19 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
            <span className="bg-[#0f172a] text-indigo-400 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-indigo-900/50 shadow-lg">{t('sync_engine')}</span>
         </div>
       </header>
+
+      {/* Instructional Tooltip Banner */}
+      <div className="bg-indigo-600 rounded-[2.5rem] p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden group">
+         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-[50px] rounded-full"></div>
+         <div className="flex items-center gap-6">
+            <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center text-2xl animate-float">👋</div>
+            <div>
+               <h4 className="text-lg font-black uppercase tracking-tighter">Welcome to the Interactive Demo</h4>
+               <p className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest mt-1">Populated with sample school data. Try the AI Sync above to see optimization in action.</p>
+            </div>
+         </div>
+         <button onClick={onResync} className="px-8 py-4 bg-white text-indigo-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl">Customize Faculty</button>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
         {stats.map((stat) => (
@@ -79,7 +92,12 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
               <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col h-[400px]">
                  <div className="flex justify-between items-center mb-8 px-2">
                     <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">{t('classroom_hub')}</h3>
-                    <span className="text-[9px] font-bold text-slate-300 uppercase">{t('live_index')}</span>
+                    <div className="relative group/tip">
+                       <span className="text-[9px] font-bold text-indigo-500 uppercase cursor-help underline decoration-dotted">Jump to Schedule</span>
+                       <div className="absolute bottom-full right-0 mb-2 w-48 p-4 bg-slate-900 text-white rounded-2xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50">
+                         Click any class below to view their real-time weekly grid.
+                       </div>
+                    </div>
                  </div>
                  <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                     {classes.length > 0 ? classes.map(c => (
@@ -122,7 +140,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
         </div>
 
         <div className="xl:col-span-4 space-y-8">
-          <div className="bg-[#0f172a] p-12 rounded-[4rem] shadow-2xl text-white relative overflow-hidden group min-h-[300px] flex flex-col justify-between">
+          <div className="bg-[#0f172a] p-12 rounded-[4rem] shadow-2xl text-white relative overflow-hidden group min-h-[400px] flex flex-col justify-between">
             <div className="absolute top-[-20%] right-[-20%] w-64 h-64 gradient-primary blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
             <div>
               <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8">{t('executive_summary')}</h3>
@@ -135,6 +153,10 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
                   <span className="text-sm font-bold text-slate-400">{t('logic_integrity')}</span>
                   <span className="text-lg font-black text-white">Verified</span>
                 </div>
+              </div>
+              <div className="mt-8 p-6 bg-white/5 rounded-3xl border border-white/10">
+                 <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">Next Step:</p>
+                 <p className="text-xs font-bold text-slate-300 leading-relaxed">Head to the <span className="text-white">Schedules</span> tab to see how AI populated the class grids based on your teachers.</p>
               </div>
             </div>
             <button onClick={onResync} className="w-full mt-10 py-5 bg-white text-slate-900 rounded-3xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl font-black">{t('configure_infra')}</button>
