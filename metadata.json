@@ -1,5 +1,8 @@
 {
   "name": "EduPlanner Schedule",
   "description": "A sophisticated AI-powered scheduling system for schools that generates yearly curriculum-based plans, teacher schedules with balanced breaks, and homeroom monthly views.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
 }
