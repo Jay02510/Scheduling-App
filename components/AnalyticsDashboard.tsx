@@ -3,6 +3,7 @@ import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, Tool
 import { SchoolSchedule, SchoolProfile, Teacher } from '../types';
 import { analyzeSchedule } from '../services/geminiService';
 import React, { useState } from 'react';
+import { logSecurely } from '../utils/security';
 
 interface AnalyticsDashboardProps {
   schedule: SchoolSchedule;
@@ -22,7 +23,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
       const result = await analyzeSchedule(schedule, profile, teachers);
       setDiagnostics(result);
     } catch (e) {
-      console.error("Audit failed", e);
+      logSecurely("Audit failed", e);
     } finally {
       setLoading(false);
     }

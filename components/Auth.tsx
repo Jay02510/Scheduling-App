@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { auth } from '../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { sanitizeErrorMessage } from '../utils/security';
 
 interface AuthProps {
   onBack?: () => void;
@@ -25,7 +26,7 @@ const Auth: React.FC<AuthProps> = ({ onBack }) => {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(sanitizeErrorMessage(err));
     } finally {
       setLoading(false);
     }

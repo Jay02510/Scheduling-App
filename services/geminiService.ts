@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { Teacher, LockedSlot, ClassGroup, SchoolProfile, ScheduleSlot, SchoolSchedule } from "../types";
+import { logSecurely } from "../utils/security";
 
 const sanitizeJson = (text: string) => {
   let cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -177,7 +178,7 @@ export const generateWeeklyMaster = async (
       const newSlots = (result.slots || []).map((s: any) => ({ ...s, id: Math.random().toString(36).substr(2, 9) }));
       runningSlots = [...runningSlots, ...newSlots];
     } catch (e) {
-      console.error(`Failed to draft for ${className}`, e);
+      logSecurely(`Failed to draft for ${className}`, e);
     }
   }
 

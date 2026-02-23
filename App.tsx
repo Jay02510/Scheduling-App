@@ -5,6 +5,7 @@ import { auth, saveUserData, fetchUserData, clearUserData } from './services/fir
 import { Teacher, Textbook, ClassGroup, LockedSlot, SchoolSchedule, SchoolProfile, SubjectConfig, Language, ScheduleSlot } from './types';
 import { generateWeeklyMaster, computeInputHash } from './services/geminiService';
 import { TRANSLATIONS } from './constants';
+import { sanitizeErrorMessage, logSecurely, sanitizeData } from './utils/security';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ScheduleForm from './components/ScheduleForm';
@@ -20,14 +21,7 @@ import FeedbackModal from './components/FeedbackModal';
 import MasterRhythm from './components/MasterRhythm';
 
 // SECURITY: Sanitize inputs to prevent XSS and strip potential PII patterns
-const sanitizeInput = (val: string) => {
-  if (typeof val !== 'string') return val;
-  // Remove HTML tags and script-like sequences
-  let clean = val.replace(/<[^>]*>?/gm, '').replace(/javascript:/gi, '');
-  // Simple PII mask: mask potential phone numbers or SSN-like patterns for safety
-  clean = clean.replace(/\b\d{3}-\d{2}-\d{4}\b/g, "[REDACTED ID]");
-  return clean.trim();
-};
+const sanitizeInput = (val: string) => sanitizeData(val);
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -46,6 +40,7 @@ const App: React.FC = () => {
   
   const [dirtyClassIds, setDirtyClassIds] = useState<Set<string>>(new Set());
   const [forceFullSync, setForceFullSync] = useState(false);
+  const [lastActivity, setLastActivity] = useState<number>(Date.now());
 
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -66,6 +61,30 @@ const App: React.FC = () => {
     }
     return () => clearInterval(timer);
   }, [cooldown]);
+
+  // Session Timeout Logic: Auto-logout after 30 mins of inactivity
+  useEffect(() => {
+    const timeout = 30 * 60 * 1000; // 30 minutes
+    const checkInactivity = setInterval(() => {
+      if (user && Date.now() - lastActivity > timeout) {
+        logSecurely("Session expired due to inactivity");
+        signOut(auth);
+        window.location.reload();
+      }
+    }, 60000);
+
+    const updateActivity = () => setLastActivity(Date.now());
+    window.addEventListener('mousemove', updateActivity);
+    window.addEventListener('keydown', updateActivity);
+    window.addEventListener('click', updateActivity);
+
+    return () => {
+      clearInterval(checkInactivity);
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('click', updateActivity);
+    };
+  }, [user, lastActivity]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -89,7 +108,7 @@ const App: React.FC = () => {
             if (cloudData.language) setLanguage(cloudData.language);
           }
         } catch (e) {
-          console.error("Cloud fetch error:", e);
+          logSecurely("Cloud fetch error:", e);
         }
       } else {
         setUser(null);
@@ -197,7 +216,8 @@ const App: React.FC = () => {
       setLastSyncTime(Date.now());
       setCooldown(30); // 30s Cooldown for stability and security
     } catch (e: any) {
-      setErrorMessage(e.message || "Sync failed.");
+      setErrorMessage(sanitizeErrorMessage(e));
+      logSecurely("Generation failed", e);
     } finally {
       setIsLoading(false);
     }

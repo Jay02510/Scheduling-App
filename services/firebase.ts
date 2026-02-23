@@ -2,14 +2,15 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp, deleteDoc, updateDoc, runTransaction } from "firebase/firestore";
+import { logSecurely } from "../utils/security";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBO2ui1QEa9vEHvpknfDJiB7N80hQGBjbk",
-  authDomain: "scheduling-app-b2828.firebaseapp.com",
-  projectId: "scheduling-app-b2828",
-  storageBucket: "scheduling-app-b2828.firebasestorage.app",
-  messagingSenderId: "1049100770426",
-  appId: "1:1049100770426:web:10614c92942b0c7f55afc3"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -25,7 +26,7 @@ export const saveUserData = async (userId: string, data: any) => {
     }, { merge: true });
     return true;
   } catch (error) {
-    console.error("Cloud sync failed:", error);
+    logSecurely("Cloud sync failed:", error);
     throw error;
   }
 };
@@ -55,7 +56,7 @@ export const redeemBetaCode = async (userId: string, code: string) => {
     });
     return result;
   } catch (error: any) {
-    console.error("Redemption failed:", error.message);
+    logSecurely("Redemption failed:", error.message);
     throw error;
   }
 };
@@ -73,7 +74,7 @@ export const saveFeedback = async (userId: string, email: string, category: stri
     });
     return true;
   } catch (error) {
-    console.error("Feedback submission failed:", error);
+    logSecurely("Feedback submission failed:", error);
     return false;
   }
 };
@@ -85,7 +86,7 @@ export const clearUserData = async (userId: string) => {
     await deleteDoc(userDoc);
     return true;
   } catch (error) {
-    console.error("Firebase deletion failed:", error);
+    logSecurely("Firebase deletion failed:", error);
     return false;
   }
 };
@@ -97,7 +98,7 @@ export const fetchUserData = async (userId: string) => {
     if (snap.exists() && snap.data()._deleted) return null;
     return snap.exists() ? snap.data() : null;
   } catch (error) {
-    console.error("Fetch failed:", error);
+    logSecurely("Fetch failed:", error);
     return null;
   }
 };
