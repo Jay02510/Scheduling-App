@@ -5,12 +5,12 @@ import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp,
 import { logSecurely } from "../utils/security";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBO2ui1QEa9vEHvpknfDJiB7N80hQGBjbk",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "scheduling-app-b2828.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "scheduling-app-b2828",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "scheduling-app-b2828.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1049100770426",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1049100770426:web:10614c92942b0c7f55afc3"
 };
 
 const app = initializeApp(firebaseConfig);
