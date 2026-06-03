@@ -71,15 +71,15 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
         {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 transition-all hover:shadow-xl group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-slate-50 opacity-50 rounded-bl-[3rem] translate-x-4 -translate-y-4 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform"></div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-50 mb-6 border border-slate-50 group-hover:scale-110 transition-transform">
-              <svg className="w-6 h-6" fill="none" stroke={stat.color} viewBox="0 0 24 24">
+          <div key={stat.name} className="bg-white p-10 rounded-[3rem] shadow-[6px_6px_0px_rgba(15,23,42,1)] border-[3px] border-slate-900 transition-all duration-300 hover:shadow-[12px_12px_0px_rgba(15,23,42,1)] hover:translate-x-[-3px] hover:translate-y-[-3px] group relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-slate-100/50 opacity-40 rounded-bl-[3rem] translate-x-4 -translate-y-4 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform"></div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-50 mb-6 border-2 border-slate-950 group-hover:scale-110 transition-transform shadow-sm">
+              <svg className="w-6 h-6 animate-pulse-soft" fill="none" stroke={stat.color} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={stat.icon} />
               </svg>
             </div>
             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{stat.name}</p>
-            <p className="text-4xl font-black mt-2 tracking-tighter text-slate-900">
+            <p className="text-4xl font-black mt-2 tracking-tighter text-slate-900 leading-none">
               {stat.value}{stat.unit}
             </p>
           </div>
@@ -89,24 +89,24 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
         <div className="xl:col-span-8 space-y-10">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col h-[400px]">
+              <div className="bg-white p-10 rounded-[3.5rem] border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)] hover:shadow-[10px_10px_0px_rgba(15,23,42,1)] transition-all duration-300 flex flex-col h-[400px]">
                  <div className="flex justify-between items-center mb-8 px-2">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">{t('classroom_hub')}</h3>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-450">{t('classroom_hub')}</h3>
                     <div className="relative group/tip">
-                       <span className="text-[9px] font-bold text-indigo-500 uppercase cursor-help underline decoration-dotted">Jump to Schedule</span>
-                       <div className="absolute bottom-full right-0 mb-2 w-48 p-4 bg-slate-900 text-white rounded-2xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50">
+                       <span className="text-[9px] font-bold text-indigo-600 uppercase cursor-help underline decoration-dotted">Jump to Schedule</span>
+                       <div className="absolute bottom-full right-0 mb-3 w-48 p-4 bg-slate-900 text-white rounded-2xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50">
                          Click any class below to view their real-time weekly grid.
                        </div>
                     </div>
                  </div>
                  <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                     {classes.length > 0 ? classes.map(c => (
-                       <button key={c.id} onClick={() => onJump?.(c.id, 'class')} className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 rounded-2xl transition-all group">
+                       <button key={c.id} onClick={() => onJump?.(c.id, 'class')} className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-white border-2 border-transparent hover:border-slate-900 rounded-2xl transition-all group hover:shadow-[3px_3px_0px_rgba(15,23,42,1)]">
                           <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-xl shadow-inner" style={{ backgroundColor: c.color }}></div>
-                             <span className="font-black text-slate-800 uppercase text-xs">{c.name}</span>
+                             <div className="w-10 h-10 rounded-xl shadow-inner border border-slate-900" style={{ backgroundColor: c.color }}></div>
+                             <span className="font-black text-slate-800 uppercase text-xs tracking-tight">{c.name}</span>
                           </div>
-                          <svg className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                          <svg className="w-4 h-4 text-slate-350 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                        </button>
                     )) : (
                       <div className="py-20 text-center opacity-30 font-black uppercase text-[10px]">No classes registered</div>
@@ -114,22 +114,22 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
                  </div>
               </div>
 
-              <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col h-[400px]">
+              <div className="bg-white p-10 rounded-[3.5rem] border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)] hover:shadow-[10px_10px_0px_rgba(15,23,42,1)] transition-all duration-300 flex flex-col h-[400px]">
                  <div className="flex justify-between items-center mb-8 px-2">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">{t('faculty_registry')}</h3>
-                    <span className="text-[9px] font-bold text-slate-300 uppercase">{t('live_index')}</span>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-450">{t('faculty_registry')}</h3>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase">{t('live_index')}</span>
                  </div>
                  <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                     {teachers.length > 0 ? teachers.map(t => (
-                       <button key={t.id} onClick={() => onJump?.(t.id, 'teacher')} className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 rounded-2xl transition-all group">
+                       <button key={t.id} onClick={() => onJump?.(t.id, 'teacher')} className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-white border-2 border-transparent hover:border-slate-900 rounded-2xl transition-all group hover:shadow-[3px_3px_0px_rgba(15,23,42,1)]">
                           <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg" style={{ backgroundColor: t.color }}>{t.name[0] || 'T'}</div>
+                             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 font-black text-xs border border-slate-900 shadow-sm" style={{ backgroundColor: t.color }}>{t.name[0] || 'T'}</div>
                              <div className="text-left">
-                                <p className="font-black text-slate-800 uppercase text-xs">{t.name}</p>
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.role}</p>
+                                 <p className="font-black text-slate-800 uppercase text-xs">{t.name}</p>
+                                 <p className="text-[8px] font-black text-slate-450 uppercase tracking-widest mt-0.5">{t.role}</p>
                              </div>
                           </div>
-                          <svg className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                          <svg className="w-4 h-4 text-slate-355 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                        </button>
                     )) : (
                       <div className="py-20 text-center opacity-30 font-black uppercase text-[10px]">No faculty added</div>
@@ -140,7 +140,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
         </div>
 
         <div className="xl:col-span-4 space-y-8">
-          <div className="bg-[#0f172a] p-12 rounded-[4rem] shadow-2xl text-white relative overflow-hidden group min-h-[400px] flex flex-col justify-between">
+          <div className="bg-[#0f172a] p-12 rounded-[4rem] border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)] text-white relative overflow-hidden group min-h-[400px] flex flex-col justify-between">
             <div className="absolute top-[-20%] right-[-20%] w-64 h-64 gradient-primary blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
             <div>
               <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8">{t('executive_summary')}</h3>
@@ -156,10 +156,10 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
               </div>
               <div className="mt-8 p-6 bg-white/5 rounded-3xl border border-white/10">
                  <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">Next Step:</p>
-                 <p className="text-xs font-bold text-slate-300 leading-relaxed">Head to the <span className="text-white">Schedules</span> tab to see how AI populated the class grids based on your teachers.</p>
+                 <p className="text-xs font-bold text-slate-300 leading-relaxed text-left">Head to the <span className="text-white">Schedules</span> tab to see how AI populated the class grids based on your teachers.</p>
               </div>
             </div>
-            <button onClick={onResync} className="w-full mt-10 py-5 bg-white text-slate-900 rounded-3xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl font-black">{t('configure_infra')}</button>
+            <button onClick={onResync} className="w-full mt-10 py-5 bg-white border-2 border-slate-900 text-slate-900 rounded-3xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-50 hover:shadow-[4px_4px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all font-black">{t('configure_infra')}</button>
           </div>
         </div>
       </div>

@@ -59,9 +59,9 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 animate-fadeIn max-w-full pb-12">
       <div className="xl:col-span-1 space-y-6 no-print">
-        <div className="bg-[#0f172a] p-8 rounded-[2rem] text-white shadow-xl flex flex-col h-full min-h-[500px]">
+        <div className="bg-[#0f172a] p-8 rounded-[2rem] text-white border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)] flex flex-col h-full min-h-[500px]">
            <div className="flex flex-col items-center mb-8 shrink-0">
-             <div className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center text-white text-2xl font-black shadow-2xl mb-4" style={{ backgroundColor: currentTeacher.color }}>{currentTeacher.name[0]}</div>
+             <div className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center text-slate-900 text-2xl font-black shadow-lg border-2 border-slate-900 mb-4" style={{ backgroundColor: currentTeacher.color }}>{currentTeacher.name[0]}</div>
              <h4 className="text-lg font-black uppercase text-center tracking-tight truncate w-full px-2">{currentTeacher.name}</h4>
              <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mt-1 opacity-70">{currentTeacher.role}</p>
           </div>
@@ -71,7 +71,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
             <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
               {teachers.map(t => (
                 <button key={t.id} onClick={() => setSelectedTeacherId(t.id)} 
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all ${selectedTeacherId === t.id ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-400 hover:bg-white/5'}`}>
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all ${selectedTeacherId === t.id ? 'bg-white text-slate-900 border border-slate-950 shadow-[3px_3px_0px_rgba(15,23,42,1)]' : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'}`}>
                   <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: t.color }}></div>
                   <span className="truncate">{t.name}</span>
                 </button>
@@ -81,7 +81,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
             <div className="pt-6 border-t border-white/5 space-y-4">
                <button 
                 onClick={handleExportPDF}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 border border-slate-950 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:shadow-[3px_3px_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:bg-indigo-500 transition-all shadow-md"
                >
                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                  Export PDF
@@ -99,7 +99,7 @@ const TeacherView: React.FC<TeacherViewProps> = ({ schedule, teachers, classes, 
         </div>
       </div>
 
-      <div className="xl:col-span-3 bg-white border-[2px] border-slate-900 rounded-[2rem] overflow-hidden shadow-sm max-w-full overflow-x-auto">
+      <div className="xl:col-span-3 bg-white border-[3px] border-slate-900 rounded-[2rem] overflow-hidden shadow-[6px_6px_0px_rgba(15,23,42,1)] max-w-full overflow-x-auto">
         <div className="hidden print:block p-8 border-b-[2px] border-slate-900">
            <div className="flex justify-between items-end">
              <div>

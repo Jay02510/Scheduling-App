@@ -6,9 +6,10 @@ import { sanitizeErrorMessage } from '../utils/security';
 
 interface AuthProps {
   onBack?: () => void;
+  onTryDemo?: () => void;
 }
 
-const Auth: React.FC<AuthProps> = ({ onBack }) => {
+const Auth: React.FC<AuthProps> = ({ onBack, onTryDemo }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -140,6 +141,19 @@ const Auth: React.FC<AuthProps> = ({ onBack }) => {
               )}
             </button>
           </form>
+          {onTryDemo && (
+            <div className="mt-8 pt-6 border-t border-white/10 text-center">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Just trying out the application?</p>
+              <button
+                type="button"
+                onClick={onTryDemo}
+                className="text-xs font-black text-indigo-400 hover:text-sky-450 uppercase tracking-widest transition-colors flex items-center gap-2 mx-auto"
+              >
+                <span>Enter with Demo Guest Access</span>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="mt-14 text-center opacity-60">

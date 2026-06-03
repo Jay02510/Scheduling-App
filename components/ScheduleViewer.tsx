@@ -146,12 +146,12 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
     <div className="space-y-8 animate-fadeIn max-w-full pb-32 relative" id="homeroom-schedule">
       {/* Real-time Detailed Conflict Alert */}
       {errorToast && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-4 bg-[#0f172a] text-white px-8 py-4 rounded-[1.8rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-rose-500/50 animate-bounce-short">
-          <div className="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-white shrink-0">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-4 bg-[#0f172a] text-white px-8 py-4 rounded-[1.8rem] shadow-[6px_6px_0px_rgba(244,63,94,1)] border-[3px] border-slate-900 animate-bounce-short">
+          <div className="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-white shrink-0 border-2 border-slate-900">
              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400">Logic Violation</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-450">Logic Violation</span>
             <span className="text-xs font-bold text-slate-100 uppercase tracking-tight">{errorToast.msg}</span>
           </div>
         </div>
@@ -162,7 +162,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{t('homeroom_portal')}</h2>
           <div className="flex items-center gap-3 mt-2">
             <span className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">{t('institution_grid')} • {currentClass.name}</span>
-            <div className="px-3 py-1 bg-indigo-50 text-indigo-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm group relative cursor-help">
+            <div className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-200 shadow-sm group relative cursor-help">
                Real-time Conflict Checking Active
                <div className="absolute top-full left-0 mt-2 w-64 p-4 bg-slate-900 text-white rounded-2xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50">
                  The Guardian engine monitors every move. Try dragging a slot onto a lunch break to see it in action.
@@ -173,31 +173,31 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ schedule, classes, teac
         <div className="flex items-center gap-4">
           <button 
             onClick={handleExportPDF}
-            className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2"
+            className="px-6 py-3 bg-white border-2 border-slate-900 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-[3px_3px_0px_rgba(15,23,42,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_rgba(15,23,42,1)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_rgba(15,23,42,1)] flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             {t('export_pdf')}
           </button>
-          <div className="flex gap-2 bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200">
+          <div className="flex gap-2 bg-slate-100 p-1.5 rounded-[1.5rem] border-2 border-slate-900 shadow-sm">
             {classes.map(c => (
-              <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedClassId === c.id ? 'bg-[#0f172a] text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}>{c.name}</button>
+              <button key={c.id} onClick={() => setSelectedClassId(c.id)} className={`px-5 py-2 rounded-[1rem] text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedClassId === c.id ? 'bg-[#0f172a] text-white border border-slate-900 shadow-sm' : 'text-slate-450 hover:text-slate-700'}`}>{c.name}</button>
             ))}
           </div>
         </div>
       </header>
 
       {/* Demo Tip Card */}
-      <div className="bg-white border-[3px] border-indigo-500 rounded-[2.5rem] p-6 no-print flex flex-col md:flex-row items-center gap-6 shadow-xl">
-         <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-500 shrink-0">
+      <div className="bg-white border-[3px] border-slate-900 rounded-[2.5rem] p-6 no-print flex flex-col md:flex-row items-center gap-6 shadow-[6px_6px_0px_rgba(15,23,42,1)]">
+         <div className="w-12 h-12 rounded-2xl bg-indigo-50 border-2 border-slate-900 flex items-center justify-center text-indigo-500 shrink-0">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 013 0m-6 3V11m0 5.5v-1a1.5 1.5 0 013 0v1" /></svg>
          </div>
-         <div className="flex-1">
+         <div className="flex-1 text-left">
             <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">Interactive Learning</p>
-            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Try dragging any slot below to a new period. Hold <span className="text-indigo-600">ALT/Option</span> while dragging to CLONE instead of MOVE.</p>
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 leading-relaxed">Try dragging any slot below to a new period. Hold <span className="text-indigo-600">ALT/Option</span> while dragging to CLONE instead of MOVE.</p>
          </div>
       </div>
 
-      <div className="bg-white border-[3px] border-slate-900 rounded-[3rem] overflow-hidden shadow-[20px_20px_60px_-15px_rgba(0,0,0,0.05)] max-w-full overflow-x-auto">
+      <div className="bg-white border-[3px] border-slate-900 rounded-[3rem] overflow-hidden shadow-[10px_10px_0px_rgba(15,23,42,1)] max-w-full overflow-x-auto">
         <table className="w-full border-collapse table-fixed min-w-[1000px]">
           <thead>
             <tr className="bg-slate-50 border-b-[3px] border-slate-900">

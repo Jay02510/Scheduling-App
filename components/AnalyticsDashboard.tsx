@@ -94,15 +94,15 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
+        <div className="lg:col-span-1 bg-white p-10 rounded-[3.5rem] border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)] flex flex-col items-center justify-center text-center">
             <div className="relative w-48 h-48 flex items-center justify-center">
               <svg className="w-full h-full transform -rotate-90">
-                <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="16" fill="transparent" className="text-slate-50" />
+                <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="16" fill="transparent" className="text-slate-100" />
                 <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="16" fill="transparent" strokeDasharray={552} strokeDashoffset={552 - (552 * (diagnostics?.score || 0)) / 100} className="text-indigo-600 transition-all duration-1000" strokeLinecap="round" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-5xl font-black text-slate-900 tracking-tighter">{diagnostics?.score}%</span>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Health Score</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{diagnostics?.score === 100 ? 'Optimal' : 'Stability'}</span>
               </div>
             </div>
             <div className="mt-8 flex flex-col gap-3">
@@ -112,17 +112,17 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
               </div>
               <div className="flex items-center justify-center gap-2">
                 <span className="text-[9px] font-black text-slate-400 uppercase">Confidence:</span>
-                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg font-black text-[9px] uppercase">{diagnostics?.coverageConfidence || 'Safe'}</span>
+                <span className="px-3 py-1 bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-lg font-black text-[9px] uppercase">{diagnostics?.coverageConfidence || 'Safe'}</span>
               </div>
             </div>
         </div>
 
         <div className="lg:col-span-2 space-y-8">
-           <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm">
+           <div className="bg-white p-10 rounded-[3.5rem] border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)]">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Faculty Sustainability Matrix</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Object.entries(diagnostics?.burnoutRisks || {}).map(([name, risk]: [string, any]) => (
-                  <div key={name} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                  <div key={name} className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-900 flex items-center justify-between hover:translate-y-[-2px] transition-transform">
                     <span className="text-[10px] font-black text-slate-700 uppercase truncate pr-2">{name}</span>
                     <div className={`w-2.5 h-2.5 rounded-full ${getRiskColor(risk as string)} shadow-sm`}></div>
                   </div>
@@ -130,7 +130,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
               </div>
            </div>
 
-           <div className="bg-slate-900 p-10 rounded-[3.5rem] text-white relative overflow-hidden group">
+           <div className="bg-slate-900 p-10 rounded-[3.5rem] border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)] text-white relative overflow-hidden group text-left">
               <div className="absolute top-0 right-0 w-32 h-32 gradient-primary blur-[50px] opacity-20"></div>
               <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-6">Guardian Perspective (Admin Explanation)</h3>
               <p className="text-sm font-medium text-slate-300 leading-relaxed italic">"{diagnostics?.adminExplanation || diagnostics?.summary || 'Audit pending system refresh.'}"</p>
@@ -139,13 +139,13 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col items-center">
+        <div className="bg-white p-10 rounded-[3.5rem] border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)] flex flex-col items-center">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10">Load & Balance Matrix</h3>
           <div className="w-full h-80">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                <PolarGrid stroke="#f1f5f9" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }} />
+                <PolarGrid stroke="#e2e8f0" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 10, fontWeight: 900 }} />
                 <Radar name="Guardian Audit" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#6366f1" fillOpacity={0.25} />
                 <Tooltip />
               </RadarChart>
@@ -154,12 +154,12 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ schedule, profi
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Actionable Intelligence</h3>
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 text-left">Actionable Intelligence</h3>
           <div className="space-y-3">
             {diagnostics?.insights?.map((insight: string, idx: number) => (
-              <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex gap-5 group hover:border-indigo-100 transition-all">
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-1.5"></div>
-                <p className="text-[11px] text-slate-600 font-bold leading-relaxed">{insight}</p>
+              <div key={idx} className="bg-white p-6 rounded-[2rem] border-[3px] border-slate-900 shadow-[4px_4px_0px_rgba(15,23,42,1)] flex gap-5 group hover:border-indigo-600 transition-all text-left">
+                <div className="w-2 h-2 bg-indigo-500 rounded-full mt-1.5 shrink-0 animate-pulse-soft"></div>
+                <p className="text-[11px] text-slate-755 font-bold leading-relaxed">{insight}</p>
               </div>
             ))}
           </div>

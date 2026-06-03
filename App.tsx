@@ -111,8 +111,27 @@ const App: React.FC = () => {
           logSecurely("Cloud fetch error:", e);
         }
       } else {
-        setUser(null);
-        setIsPremium(false);
+        const localSession = localStorage.getItem('demo_user_session');
+        if (localSession) {
+          const parsedUser = JSON.parse(localSession);
+          setUser(parsedUser);
+          setIsPremium(true);
+          const localData = localStorage.getItem('demo_data');
+          if (localData) {
+            const data = JSON.parse(localData);
+            setProfile(data.profile);
+            setTeachers(data.teachers || []);
+            setClasses(data.classes || []);
+            setTextbooks(data.textbooks || []);
+            setLockedSlots(data.lockedSlots || []);
+            setSubjects(data.subjects || []);
+            setSchedule(data.schedule || null);
+            setLastInputHash(data.lastInputHash || '');
+          }
+        } else {
+          setUser(null);
+          setIsPremium(false);
+        }
       }
       setAuthLoading(false);
     });
@@ -124,6 +143,10 @@ const App: React.FC = () => {
       const dataToSave = {
         profile, teachers, classes, textbooks, lockedSlots, subjects, schedule, lastInputHash, language, isPremium
       };
+      if (user.isDemo) {
+        localStorage.setItem('demo_data', JSON.stringify(dataToSave));
+        return;
+      }
       const timeoutId = setTimeout(() => { saveUserData(user.uid, dataToSave); }, 5000);
       return () => clearTimeout(timeoutId);
     }
@@ -223,9 +246,113 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLaunchDemo = () => {
+    const demoUser = {
+      uid: 'demo-user',
+      email: 'guest@eduplanner.pro',
+      displayName: 'Demo Guest',
+      isDemo: true,
+      isPremium: true
+    };
+    
+    const demoTeachers = [
+      { id: 't-1', name: 'Dr. Aris Miller', role: 'homeroom' as const, subjects: ['sub-math'], maxDailyPeriods: 6, breaksNeededPerWeek: 5, color: '#6366f1', assignedClasses: ['c-1'], employmentType: 'Full-Time' },
+      { id: 't-2', name: 'Prof. Kim Lin', role: 'subject' as const, subjects: ['sub-sci', 'sub-mus'], maxDailyPeriods: 7, breaksNeededPerWeek: 4, color: '#10b981', assignedClasses: [], employmentType: 'Full-Time' },
+      { id: 't-3', name: 'Ms. Lopez Perez', role: 'homeroom' as const, subjects: ['sub-eng'], maxDailyPeriods: 6, breaksNeededPerWeek: 5, color: '#f59e0b', assignedClasses: ['c-2'], employmentType: 'Full-Time' },
+      { id: 't-4', name: 'Coach Ben Wright', role: 'specialist' as const, subjects: ['sub-pe'], maxDailyPeriods: 8, breaksNeededPerWeek: 3, color: '#a855f7', assignedClasses: [], employmentType: 'Full-Time' }
+    ];
+
+    const demoClasses = [
+      { id: 'c-1', name: 'Grade 1A', grade: 'G1', homeroomTeacherId: 't-1', color: '#6366f1', assignments: [{ subjectId: 'sub-math', teacherId: 't-1' }, { subjectId: 'sub-sci', teacherId: 't-2' }, { subjectId: 'sub-pe', teacherId: 't-4' }] },
+      { id: 'c-2', name: 'Grade 1B', grade: 'G1', homeroomTeacherId: 't-3', color: '#f59e0b', assignments: [{ subjectId: 'sub-eng', teacherId: 't-3' }, { subjectId: 'sub-mus', teacherId: 't-2' }, { subjectId: 'sub-pe', teacherId: 't-4' }] }
+    ];
+
+    const demoSubjects = [
+      { id: 'sub-math', name: 'Mathematics', frequencyPerWeek: 5, gradeLevels: ['G1'] },
+      { id: 'sub-eng', name: 'English', frequencyPerWeek: 5, gradeLevels: ['G1'] },
+      { id: 'sub-sci', name: 'Science', frequencyPerWeek: 3, gradeLevels: ['G1'] },
+      { id: 'sub-art', name: 'Art', frequencyPerWeek: 2, gradeLevels: ['G1'] },
+      { id: 'sub-pe', name: 'Physical Ed', frequencyPerWeek: 2, gradeLevels: ['G1'] },
+      { id: 'sub-mus', name: 'Music', frequencyPerWeek: 2, gradeLevels: ['G1'] }
+    ];
+
+    const demoTextbooks = [
+      { id: 'tb-1', title: 'Calculus Foundations', subject: 'Mathematics', gradeLevel: 'G1', totalChapters: 12, totalPages: 360, currentPage: 1, classId: 'c-1', assignedQuarter: 0, color: '#6366f1' },
+      { id: 'tb-2', title: 'Experimental Science 101', subject: 'Science', gradeLevel: 'G1', totalChapters: 8, totalPages: 240, currentPage: 1, classId: 'c-1', assignedQuarter: 0, color: '#10b981' },
+      { id: 'tb-3', title: 'Oxford Literature', subject: 'English', gradeLevel: 'G1', totalChapters: 16, totalPages: 420, currentPage: 1, classId: 'c-2', assignedQuarter: 0, color: '#f59e0b' }
+    ];
+
+    const demoLockedSlots = [
+      { id: 'lock-lunch', name: 'Lunch Break', dayOfWeek: 0, period: 3, classIds: [], isSchoolWide: true },
+      { id: 'lock-lunch-tue', name: 'Lunch Break', dayOfWeek: 1, period: 3, classIds: [], isSchoolWide: true },
+      { id: 'lock-lunch-wed', name: 'Lunch Break', dayOfWeek: 2, period: 3, classIds: [], isSchoolWide: true },
+      { id: 'lock-lunch-thu', name: 'Lunch Break', dayOfWeek: 3, period: 3, classIds: [], isSchoolWide: true },
+      { id: 'lock-lunch-fri', name: 'Lunch Break', dayOfWeek: 4, period: 3, classIds: [], isSchoolWide: true }
+    ];
+
+    const demoSchedule = {
+      quarterlyPlan: { quarterName: 'Term 1', weeks: [] },
+      weeklySlots: [
+        { id: 'm1', day: 0, period: 0, classId: 'c-1', subjectId: 'sub-math', teacherId: 't-1' },
+        { id: 'm2', day: 0, period: 1, classId: 'c-1', subjectId: 'sub-sci', teacherId: 't-2' },
+        { id: 'm3', day: 0, period: 2, classId: 'c-1', subjectId: 'sub-pe', teacherId: 't-4' },
+        { id: 'm4', day: 1, period: 0, classId: 'c-1', subjectId: 'sub-math', teacherId: 't-1' },
+        { id: 'm5', day: 1, period: 1, classId: 'c-1', subjectId: 'sub-sci', teacherId: 't-2' },
+        { id: 'm6', day: 2, period: 0, classId: 'c-1', subjectId: 'sub-math', teacherId: 't-1' },
+        
+        { id: 'm7', day: 0, period: 0, classId: 'c-2', subjectId: 'sub-eng', teacherId: 't-3' },
+        { id: 'm8', day: 0, period: 1, classId: 'c-2', subjectId: 'sub-mus', teacherId: 't-2' },
+        { id: 'm9', day: 1, period: 0, classId: 'c-2', subjectId: 'sub-eng', teacherId: 't-3' },
+        { id: 'm10', day: 1, period: 1, classId: 'c-2', subjectId: 'sub-pe', teacherId: 't-4' },
+        { id: 'm11', day: 2, period: 1, classId: 'c-2', subjectId: 'sub-eng', teacherId: 't-3' }
+      ]
+    };
+
+    const demoProfile = {
+      name: 'Westside Academy (Trial Console)',
+      hours: { startTime: '08:30', periodDuration: 45, totalPeriods: 8, lunchAfterPeriod: 4, recessAfterPeriod: 2, homeworkAfterPeriod: 8 },
+      subjects: demoSubjects,
+      textbooks: demoTextbooks,
+      teachers: demoTeachers,
+      classes: demoClasses,
+      lockedSlots: demoLockedSlots,
+      specialEvents: []
+    };
+
+    localStorage.setItem('demo_user_session', JSON.stringify(demoUser));
+    
+    // Save current schema if they want to override later
+    const initialDemoSave = {
+      profile: demoProfile, teachers: demoTeachers, classes: demoClasses, textbooks: demoTextbooks, lockedSlots: demoLockedSlots, subjects: demoSubjects, schedule: demoSchedule, lastInputHash: '', language, isPremium: true
+    };
+    localStorage.setItem('demo_data', JSON.stringify(initialDemoSave));
+
+    setProfile(demoProfile);
+    setTeachers(demoTeachers);
+    setClasses(demoClasses);
+    setSubjects(demoSubjects);
+    setTextbooks(demoTextbooks);
+    setLockedSlots(demoLockedSlots);
+    setSchedule(demoSchedule);
+    setLastInputHash('');
+    setIsPremium(true);
+    setUser(demoUser);
+    setHasEntered(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('demo_user_session');
+    localStorage.removeItem('demo_data');
+    signOut(auth);
+    setUser(null);
+    setIsPremium(false);
+    setProfile(null);
+    setHasEntered(false);
+  };
+
   if (authLoading) return <div className="min-h-screen bg-[#020617] flex items-center justify-center"><div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div></div>;
-  if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} language={language} setLanguage={setLanguage} />;
-  if (!user) return <Auth onBack={() => setHasEntered(false)} />;
+  if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} onTryDemo={handleLaunchDemo} language={language} setLanguage={setLanguage} />;
+  if (!user) return <Auth onBack={() => setHasEntered(false)} onTryDemo={handleLaunchDemo} />;
   if (!profile) return <Onboarding onComplete={(p) => { setProfile(p); setTeachers(p.teachers); setClasses(p.classes); setSubjects(p.subjects); setForceFullSync(true); }} />;
 
   const changeCount = dirtyClassIds.size;
@@ -301,7 +428,25 @@ const App: React.FC = () => {
           {activeTab === 'curriculum' && <CurriculumRoadmap textbooks={textbooks} onUpdateTextbooks={setTextbooks} subjects={subjects} classes={classes} language={language} />}
           {activeTab === 'calendar' && <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => setProfile(p => p ? {...p, specialEvents: evs} : null)} language={language} />}
           {activeTab === 'faculty' && <TeacherView schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} teachers={teachers} classes={classes} subjects={subjects} lockedSlots={lockedSlots} profile={profile} />}
-          {activeTab === 'settings' && <Settings user={user} profile={profile} teachers={teachers} schedule={schedule} isPremium={isPremium} onReset={() => clearUserData(user.uid).then(() => window.location.reload())} onLogout={() => signOut(auth)} language={language} />}
+          {activeTab === 'settings' && (
+            <Settings 
+              user={user} 
+              profile={profile} 
+              teachers={teachers} 
+              schedule={schedule} 
+              isPremium={isPremium} 
+              onReset={async () => {
+                if (user && user.isDemo) {
+                  localStorage.removeItem('demo_data');
+                  window.location.reload();
+                  return;
+                }
+                clearUserData(user.uid).then(() => window.location.reload());
+              }} 
+              onLogout={handleLogout} 
+              language={language} 
+            />
+          )}
           {activeTab === 'rhythm' && <MasterRhythm profile={profile} language={language} />}
         </>
       )}

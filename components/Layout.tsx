@@ -67,24 +67,24 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
           </div>
         )}
         
-        <div className="space-y-1 flex-1">
+        <div className="space-y-1.5 flex-1 select-none">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 relative group ${
-                  isActive ? 'text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
+                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 relative group overflow-hidden ${
+                  isActive ? 'text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 hover:translate-x-1'
                 }`}
               >
                 {isActive && (
-                  <div className="absolute inset-0 gradient-primary rounded-2xl -z-0 shadow-lg shadow-indigo-500/10"></div>
+                  <div className="absolute inset-0 gradient-primary rounded-2xl -z-0 shadow-lg shadow-indigo-500/20 animate-fadeIn bg-indigo-600"></div>
                 )}
-                <svg className={`w-4 h-4 relative z-10 transition-colors ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 relative z-10 transition-all duration-300 ${isActive ? 'text-white scale-110' : 'text-slate-500 group-hover:text-slate-300 group-hover:scale-110'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={tab.icon} />
                 </svg>
-                <span className="relative z-10 truncate">{tab.label}</span>
+                <span className="relative z-10 truncate transition-all duration-300 group-hover:tracking-wider">{tab.label}</span>
               </button>
             );
           })}
