@@ -365,6 +365,7 @@ const App: React.FC = () => {
       setLanguage={setLanguage}
       onOpenFeedback={() => setIsFeedbackOpen(true)}
       isPremium={isPremium}
+      onLogout={handleLogout}
     >
       <div className="mb-8 no-print flex flex-col sm:flex-row items-center justify-between bg-white border border-slate-200 p-5 rounded-[2rem] shadow-sm gap-4">
         <div className="flex items-center gap-4 ml-2">

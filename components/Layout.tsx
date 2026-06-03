@@ -12,9 +12,10 @@ interface LayoutProps {
   setLanguage: (lang: Language) => void;
   onOpenFeedback: () => void;
   isPremium?: boolean;
+  onLogout?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, language, setLanguage, onOpenFeedback, isPremium }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, language, setLanguage, onOpenFeedback, isPremium, onLogout }) => {
   const [legalView, setLegalView] = useState<{ isOpen: boolean, type: 'privacy' | 'terms' | 'compliance' }>({
     isOpen: false,
     type: 'privacy'
@@ -103,6 +104,18 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
             </div>
             <span>Give Feedback</span>
           </button>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-rose-400 hover:text-white hover:bg-rose-500/10 transition-all group border border-rose-500/10"
+            >
+              <svg className="w-4 h-4 text-rose-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>{language === 'ko' ? '종료 / 로그아웃' : 'Exit / Log Out'}</span>
+            </button>
+          )}
         </div>
       </nav>
 
