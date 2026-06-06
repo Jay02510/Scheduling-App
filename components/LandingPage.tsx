@@ -398,14 +398,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   </p>
                 </div>
 
-                {/* Float-badge simulation */}
-                <div className="absolute bottom-6 -right-5 transform rotate-6 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5">
-                  <Users className="w-4 h-4 text-indigo-400" />
-                  <div className="text-left">
-                    <p className="text-[8px] font-black text-slate-500 uppercase">ACTIVE TEACHERS</p>
-                    <p className="text-[11px] font-black text-white leading-none mt-0.5">24 REGULATED</p>
-                  </div>
-                </div>
+
 
               </div>
             </div>
