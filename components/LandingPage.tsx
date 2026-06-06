@@ -30,6 +30,7 @@ interface LandingPageProps {
   language: Language;
   setLanguage: (lang: Language) => void;
   userId?: string;
+  serviceError?: string;
 }
 
 interface SandboxSubject {
@@ -49,7 +50,7 @@ const LANDING_SUBJECTS: SandboxSubject[] = [
   { id: 'music', name: 'Music Theory', nameKo: '음악 이론', teacher: 'Prof. Emily Post', teacherKo: '에밀리 포스트 교수', color: '#a855f7', bgClass: 'bg-purple-500/20 text-purple-400 border-purple-500/40' },
 ];
 
-const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language, setLanguage, userId }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language, setLanguage, userId, serviceError }) => {
   const [legalView, setLegalView] = useState<{ isOpen: boolean, type: 'privacy' | 'terms' | 'compliance' }>({
     isOpen: false,
     type: 'privacy'
@@ -215,7 +216,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
           {/* Hero Left Content */}
-          <div className="lg:col-span-7 space-y-8 text-left">
+          <div className="lg:col-span-7 space-y-8 text-left animate-fadeIn animate-duration-500">
+            {serviceError && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-5 bg-rose-500/10 border border-rose-500/30 rounded-3xl flex items-start gap-4 text-left shadow-[0_0_50px_rgba(244,63,94,0.1)] mb-4 border-glow-cyan"
+              >
+                <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5 animate-bounce" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-black text-rose-200 uppercase tracking-widest">Platform Boot Warning</h4>
+                  <p className="text-xs text-rose-300 font-medium leading-relaxed">{serviceError}</p>
+                </div>
+              </motion.div>
+            )}
+
             <motion.div 
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}

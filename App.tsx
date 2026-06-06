@@ -109,24 +109,34 @@ const App: React.FC = () => {
           }
         } catch (e) {
           logSecurely("Cloud fetch error:", e);
+          setErrorMessage("Failed to establish server connection. Database limits exceeded or blocked.");
         }
       } else {
         const localSession = localStorage.getItem('demo_user_session');
         if (localSession) {
           const parsedUser = JSON.parse(localSession);
-          setUser(parsedUser);
-          setIsPremium(true);
-          const localData = localStorage.getItem('demo_data');
-          if (localData) {
-            const data = JSON.parse(localData);
-            setProfile(data.profile);
-            setTeachers(data.teachers || []);
-            setClasses(data.classes || []);
-            setTextbooks(data.textbooks || []);
-            setLockedSlots(data.lockedSlots || []);
-            setSubjects(data.subjects || []);
-            setSchedule(data.schedule || null);
-            setLastInputHash(data.lastInputHash || '');
+          const now = Date.now();
+          if (parsedUser.expiresAt && now > parsedUser.expiresAt) {
+            localStorage.removeItem('demo_user_session');
+            localStorage.removeItem('demo_data');
+            setUser(null);
+            setIsPremium(false);
+          } else {
+            setUser(parsedUser);
+            setIsPremium(true);
+            setHasEntered(true);
+            const localData = localStorage.getItem('demo_data');
+            if (localData) {
+              const data = JSON.parse(localData);
+              setProfile(data.profile);
+              setTeachers(data.teachers || []);
+              setClasses(data.classes || []);
+              setTextbooks(data.textbooks || []);
+              setLockedSlots(data.lockedSlots || []);
+              setSubjects(data.subjects || []);
+              setSchedule(data.schedule || null);
+              setLastInputHash(data.lastInputHash || '');
+            }
           }
         } else {
           setUser(null);
@@ -141,7 +151,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (user && profile && !isLoading) {
       const dataToSave = {
-        profile, teachers, classes, textbooks, lockedSlots, subjects, schedule, lastInputHash, language, isPremium
+        profile, teachers, classes, textbooks, lockedSlots, subjects, schedule, lastInputHash, language
       };
       if (user.isDemo) {
         localStorage.setItem('demo_data', JSON.stringify(dataToSave));
@@ -150,7 +160,7 @@ const App: React.FC = () => {
       const timeoutId = setTimeout(() => { saveUserData(user.uid, dataToSave); }, 5000);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading, lastInputHash, language, isPremium]);
+  }, [user, teachers, classes, textbooks, lockedSlots, subjects, schedule, isLoading, lastInputHash, language]);
 
   const markClassDirty = (classId: string) => {
     setDirtyClassIds(prev => new Set(prev).add(classId));
@@ -192,7 +202,8 @@ const App: React.FC = () => {
 
     let newSlots = [...schedule.weeklySlots];
     newSlots = newSlots.filter(s => !(s.classId === classId && s.day === target.day && s.period === target.period));
-    const newSlot = { ...sourceSlot, id: Math.random().toString(36).substr(2, 9), day: target.day, period: target.period };
+    const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'slot-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const newSlot = { ...sourceSlot, id: uniqueId, day: target.day, period: target.period };
     newSlots.push(newSlot);
 
     if (!isCopy) {
@@ -252,7 +263,9 @@ const App: React.FC = () => {
       email: 'guest@eduplanner.pro',
       displayName: 'Demo Guest',
       isDemo: true,
-      isPremium: true
+      isPremium: true,
+      issuedAt: Date.now(),
+      expiresAt: Date.now() + 3600000 // 1 hour TTL
     };
     
     const demoTeachers = [
@@ -351,8 +364,8 @@ const App: React.FC = () => {
   };
 
   if (authLoading) return <div className="min-h-screen bg-[#020617] flex items-center justify-center"><div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div></div>;
-  if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} onTryDemo={handleLaunchDemo} language={language} setLanguage={setLanguage} />;
-  if (!user) return <Auth onBack={() => setHasEntered(false)} onTryDemo={handleLaunchDemo} />;
+  if (!hasEntered && !user) return <LandingPage onEnter={() => setHasEntered(true)} onTryDemo={handleLaunchDemo} language={language} setLanguage={setLanguage} serviceError={errorMessage || undefined} />;
+  if (!user) return <Auth onBack={() => setHasEntered(false)} onTryDemo={handleLaunchDemo} serviceError={errorMessage || undefined} language={language} />;
   if (!profile) return <Onboarding onComplete={(p) => { setProfile(p); setTeachers(p.teachers); setClasses(p.classes); setSubjects(p.subjects); setForceFullSync(true); }} />;
 
   const changeCount = dirtyClassIds.size;
@@ -367,37 +380,42 @@ const App: React.FC = () => {
       isPremium={isPremium}
       onLogout={handleLogout}
     >
-      <div className="mb-8 no-print flex flex-col sm:flex-row items-center justify-between bg-white border border-slate-200 p-5 rounded-[2rem] shadow-sm gap-4">
+      <div className="mb-8 no-print flex flex-col sm:flex-row items-center justify-between bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl gap-4 text-white">
         <div className="flex items-center gap-4 ml-2">
-          <div className={`w-3 h-3 rounded-full ${changeCount === 0 && !forceFullSync ? 'bg-emerald-500 shadow-lg' : 'bg-amber-500 animate-pulse shadow-lg'}`}></div>
+          <div className={`w-3 h-3 rounded-full ${changeCount === 0 && !forceFullSync ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.5)]'}`}></div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
+            <span className="text-xs font-black uppercase tracking-wide text-slate-200">
               {forceFullSync ? `FULL RE-SYNC` : (changeCount > 0 ? `${changeCount} CHANGES DETECTED` : `LOGIC STABLE`)}
             </span>
-            {cooldown > 0 && <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight">Cooldown: {cooldown}s</span>}
+            {cooldown > 0 && <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide mt-0.5">Cooldown: {cooldown}s</span>}
           </div>
         </div>
         <div className="flex gap-4">
           <button 
             disabled={isLoading || cooldown > 0}
             onClick={() => { setForceFullSync(true); handleGenerateMaster(); }} 
+            aria-label={isLoading ? (language === 'ko' ? 'AI 시간표를 동기화하는 중입니다. 잠시만 기다려 주세요.' : 'Syncing AI schedule, please wait') : (language === 'ko' ? 'AI 시간표 동기화' : 'Sync AI Schedule')}
+            aria-busy={isLoading}
             className={`px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl flex items-center gap-3 ${
-              cooldown > 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-[#0f172a] text-white hover:bg-indigo-600'
+              cooldown > 0 ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50' : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-indigo-500/20'
             }`}
           >
             {isLoading ? <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> : 
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-            {isLoading ? 'Syncing...' : (cooldown > 0 ? `Ready in ${cooldown}s` : 'Sync AI Schedule')}
+            {isLoading ? (language === 'ko' ? '동기화 중...' : 'Syncing...') : (cooldown > 0 ? (language === 'ko' ? `${cooldown}초 후 준비됨` : `Ready in ${cooldown}s`) : (language === 'ko' ? 'AI 시간표 동기화' : 'Sync AI Schedule'))}
           </button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-10 animate-pulse">
-          <div className="relative"><div className="w-24 h-24 border-[10px] border-indigo-50 rounded-full"></div><div className="w-24 h-24 border-[10px] border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0"></div></div>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-10 animate-pulse text-white">
+          <div className="relative"><div className="w-24 h-24 border-[10px] border-slate-800 rounded-full"></div><div className="w-24 h-24 border-[10px] border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0"></div></div>
           <div className="text-center space-y-3">
-            <p className="text-[14px] font-black text-slate-900 uppercase tracking-[0.5em]">{loadingMsg}</p>
+            <p className="text-[14px] font-black text-slate-100 uppercase tracking-[0.5em]">{loadingMsg}</p>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Applying Institutional Logic...</p>
+            <p className="text-[11px] font-bold text-indigo-400 uppercase tracking-wide mt-2">
+              {language === 'ko' ? '보통 15-30초 정도 소요됩니다' : 'Usually takes 15–30 seconds'}
+            </p>
           </div>
         </div>
       ) : (
@@ -416,15 +434,39 @@ const App: React.FC = () => {
             />
           )}
           {activeTab === 'homerooms' && (
-            <ScheduleViewer 
-              schedule={schedule || { weeklySlots: [], quarterlyPlan: { quarterName: '', weeks: [] } }} 
-              classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} 
-              lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} 
-              onNavigate={setActiveTab} onRegenerate={handleGenerateMaster} 
-              onUpdateSlot={handleManualSlotUpdate}
-              onMoveSlot={handleManualMove}
-              language={language} 
-            />
+            !schedule ? (
+              <div className="flex flex-col items-center justify-center p-12 bg-white border-2 border-slate-900 rounded-2xl shadow-[6px_6px_0px_rgba(15,23,42,1)] text-center max-w-xl mx-auto my-12 space-y-6">
+                <div className="w-16 h-16 bg-indigo-50 border-2 border-slate-900 text-indigo-650 rounded-2xl flex items-center justify-center text-3xl shadow-[3px_3px_0px_rgba(15,23,42,1)] font-bold">
+                  📅
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                    {language === 'ko' ? '동기화된 시간표 없음' : 'No Active Schedule'}
+                  </h3>
+                  <p className="text-slate-500 font-medium text-xs max-w-sm mx-auto leading-relaxed">
+                    {language === 'ko' 
+                      ? '기초 데이터 등록수정 후 상단 [AI 시간표 동기화] 단추를 눌러 충돌 없는 최적 시간표를 동시 연산·출력하십시오.' 
+                      : 'Configure school settings, subjects, cohorts and faculty rules first, then press [Sync AI Schedule] above to generate a flawless timetable.'}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setActiveTab('setup')} 
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black uppercase text-[10px] tracking-wider transition-all duration-300"
+                >
+                  {language === 'ko' ? '기초 설정 하러가기' : 'Configure Settings'}
+                </button>
+              </div>
+            ) : (
+              <ScheduleViewer 
+                schedule={schedule} 
+                classes={classes} teachers={teachers} subjects={subjects} textbooks={textbooks} 
+                lockedSlots={lockedSlots} profile={profile} onGenerateRoadmap={() => {}} 
+                onNavigate={setActiveTab} onRegenerate={handleGenerateMaster} 
+                onUpdateSlot={handleManualSlotUpdate}
+                onMoveSlot={handleManualMove}
+                language={language} 
+              />
+            )
           )}
           {activeTab === 'curriculum' && <CurriculumRoadmap textbooks={textbooks} onUpdateTextbooks={setTextbooks} subjects={subjects} classes={classes} language={language} />}
           {activeTab === 'calendar' && <SchoolCalendar events={profile?.specialEvents || []} onUpdate={(evs) => setProfile(p => p ? {...p, specialEvents: evs} : null)} language={language} />}

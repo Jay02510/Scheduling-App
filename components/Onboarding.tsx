@@ -113,17 +113,244 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 </div>
               </div>
             )}
+            {step === 2 && (
+              <div className="space-y-8 animate-fadeIn">
+                <header>
+                  <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Classes & Grades</h2>
+                  <p className="text-slate-500 font-medium text-xs mt-1">Configure your student cohorts to begin scheduling.</p>
+                </header>
+                <div className="space-y-6">
+                  <div className="bg-white p-6 rounded-3xl border-2 border-slate-900 shadow-[4px_4px_0px_rgba(15,23,42,1)] space-y-4">
+                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Add Cohort</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <input 
+                        id="newClassName"
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none text-xs" 
+                        placeholder="e.g. Class 1A" 
+                      />
+                      <select 
+                        id="newClassGrade"
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none text-xs"
+                      >
+                        <option value="G1">Grade 1</option>
+                        <option value="G2">Grade 2</option>
+                        <option value="G3">Grade 3</option>
+                        <option value="G4">Grade 4</option>
+                        <option value="G5">Grade 5</option>
+                        <option value="G6">Grade 6</option>
+                      </select>
+                      <button 
+                        onClick={() => {
+                          const nameEl = document.getElementById('newClassName') as HTMLInputElement;
+                          const gradeEl = document.getElementById('newClassGrade') as HTMLSelectElement;
+                          if (nameEl && nameEl.value.trim()) {
+                            const newCl = {
+                              id: 'c-' + Date.now(),
+                              name: nameEl.value.trim(),
+                              grade: gradeEl.value,
+                              homeroomTeacherId: profile.teachers[0]?.id || '',
+                              assignments: [],
+                              color: CLASS_COLORS[profile.classes.length % CLASS_COLORS.length]
+                            };
+                            setProfile({
+                              ...profile,
+                              classes: [...profile.classes, newCl]
+                            });
+                            nameEl.value = '';
+                          }
+                        }}
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-black text-[9px] uppercase tracking-widest rounded-xl py-3 px-6 transition-all"
+                      >
+                        + Add Class
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Class List ({profile.classes.length})</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {profile.classes.map((c) => (
+                        <div key={c.id} className="p-4 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-between group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded-full border border-slate-300" style={{ backgroundColor: c.color }} />
+                            <div>
+                              <p className="font-black text-sm text-slate-900 leading-none">{c.name}</p>
+                              <span className="text-[9px] font-black text-indigo-505 uppercase tracking-wider block mt-1.5">{c.grade} Level</span>
+                            </div>
+                          </div>
+                          <button 
+                            disabled={profile.classes.length <= 1}
+                            onClick={() => {
+                              setProfile({
+                                ...profile,
+                                classes: profile.classes.filter(item => item.id !== c.id)
+                              });
+                            }}
+                            className="text-rose-500 hover:text-rose-600 disabled:opacity-30 p-2 hover:bg-rose-50 rounded-xl transition-all"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-8 animate-fadeIn">
+                <header>
+                  <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Faculty & Teachers</h2>
+                  <p className="text-slate-500 font-medium text-xs mt-1">Register teachers and specify their schedule rules.</p>
+                </header>
+                <div className="space-y-6">
+                  <div className="bg-white p-6 rounded-3xl border-2 border-slate-900 shadow-[4px_4px_0px_rgba(15,23,42,1)] space-y-4">
+                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Add Instructor</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                      <input 
+                        id="newTeacherName"
+                        className="bg-slate-55 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none text-xs sm:col-span-2" 
+                        placeholder="Instructor Name (e.g. Dr. Jordan)" 
+                      />
+                      <select 
+                        id="newTeacherRole" 
+                        className="bg-slate-55 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none text-xs"
+                      >
+                        <option value="homeroom">Homeroom</option>
+                        <option value="subject">Subject Specialist</option>
+                        <option value="specialist">Specialist</option>
+                      </select>
+                      <button 
+                        onClick={() => {
+                          const nameEl = document.getElementById('newTeacherName') as HTMLInputElement;
+                          const roleEl = document.getElementById('newTeacherRole') as HTMLSelectElement;
+                          if (nameEl && nameEl.value.trim()) {
+                            const newT: Teacher = {
+                              id: 't-' + Date.now(),
+                              name: nameEl.value.trim(),
+                              role: roleEl.value as any,
+                              subjects: [],
+                              maxDailyPeriods: 8,
+                              breaksNeededPerWeek: 5,
+                              color: TEACHER_COLORS[profile.teachers.length % TEACHER_COLORS.length],
+                              assignedClasses: [],
+                              employmentType: 'Full-Time'
+                            };
+                            setProfile({
+                              ...profile,
+                              teachers: [...profile.teachers, newT]
+                            });
+                            nameEl.value = '';
+                          }
+                        }}
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-black text-[9px] uppercase tracking-widest rounded-xl py-3 px-6 transition-all animate-pulse"
+                      >
+                        + Add Teacher
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Teachers ({profile.teachers.length})</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {profile.teachers.map((tea) => (
+                        <div key={tea.id} className="p-4 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-between group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs text-white uppercase shadow" style={{ backgroundColor: tea.color }}>
+                              {tea.name[0] || 'T'}
+                            </div>
+                            <div>
+                              <p className="font-black text-sm text-slate-900 leading-none">{tea.name}</p>
+                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1.5 block">{tea.role} • Max: {tea.maxDailyPeriods}p</span>
+                            </div>
+                          </div>
+                          <button 
+                            disabled={profile.teachers.length <= 1}
+                            onClick={() => {
+                              setProfile({
+                                ...profile,
+                                teachers: profile.teachers.filter(item => item.id !== tea.id)
+                              });
+                            }}
+                            className="text-rose-500 hover:text-rose-600 disabled:opacity-30 p-2 hover:bg-rose-50 rounded-xl transition-all"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-8 animate-fadeIn">
+                <header>
+                  <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Time Slots & Breaks</h2>
+                  <p className="text-slate-500 font-medium text-xs mt-1">Configure lunch times and daily recess limits.</p>
+                </header>
+                <div className="space-y-6">
+                  <div className="bg-white p-6 rounded-3xl border-2 border-slate-900 shadow-[4px_4px_0px_rgba(15,23,42,1)] space-y-6">
+                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider block">Standard Parameters</span>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <label className="block">
+                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-2 ml-1">Lunch Slot Placement index (0-7)</span>
+                        <select 
+                          value={profile.hours.lunchAfterPeriod} 
+                          onChange={e => setProfile({
+                            ...profile,
+                            hours: { ...profile.hours, lunchAfterPeriod: parseInt(e.target.value) }
+                          })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none text-xs"
+                        >
+                          <option value="2">After Period 2</option>
+                          <option value="3">After Period 3</option>
+                          <option value="4">After Period 4</option>
+                          <option value="5">After Period 5</option>
+                        </select>
+                      </label>
+
+                      <label className="block">
+                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-2 ml-1">Daily Recess Placement</span>
+                        <select 
+                          value={profile.hours.recessAfterPeriod} 
+                          onChange={e => setProfile({
+                            ...profile,
+                            hours: { ...profile.hours, recessAfterPeriod: parseInt(e.target.value) }
+                          })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none text-xs"
+                        >
+                          <option value="1">After Period 1</option>
+                          <option value="2">After Period 2</option>
+                          <option value="3">After Period 3</option>
+                          <option value="4">After Period 4</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-extrabold text-sm">ℹ</div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-relaxed">
+                        These lockslots are applied globally across all schedules to safeguard teacher break-times and student lunch periods.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {step === 5 && (
               <div className="space-y-8 animate-fadeIn h-full flex flex-col items-center justify-center text-center">
-                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center shadow-lg mb-4">
+                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center shadow-lg mb-4 border-2 border-slate-900 p-4">
                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Ready to Deploy</h2>
-                <p className="text-slate-500 font-medium text-sm max-w-xs">Your core school infrastructure is initialized. Press the button to enter the dashboard.</p>
+                <p className="text-slate-500 font-medium text-sm max-w-sm">Your school's structural parameters are initialized. Press Launch to access the core schedule builder engine.</p>
               </div>
             )}
-            {/* ... other steps ... */}
-            <div className="py-20 text-center opacity-30 text-[10px] font-black uppercase">Configure steps 2-4 in the setup center later</div>
           </div>
           <div className="flex justify-between pt-10 border-t border-slate-200">
             {step > 1 && <button onClick={back} className="px-8 py-4 text-slate-400 font-black uppercase text-[9px] tracking-widest">Back</button>}
