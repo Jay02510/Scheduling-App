@@ -72,7 +72,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         <div className="w-full md:w-80 bg-[#0f172a] p-10 text-white flex flex-col justify-between shrink-0">
           <div>
             <h1 className="text-2xl font-black tracking-tighter uppercase mb-2 leading-none text-glow-cyan">EduPlanner<br/><span className="text-indigo-400">Setup</span></h1>
-            <p className="text-indigo-400 text-[9px] font-black uppercase tracking-widest mt-2">Core OS Initialization</p>
+            <p className="text-indigo-400 text-[9px] font-black uppercase tracking-widest mt-2">Planner Setup Assistant</p>
           </div>
           <div className="space-y-6">
             {[1, 2, 3, 4, 5].map(s => (
@@ -117,11 +117,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               <div className="space-y-8 animate-fadeIn">
                 <header>
                   <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Classes & Grades</h2>
-                  <p className="text-slate-500 font-medium text-xs mt-1">Configure your student cohorts to begin scheduling.</p>
+                  <p className="text-slate-500 font-medium text-xs mt-1">Configure your classes and cohorts to begin scheduling.</p>
                 </header>
                 <div className="space-y-6">
                   <div className="bg-white p-6 rounded-3xl border-2 border-slate-900 shadow-[4px_4px_0px_rgba(15,23,42,1)] space-y-4">
-                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Add Cohort</span>
+                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Add New Class</span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <input 
                         id="newClassName"
@@ -293,11 +293,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 </header>
                 <div className="space-y-6">
                   <div className="bg-white p-6 rounded-3xl border-2 border-slate-900 shadow-[4px_4px_0px_rgba(15,23,42,1)] space-y-6">
-                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider block">Standard Parameters</span>
+                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider block">Standard Schedule Settings</span>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <label className="block">
-                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-2 ml-1">Lunch Slot Placement index (0-7)</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-2 ml-1">Lunch Break Period</span>
                         <select 
                           value={profile.hours.lunchAfterPeriod} 
                           onChange={e => setProfile({
@@ -334,7 +334,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-extrabold text-sm">ℹ</div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-relaxed">
-                        These lockslots are applied globally across all schedules to safeguard teacher break-times and student lunch periods.
+                        These school periods are applied globally across all schedules to protect teacher break-times and student lunch periods.
                       </p>
                     </div>
                   </div>
@@ -347,8 +347,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center shadow-lg mb-4 border-2 border-slate-900 p-4">
                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Ready to Deploy</h2>
-                <p className="text-slate-500 font-medium text-sm max-w-sm">Your school's structural parameters are initialized. Press Launch to access the core schedule builder engine.</p>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Ready to Begin</h2>
+                <p className="text-slate-500 font-medium text-sm max-w-sm">Your school settings are successfully initialized. Click Launch to access your new scheduling dashboard.</p>
               </div>
             )}
           </div>

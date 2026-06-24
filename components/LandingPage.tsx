@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence, useInView, useScroll, useMotionValueEvent } from 'motion/react';
+import React, { useState, useRef, useCallback } from 'react';
+import { motion, AnimatePresence, useInView, useScroll, useMotionValueEvent, useSpring, useMotionValue } from 'motion/react';
 
 const FadeUp = ({ children, delay = 0, className = '' }: { children: React.ReactNode, delay?: number, className?: string }) => {
   const ref = React.useRef(null);
@@ -86,6 +86,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
   });
 
   const [sandboxResetCounter, setSandboxResetCounter] = useState(0);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useSpring(useMotionValue(0), { stiffness: 150, damping: 20 });
+  const rotateY = useSpring(useMotionValue(0), { stiffness: 150, damping: 20 });
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const relX = (e.clientX - centerX) / (rect.width / 2);
+    const relY = (e.clientY - centerY) / (rect.height / 2);
+    rotateX.set(-relY * 10);
+    rotateY.set(relX * 10);
+  }, [rotateX, rotateY]);
+
+  const handleMouseLeave = useCallback(() => {
+    rotateX.set(0);
+    rotateY.set(0);
+  }, [rotateX, rotateY]);
 
   const [counted, setCounted] = React.useState(false);
   React.useEffect(() => {
@@ -360,8 +382,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               className="text-base sm:text-lg text-slate-400 font-medium max-w-2xl leading-relaxed"
             >
               {isKo 
-                ? '번거롭고 복잡한 교사 시간 중복과 시설 제약 조건 해결을 인공지능에게 위임하세요. EduPlanner Pro는 Gemini 지능형 솔버를 사용하여 충돌 없는 시간표와 교직원 번아웃 지표를 즉각 보고합니다.' 
-                : 'Say goodbye to scheduling collisions and administrative burnout. EduPlanner Pro harnesses Gemini constraint-intelligence to suggest real-time optimal blueprints, protect faculty wellness, and export flawless compliance grids.'}
+                ? '번거롭고 복잡한 교사 시간 중복 조율을 인공지능에게 위임하세요. EduPlanner Pro는 Gemini의 스마트 추천을 활용하여 충돌 없는 시간표와 교직원 업무 상태를 즉각 알려줍니다.' 
+                : 'Say goodbye to scheduling collisions and administrative burnout. EduPlanner Pro uses Gemini smart assistance to suggest real-time optimal schedules, balance teacher workloads, and export clean timetables.'}
             </motion.p>
             
             <motion.div 
@@ -430,17 +452,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           </div>
 
           {/* Hero Right: 3D Hologram Interface Device Mockup */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.93, rotateY: 10 }}
-            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-            transition={{ duration: 1, ease: 'easeOut' }}
-            className="lg:col-span-5 relative flex justify-center items-center perspective-1000"
-          >
-            <div className="relative w-full max-w-md aspect-[4/4] group">
+          <div className="lg:col-span-5 relative flex justify-center items-center" style={{ perspective: '1000px' }}>
+            <motion.div
+              ref={cardRef}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+              initial={{ opacity: 0, scale: 0.93 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+              className="relative w-full max-w-md group cursor-default"
+            >
+              {/* Floating depth layer — sits behind the card in 3D space */}
+              <motion.div
+                style={{ translateZ: '-40px', transformStyle: 'preserve-3d' }}
+                className="absolute inset-4 rounded-2xl bg-sky-500/10 blur-xl"
+              />
+
               {/* Main Holo Card Terminal */}
-              <div className="relative bg-slate-950/80 border-2 hero-card-border shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl rounded-2xl p-8 space-y-6 overflow-hidden transition-shadow duration-1000">
+              <div
+                style={{ transform: 'translateZ(0px)', transformStyle: 'preserve-3d' }}
+                className="relative bg-slate-950/80 border border-sky-500/20 hero-card-border shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl rounded-2xl p-8 space-y-6 overflow-hidden"
+              >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 blur-3xl rounded-full" />
-                
+
                 {/* Simulated Screen Header */}
                 <div className="flex items-center justify-between pb-4 border-b border-slate-900">
                   <div className="flex items-center gap-3">
@@ -458,14 +493,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 </div>
 
                 {/* Simulated Core Diagnostic chart */}
-                <div className="bg-slate-900/40 border border-slate-900 rounded-2.5xl p-5 space-y-3.5 relative overflow-hidden">
+                <div className="bg-slate-900/40 border border-slate-900 rounded-xl p-5 space-y-3.5 relative overflow-hidden">
                   <div className="absolute inset-0 bg-grid opacity-10" />
                   <div className="flex justify-between items-center text-xs font-medium uppercase tracking-widest text-slate-400">
                     <span>Faculty Load Matrix</span>
                     <span className="text-sky-400">92% OPTIMAL</span>
                   </div>
-                  
-                  {/* Vertical bar charts simulated */}
                   <div className="grid grid-cols-4 gap-4 pt-2">
                     {[
                       { l: 'Math', v: '85%', color: 'from-sky-500 to-sky-600' },
@@ -475,11 +508,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                     ].map((item, id) => (
                       <div key={id} className="space-y-2 flex flex-col items-center">
                         <div className="w-full h-24 bg-slate-950 rounded-xl relative overflow-hidden flex items-end border border-slate-800">
-                          <motion.div 
+                          <motion.div
                             initial={{ height: 0 }}
                             animate={{ height: item.v }}
                             transition={{ duration: 0.8, delay: id * 0.15 + 0.3, ease: [0.16, 1, 0.3, 1] }}
-                            className={`w-full bg-gradient-to-t ${item.color} rounded-t-lg`} 
+                            className={`w-full bg-gradient-to-t ${item.color} rounded-t-lg`}
                           />
                         </div>
                         <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">{item.l}</span>
@@ -488,24 +521,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   </div>
                 </div>
 
-                {/* Bottom interactive recommendation badge */}
-                <div className="p-4 bg-sky-500/5 border border-sky-500/25 rounded-2xl space-y-1 text-left">
+                {/* Floating recommendation badge — raised in Z */}
+                <div
+                  style={{ transform: 'translateZ(20px)' }}
+                  className="p-4 bg-sky-500/5 border border-sky-500/25 rounded-2xl space-y-1 text-left"
+                >
                   <div className="flex items-center gap-2 text-sky-400">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span className="text-xs font-medium uppercase tracking-widest">COGNITIVE RECOMMENDATION</span>
                   </div>
                   <p className="text-xs text-slate-300 font-medium leading-relaxed">
-                    {isKo 
-                      ? 'AP 미적분 강사가 7교시에 연속 배치되었습니다. 번아웃 보호 장치를 켜서 4교시로 순환을 제안합니다.' 
+                    {isKo
+                      ? 'AP 미적분 강사가 7교시에 연속 배치되었습니다. 번아웃 보호 장치를 켜서 4교시로 순환을 제안합니다.'
                       : 'AP Calculus instructor assigned back-to-back lessons. Shift Monday slot to Period 3 for optimal cognitive balance.'}
                   </p>
                 </div>
-
-
-
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
 
         </div>
       </section>
@@ -744,22 +777,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
         
         <div className="text-center mb-20 space-y-4">
           <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-xs font-medium uppercase tracking-[0.06em]">
-            {isKo ? '가디언 지능형 행정 시스템' : 'GENIAL COGNITIVE MATRIX'}
+            {isKo ? '지능형 시간표 관리 시스템' : 'INTELLIGENT ACADEMIC SCHEDULING'}
           </div>
           <h2 className="text-3xl md:text-5xl font-black tracking-tight">
             {isKo ? '복잡한 조율 과정을 자동화하는 비결' : 'Schedule intelligence, redesigned.'}
           </h2>
           <p className="text-slate-400 font-medium max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
             {isKo 
-              ? '에듀플래너 프로가 제공하는 다섯 개의 핵심 엔진은 직관적인 운영과 교원의 복지를 최고 순위로 보전합니다.' 
-              : 'Our coordinate solver maps the specific constraints of high-density academic environments seamlessly without a single logical leak.'}
+              ? '에듀플래너 프로가 제공하는 핵심 엔진은 직관적인 운영과 교원의 복지를 최고 순위로 보전합니다.' 
+              : 'Our intelligent scheduling engine organizes complex teacher and classroom requirements seamlessly without any overlaps.'}
           </p>
         </div>
 
         {/* High-fidelity Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 text-left">
           
-          {/* Card 1: Chronos Weaver (Large) */}
+          {/* Card 1: Smart Schedule Generator (Large) */}
           <FadeUp delay={0} className="md:col-span-8">
             <motion.div 
               whileHover={{ y: -6 }}
@@ -771,17 +804,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
                   <Layers className="w-6 h-6" />
                 </div>
-                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '크로노스 위버 AI 엔진' : 'Chronos Weaver solver'}</h3>
+                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '지능형 자동 시간표 엔진' : 'Smart Schedule Generator'}</h3>
                 <p className="text-slate-400 font-medium text-sm leading-relaxed">
                   {isKo 
-                    ? '무제한 규칙과 시설 제약 조건을 동시에 해소하는 다목적 제약 해소 알고리즘이 탑재되어 있습니다. 버튼 클릭 한 번으로 수억 개의 가용 시간 배치 조합 중 최적의 일정을 추출하여 제안합니다.' 
-                    : 'Synthesizes high-density, multi-class parameters into structurally perfect matrix grids in seconds. Runs on a powerful localized constraint solver to guarantee zero-defect scheduling.'}
+                    ? '학교 고유의 다양한 수업 규칙과 시설 요구조건을 똑똑하게 이해합니다. 버튼 클릭 한 번으로 수많은 일정 조합을 자동 탐색하여 최적의 시간표를 안전하게 추천합니다.' 
+                    : 'Combines class and teacher requirements into structured schedules in seconds. Runs on a fast local helper engine to guarantee conflict-free, easy timetables.'}
                 </p>
               </div>
               <div className="mt-8 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-widest">
-                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">GEMINI LLM SOLVER</span>
-                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">STABILITY RANKING</span>
-                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">0s COMPILER</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">GEMINI SMART ASSISTANT</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">SCHEDULE STABILITY</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">INSTANT GENERATION</span>
               </div>
             </motion.div>
           </FadeUp>
@@ -798,15 +831,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
                   <Zap className="w-6 h-6" />
                 </div>
-                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '실시간 가디언' : 'Active Guardian'}</h3>
+                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '실시간 가디언' : 'Active Safeguard'}</h3>
                 <p className="text-slate-400 font-medium text-sm leading-relaxed">
                   {isKo 
                     ? '수동 드래그 앤 드롭 중 발생하는 모든 일정 변경을 실시간 추적하고 충돌 사고가 나기 전에 원천 차단 시킵니다.' 
-                    : 'Monitors manual changes in real-time. Instantly highlights duplicate bookings or lunch violations before they occur, keeping your operations fully integrated.'}
+                    : 'Monitors manual changes in real-time. Instantly highlights duplicate bookings or lunch overlaps before they occur, keeping your schedules perfectly coordinated.'}
                 </p>
               </div>
               <span className="text-xs font-medium uppercase text-sky-400 tracking-widest mt-6 flex items-center gap-1.5 hover:translate-x-1 transition-transform">
-                {isKo ? '실시간 감시 가용' : 'LIVE PROTOCOL ACTIVE'} <ChevronRight className="w-3 h-3" />
+                {isKo ? '실시간 보호 작동 중' : 'SAFEGUARD SYSTEM ACTIVE'} <ChevronRight className="w-3 h-3" />
               </span>
             </motion.div>
           </FadeUp>
@@ -822,15 +855,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
                   <Activity className="w-6 h-6" />
                 </div>
-                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '번아웃 위기 진단' : 'Resiliency Index'}</h3>
+                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '수업 피로도 모니터' : 'Workload Balance'}</h3>
                 <p className="text-slate-400 font-medium text-sm leading-relaxed">
                   {isKo 
-                    ? '교직원들의 수업 연강 일수, 여유 교시 부족, 전공 외 시간 배치 비율 등을 진단하여 탈진 지수를 점수화하여 모니터링합니다.' 
-                    : 'Automated auditing of workload density, back-to-back lessons, and recovery periods. Reduces supervisor stress and increases faculty retention.'}
+                    ? '교직원들의 수업 연강 일수, 여유 교시 부족, 전공 외 시간 배치 비율 등을 진단하여 피로도와 업무 부담을 골고루 모니터링합니다.' 
+                    : 'Checks back-to-back lessons, workload density, and recovery periods. Reduces teacher fatigue and promotes a happier, more balanced work environment.'}
                 </p>
               </div>
               <div className="mt-6 p-4 bg-rose-500/5 rounded-2xl border border-rose-500/20 text-xs font-medium uppercase tracking-widest text-rose-300">
-                {isKo ? '교원 복지 최우선 보장제' : 'PROACTIVE RETENTION PROTECTION'}
+                {isKo ? '교원 피로 예방 지원제' : 'BALANCED WORKLOAD ASSURANCE'}
               </div>
             </motion.div>
           </FadeUp>
@@ -847,17 +880,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
                   <FileText className="w-6 h-6" />
                 </div>
-                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '교육과정 로드맵 연계' : 'Quarterly Curriculum Binder'}</h3>
+                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '교육과정 강의 계획' : 'Curriculum Planner'}</h3>
                 <p className="text-slate-400 font-medium text-sm leading-relaxed">
                   {isKo 
-                    ? '단순한 행적 기록표를 넘어 각 분기별 지정 교재, 필수 수료 시간 계산, 주차별 단원 설계 대시보드를 연계하여 단절 없는 지식의 흐름을 보장합니다.' 
-                    : 'Traces your curriculum milestones. Interleaves school syllabus guidelines with weekly scheduling grids to ensure students achieve academic targets seamlessly.'}
+                    ? '단순한 교시 배치를 넘어 분기별 지정 교재, 필수 교육 시간 계산, 주차별 학습 설계표를 연계하여 일관성 있는 수업을 지원합니다.' 
+                    : 'Tracks course timelines. Combines class schedules with weekly guidelines to ensure teachers and students meet academic goals easily.'}
                 </p>
               </div>
               <div className="mt-8 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-widest">
-                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">WEEKLY MILESTONES</span>
-                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">TEXTBOOK REPOSITORY</span>
-                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">STANDARDS BINDER</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">WEEKLY GOALS</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">RESOURCE LIBRARY</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">ACADEMIC STANDARDS</span>
               </div>
             </motion.div>
           </FadeUp>
@@ -870,14 +903,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
         
         <div className="text-center mb-16 space-y-4">
           <span className="text-sky-400 text-xs font-medium uppercase tracking-[0.06em]">{isKo ? '행정 제어 센터' : 'ADMINISTRATOR HUB'}</span>
-          <h2 className="text-3xl md:text-5xl font-black tracking-tight">{isKo ? '통합 제어부 미리보기' : 'Chronos console suite'}</h2>
+          <h2 className="text-3xl md:text-5xl font-black tracking-tight">{isKo ? '통합 제어부 미리보기' : 'Schedule Control Center'}</h2>
           
           {/* Tab buttons */}
           <div className="flex justify-center flex-wrap gap-2 mt-8 max-w-md mx-auto bg-slate-900/60 p-1.5 rounded-3xl border border-slate-800/80">
             {[
-              { id: 'weaver', label: isKo ? '시간표 위버' : 'Schedule Weaver' },
-              { id: 'guardian', label: isKo ? '실시간 조율기' : 'Active Guardian' },
-              { id: 'resiliency', label: isKo ? '번아웃 진단기' : 'Resiliency Matrix' }
+              { id: 'weaver', label: isKo ? '자동 시간표 생성기' : 'Schedule Generator' },
+              { id: 'guardian', label: isKo ? '실시간 검사기' : 'Real-time Checker' },
+              { id: 'resiliency', label: isKo ? '수업 피로도 모니터' : 'Workload Status' }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -893,7 +926,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             ))}
           </div>
         </div>
-
+ 
         {/* Dynamic Interactive Screenshot Panel */}
         <div className="bg-slate-950/80 border border-slate-800 p-8 rounded-2xl shadow-2xl max-w-5xl mx-auto relative overflow-hidden text-left min-h-[380px] flex flex-col justify-between">
           <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/[0.02] blur-3xl pointer-events-none rounded-full" />
@@ -911,24 +944,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="md:col-span-6 space-y-6">
                   <div className="inline-flex items-center gap-2 text-sky-400">
                     <Calendar className="w-5 h-5" />
-                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '자동 정렬 행렬' : 'Master Matrix Alignment'}</span>
+                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '자동 시간표 격자' : 'Automatic Schedule Grid'}</span>
                   </div>
                   <h3 className="text-3xl font-black text-white tracking-tight">
-                    {isKo ? '충돌 없는 최적의 경로 발굴' : 'Generate compliant blueprints'}
+                    {isKo ? '충돌 없는 최적의 시간표 설계' : 'Create balanced timetables'}
                   </h3>
                   <p className="text-slate-400 font-medium text-sm leading-relaxed">
                     {isKo 
-                      ? '수많은 학급과 교사의 가용 요일, 필수 시수, 교직 조건 요소를 인공지능이 동시에 탐색합니다. 클릭 무거운 엑셀 작업에서 벗어나 규정과 편익이 조화된 아름다운 주간 시간표 격자를 단 3초 만에 설계하세요.' 
-                      : 'Weaves complex teaching availability registers and classroom capacities into beautifully balanced weekly blocks. No manual mathematical calculations required - our unified system performs thousands of permutations in real-time.'}
+                      ? '자동으로 수많은 학급과 강사의 수업 시간을 조율합니다. 복잡한 엑셀 수작업에서 벗어나 충돌과 중복 없는 주간 시간표를 단 몇 초 만에 설계해 보세요.' 
+                      : 'Automatically organizes teaching hours and class slots in seconds. Skip the manual spreadsheet edits and construct perfectly balanced weekly timetables with ease.'}
                   </p>
                   <div className="flex gap-4">
                     <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-center flex-1">
                       <p className="text-xl font-black text-white">0s</p>
-                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">{isKo ? '수작업 시간 단축' : 'Calculation Lag'}</p>
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">{isKo ? '수작업 대기 시간' : 'Calculation Lag'}</p>
                     </div>
                     <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-center flex-1">
                       <p className="text-xl font-black text-sky-400">100%</p>
-                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">{isKo ? '정부 행정 규격 달성' : 'Constraint Defense'}</p>
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">{isKo ? '시간표 충돌 예방' : 'Conflict Prevention'}</p>
                     </div>
                   </div>
                 </div>
@@ -970,18 +1003,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="md:col-span-6 space-y-6">
                   <div className="inline-flex items-center gap-2 text-rose-400">
                     <ShieldCheck className="w-5 h-5 text-sky-400" />
-                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '실시간 충돌 보호' : 'Dynamic Integrity Audit'}</span>
+                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '실시간 충돌 방지' : 'Real-time Overlap Protection'}</span>
                   </div>
                   <h3 className="text-3xl font-black text-white tracking-tight">
-                    {isKo ? '조그마한 논리 모순까지 철저히 예방' : 'Prevent destructive collisions'}
+                    {isKo ? '일정 겹침이나 중복 철저 예방' : 'Prevent schedule collisions'}
                   </h3>
                   <p className="text-slate-400 font-medium text-sm leading-relaxed">
                     {isKo 
-                      ? '수정 사항이 생기는 즉시 백그라운드 AI 가디언 엔진이 작동을 시작합니다. 행정 담당자가 알지 못하는 교사들의 건강 관리 조약 위반(예를 들어 연달아 세 번의 연강, 점심 시간 겹침 등)을 정밀 검측하여 차단합니다.' 
-                      : 'Traces your active coordinates continuously. Highlights critical teacher double-booking violations, lunch-break overlaps, or subject pairing issues. Keeps your administrative ledger fully legal and transparent without any auditing latency.'}
+                      ? '시간표를 수정하는 즉시 오류 검사가 작동합니다. 담당자가 미처 발견하기 힘든 수업 중복이나 점심 시간 누락 등의 문제를 즉각 경고하고 예방해 줍니다.' 
+                      : 'Checks your schedule instantly during edits. Automatically highlights and flags teacher double-bookings, lunch period issues, or subject overlaps to keep everything correct.'}
                   </p>
                   <p className="text-xs font-semibold text-slate-350 italic">
-                    {isKo ? '"AI 가디언은 사용자가 일하는 도중 조용히 길목을 지킵니다."' : '"The active safeguard acts of silent protective intelligence while you build."'}
+                    {isKo ? '"실시간 검사 시스템이 시간표 작성 도중 조용히 길목을 지킵니다."' : '"The active safeguard acts as silent protective intelligence while you build."'}
                   </p>
                 </div>
                 <div className="md:col-span-6">
@@ -990,10 +1023,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                       <div className="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center text-red-400">
                         <AlertCircle className="w-4 h-4" />
                       </div>
-                      <span className="text-xs font-medium uppercase tracking-widest text-red-400">{isKo ? '충돌 경고 로그' : 'LOGICAL CONFLICT FLUX'}</span>
+                      <span className="text-xs font-medium uppercase tracking-widest text-red-400">{isKo ? '시간표 충돌 알림' : 'SCHEDULE CONFLICT DETECTED'}</span>
                     </div>
                     <div className="bg-slate-950/80 p-4 border border-slate-900 rounded-xl border-l-[3px] border-l-red-500 text-left">
-                      <p className="text-xs font-medium text-rose-400 uppercase tracking-widest">RULE_VIOLATION_072</p>
+                      <p className="text-xs font-medium text-rose-400 uppercase tracking-widest">CONFLICT_DETECTED</p>
                       <p className="text-xs font-medium text-white mt-1 leading-relaxed">
                         {isKo 
                           ? '김교사는 이미 10학년 화학 수업에 배정되었습니다. 9학년 융합과학에 동시 배치할 수 없습니다!' 
@@ -1017,23 +1050,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="md:col-span-6 space-y-6">
                   <div className="inline-flex items-center gap-2 text-emerald-400">
                     <Users className="w-5 h-5" />
-                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '교원 삶의 질 보호' : 'FACULTY WELLNESS SHIELD'}</span>
+                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '강사 수업 부담 보호' : 'TEACHER WORKLOAD SAFETY'}</span>
                   </div>
                   <h3 className="text-3xl font-black text-white tracking-tight">
-                    {isKo ? '지키지 못할 무리한 일정 타파' : 'Safeguard teacher wellness'}
+                    {isKo ? '무리한 시간표 편성 예방' : 'Balance teacher workloads'}
                   </h3>
                   <p className="text-slate-400 font-medium text-sm leading-relaxed">
                     {isKo 
-                      ? '과도한 연강은 교육의 수준을 낮추고 핵심 교원의 피로도를 누적시킵니다. 에듀플래너의 교직원 번아웃 지수는 연강 한계 도달, 수업 공백 간격, 주간 당직 일수 등을 체계적으로 감사하여 경고 전송 및 대체 방안을 탐험합니다.' 
-                      : 'Uncontrolled workload density is the primary catalyst for faculty resignation. Our adaptive wellness monitor checks continuous teaching blocks, mandatory pause duration, and subject drift alerts to prevent teacher exhaustion and build resilient academic cultures.'}
+                      ? '지나친 연속 수업은 교직원의 피로를 높이고 수업의 질을 낮출 수 있습니다. 에듀플래너는 연속된 수업 횟수나 휴식 시간을 실시간으로 분석해 더 여유 있는 배치를 돕습니다.' 
+                      : 'Too many continuous lessons can lead to fatigue. Our balanced workload helper automatically reviews back-to-back classes and break times, helping you build a healthy environment.'}
                   </p>
                   <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
-                    {isKo ? '✨ 교직원 이탈률 평균 22% 감소 증명됨' : '✨ Demonstrated 22% reduction in faculty schedule fatigue'}
+                    {isKo ? '✨ 교직원 업무 피로도 및 연강 이탈률 22% 감소 증명' : '✨ Demonstrated 22% reduction in faculty schedule fatigue'}
                   </p>
                 </div>
                 <div className="md:col-span-6 bg-slate-900/60 p-6 rounded-2.5xl border border-slate-800 space-y-4">
                   <div className="flex justify-between items-center text-xs font-medium uppercase text-slate-400">
-                    <span>Faculty Fatigue Matrix</span>
+                    <span>Teacher Workload Status</span>
                     <span className="text-emerald-400">98% COMPLIANT</span>
                   </div>
                   <div className="space-y-2.5">
@@ -1137,23 +1170,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 
                 <div className="space-y-6 relative z-10">
                   <div className="inline-flex px-4 py-1.5 rounded-full bg-sky-500/20 text-sky-400 text-xs font-medium uppercase tracking-widest border border-sky-500/30">
-                    {isKo ? '교육기관 및 캠퍼스 전용' : 'CAMPUS EXECUTIVE'}
+                    {isKo ? '대규모 학교 및 재단 전용' : 'SCHOOL ENTERPRISE'}
                   </div>
                   <div>
                     <h4 className="text-5xl font-black uppercase tracking-tighter text-white">{isKo ? '견적 상담' : 'CUSTOM'}</h4>
-                    <p className="text-xs font-medium text-sky-400 uppercase mt-2 tracking-widest">{isKo ? '대규모 교원 단체 맞춤 적용' : 'SCALABLE CLOUD DISPATCH'}</p>
+                    <p className="text-xs font-medium text-sky-400 uppercase mt-2 tracking-widest">{isKo ? '학교 및 재단 맞춤형 시스템' : 'SCALABLE CLOUD SYSTEM'}</p>
                   </div>
                   <p className="text-[13px] font-medium text-slate-400 leading-relaxed">
                     {isKo 
-                      ? '수십 조의 복수 학급, 전공 교사 피로도 점검, 정부 교육 시간 충족 가이드와 융합된 완전 관리 환경입니다.' 
+                      ? '수많은 학급, 전공 교사 피로도 점검, 교육 시간 충족 가이드와 융합된 안전하고 직관적인 관리 시스템을 누려보세요.' 
                       : 'A comprehensive campus deployment. Access unlimited classes, real-time workload audit dashboards, priority consulting alignment, and system uptime guarantees.'}
                   </p>
                   
                   <div className="space-y-3.5 pt-4">
                     {[
                       { en: "Unlimited Active Class Sync", ko: "무제한 학급 확장 결합" },
-                      { en: "High-Cognitive Resiliency Shield", ko: "번아웃 감사 및 피로 안전 경고" },
-                      { en: "Dedicated Success Engineer", ko: "동선 디자인 전임 솔루션 엔지니어" },
+                      { en: "Teacher Workload Protection", ko: "교사 수업 강도 및 피로 안전 경고" },
+                      { en: "Dedicated Success Specialist", ko: "전임 솔루션 지원 담당자" },
                       { en: "Database Auto Cloud Backups", ko: "클라우드 스토리지 실시간 백업보존" }
                     ].map((f, j) => (
                       <div key={j} className="flex items-center gap-3.5">

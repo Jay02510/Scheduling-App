@@ -18,11 +18,11 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
   const t = (key: string) => TRANSLATIONS[language][key] || key;
 
   const insights = [
-    "AI Engine: Optimizing daily teacher transitions...",
-    "System Diagnostic: Constraint rules validated.",
+    "AI Assistant: Balancing daily teacher classes...",
+    "System Status: All schedule rules validated.",
     "Database: All records synchronized with cloud storage.",
-    `Infrastructure: ${teachers.length} faculty members active.`,
-    `Curriculum: ${classes.length} class blocks mapped.`
+    `Staff: ${teachers.length} teachers active.`,
+    `Curriculum: ${classes.length} classes organized.`
   ];
 
   useEffect(() => {

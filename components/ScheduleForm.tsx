@@ -202,13 +202,13 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
               </div>
             </div>
             <div className="p-8 bg-slate-900 rounded-[2rem] text-white">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">{language === 'ko' ? '계약 제약 조건' : 'Contract Constraints'}</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">{language === 'ko' ? '계약 조건 설정' : 'Contract Requirements'}</span>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold">{language === 'ko' ? '보장된 주간 휴식 슬롯' : 'Guaranteed Weekly Rest Slots'}</span>
                 <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-xl px-4 py-2 font-black text-indigo-400 text-center outline-none" value={t.breaksNeededPerWeek} onChange={e => setTeachers(teachers.map(tea => tea.id === t.id ? {...tea, breaksNeededPerWeek: parseInt(e.target.value) || 5} : tea))} />
               </div>
             </div>
-            <button onClick={() => { setTeachers(teachers.filter(tea => tea.id !== t.id)); setDetailView(null); }} className="w-full py-5 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-rose-100">{language === 'ko' ? '교직원 파일 비활성화' : 'Deactivate Faculty File'}</button>
+            <button onClick={() => { setTeachers(teachers.filter(tea => tea.id !== t.id)); setDetailView(null); }} className="w-full py-5 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-rose-100">{language === 'ko' ? '교직원 제거' : 'Remove Teacher'}</button>
           </div>
         </div>
       );
@@ -470,7 +470,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
               <div className="lg:col-span-8 space-y-6">
                 <div>
                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t('special_considerations')}</h3>
-                  <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mt-1">Guide the Optimization Engine with specific human constraints</p>
+                  <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mt-1">Guide the schedule assistant with specific teacher requests and rules</p>
                 </div>
                 <div 
                   className="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-slate-200 shadow-inner relative group min-h-[450px]"
