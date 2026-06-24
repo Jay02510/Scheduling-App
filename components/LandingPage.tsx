@@ -137,15 +137,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
       <div className="fixed inset-0 z-0 pointer-events-none">
         {/* Futuristic Laser Matrix Grid */}
         <div className="absolute inset-0 bg-grid opacity-25" />
-        {/* Neon Light Orbs */}
-        <div className="absolute top-[-10%] right-[-10%] w-[65%] h-[65%] bg-sky-500/10 blur-[130px] rounded-full animate-pulse-soft" />
-        <div className="absolute bottom-[-15%] left-[-15%] w-[65%] h-[65%] bg-indigo-500/10 blur-[130px] rounded-full" />
-        <div className="absolute top-[35%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-slate-900/40 border border-indigo-500/5 blur-[90px] rounded-full" />
       </div>
 
       {/* Floating Futuristic Dock Header */}
       <nav className="fixed top-6 left-0 right-0 z-[100] px-4">
-        <div className="max-w-6xl mx-auto bg-slate-950/75 backdrop-blur-2xl border border-slate-800/80 rounded-3xl py-3 px-5 flex items-center justify-between shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)]">
+        <div className="max-w-6xl mx-auto bg-slate-950/75 backdrop-blur-2xl border border-slate-800/80 rounded-2xl py-3 px-5 flex items-center justify-between shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)]">
           <div className="flex items-center gap-8">
             <div 
               className="flex items-center gap-3 cursor-pointer group" 
@@ -156,12 +152,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   <div className="w-2 h-2 bg-sky-400 rounded-full animate-ping" />
                 </div>
               </div>
-              <span className="text-sm font-black tracking-[0.25em] text-white uppercase group-hover:text-sky-400 transition-colors">
+              <span className="text-sm font-medium tracking-normal text-white group-hover:text-sky-400 transition-colors">
                 EduPlanner<span className="text-sky-400">.</span>Pro
               </span>
             </div>
             
-            <div className="hidden md:flex items-center gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-[-2px]">
+            <div className="hidden md:flex items-center gap-8 text-xs font-medium tracking-normal text-slate-400 mb-[-2px]">
               <button onClick={() => scrollTo('sandbox')} className="hover:text-sky-400 transition-colors py-1 relative group">
                 {isKo ? '라이브 체험' : 'Interactive Playground'}
                 <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-sky-400 group-hover:w-full transition-all duration-300" />
@@ -181,20 +177,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             <div className="flex bg-slate-900/90 p-1 rounded-2xl border border-slate-800/80">
               <button 
                 onClick={() => setLanguage('ko')} 
-                className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all ${language === 'ko' ? 'bg-sky-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${language === 'ko' ? 'bg-sky-500 text-slate-950 font-medium shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 KR
               </button>
               <button 
                 onClick={() => setLanguage('en')} 
-                className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all ${language === 'en' ? 'bg-sky-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${language === 'en' ? 'bg-sky-500 text-slate-950 font-medium shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 EN
               </button>
             </div>
             <button 
               onClick={onEnter} 
-              className="text-slate-400 hover:text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all"
+              className="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-medium tracking-normal transition-all"
             >
               {isKo ? '로그인' : 'Sign In'}
             </button>
@@ -202,7 +198,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onTryDemo}
-              className="bg-white hover:bg-sky-400 text-slate-950 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 shadow-xl border border-white/20"
+              className="bg-white hover:bg-sky-400 text-slate-950 px-5 py-2.5 rounded-2xl text-xs font-medium tracking-normal transition-all flex items-center gap-2 shadow-xl border border-white/20"
             >
               {isKo ? '체험판 시작' : 'Access Sandbox'}
               <ChevronRight className="w-3.5 h-3.5" />
@@ -223,7 +219,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 animate={{ opacity: 1, scale: 1 }}
                 className="p-5 bg-rose-500/10 border border-rose-500/30 rounded-3xl flex items-start gap-4 text-left shadow-[0_0_50px_rgba(244,63,94,0.1)] mb-4 border-glow-cyan"
               >
-                <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5 animate-bounce" />
+                <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h4 className="text-sm font-black text-rose-200 uppercase tracking-widest">Platform Boot Warning</h4>
                   <p className="text-xs text-rose-300 font-medium leading-relaxed">{serviceError}</p>
@@ -237,9 +233,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               transition={{ duration: 0.6 }}
               className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-sky-500/10 border border-sky-400/20 backdrop-blur-md"
             >
-              <Sparkles className="w-4 h-4 text-sky-400 animate-pulse" />
-              <span className="text-sky-400 font-extrabold tracking-[0.3em] uppercase text-[9px]">
-                {isKo ? '실시간 대화형 하이브리드 자동 최적화 플랫폼' : 'REAL-TIME CONSTRAINT-ORIENTED SCHEDULER'}
+              <Sparkles className="w-4 h-4 text-sky-400" />
+              <span className="text-sky-400 font-medium tracking-[0.06em] text-xs">
+                {isKo ? '실시간 대화형 하이브리드 자동 최적화 플랫폼' : 'AI schedule optimizer'}
               </span>
             </motion.div>
             
@@ -252,13 +248,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               {isKo ? (
                 <>
                   교육과정의 <br />
-                  <span className="bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent italic font-serif text-glow-cyan normal-case">완전무결</span>한 <br />
+                  <span className="text-sky-400 italic font-serif normal-case">완전무결</span>한 <br />
                   시간표를 디자인하다.
                 </>
               ) : (
                 <>
                   WEAVE YOUR <br />
-                  <span className="bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent italic font-serif text-glow-cyan normal-case">FLAWLESS MATRIX</span> <br />
+                  <span className="text-sky-400 italic font-serif normal-case">FLAWLESS MATRIX</span> <br />
                   IN REAL-TIME.
                 </>
               )}
@@ -285,16 +281,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onTryDemo}
-                className="px-8 py-4.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_20px_50px_-10px_rgba(14,165,233,0.4)] hover:shadow-[0_25px_60px_-8px_rgba(14,165,233,0.6)] transition-all flex items-center justify-center gap-3 border border-white/10"
+                className="px-8 py-4.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-2xl font-semibold text-xs uppercase tracking-[0.2em] shadow-[0_20px_50px_-10px_rgba(14,165,233,0.4)] hover:shadow-[0_25px_60px_-8px_rgba(14,165,233,0.6)] transition-all flex items-center justify-center gap-3 border border-white/10"
               >
                 <span>{isKo ? '무료 체험 시작하기' : 'Lauch Free Blueprint Sandbox'}</span>
-                <ArrowRight className="w-4 h-4 animate-pulse" />
+                <ArrowRight className="w-4 h-4" />
               </motion.button>
               <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => scrollTo('sandbox')}
-                className="px-8 py-4.5 bg-slate-900 hover:bg-slate-800 border border-slate-800/80 text-slate-300 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3"
+                className="px-8 py-4.5 bg-slate-900 hover:bg-slate-800 border border-slate-800/80 text-slate-300 rounded-2xl font-semibold text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3"
               >
                 <span>{isKo ? '라이브 동작 시뮬레이터' : 'Play Live Simulator'}</span>
               </motion.button>
@@ -309,15 +305,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             >
               <div>
                 <p className="text-2xl font-black text-sky-400">0s</p>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">{isKo ? '실시간 동기화 지연' : 'Conflict Check Lag'}</p>
+                <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '실시간 동기화 지연' : 'Conflict Check Lag'}</p>
               </div>
               <div>
                 <p className="text-2xl font-black text-white">99.8%</p>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">{isKo ? '교원 탈진 보호율' : 'Burnout Protected'}</p>
+                <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '교원 탈진 보호율' : 'Burnout Protected'}</p>
               </div>
               <div>
                 <p className="text-2xl font-black text-indigo-400">Gemini</p>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">{isKo ? '순수 지능형 인프라' : 'Deep Solver model'}</p>
+                <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '순수 지능형 인프라' : 'Deep Solver model'}</p>
               </div>
             </motion.div>
           </div>
@@ -330,12 +326,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             className="lg:col-span-5 relative flex justify-center items-center perspective-1000"
           >
             <div className="relative w-full max-w-md aspect-[4/4] group">
-              {/* Outer decorative orbit line */}
-              <div className="absolute inset-[-15px] border border-dashed border-sky-500/10 rounded-[3.5rem] animate-[spin_40s_linear_infinite] pointer-events-none" />
-              <div className="absolute inset-[-40px] border border-sky-500/5 rounded-full animate-[spin_80s_linear_infinite] pointer-events-none" />
-
               {/* Main Holo Card Terminal */}
-              <div className="relative bg-slate-950/80 border-2 border-indigo-500/20 shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl rounded-[3rem] p-8 space-y-6 overflow-hidden">
+              <div className="relative bg-slate-950/80 border-2 border-indigo-500/20 shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl rounded-2xl p-8 space-y-6 overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 blur-3xl rounded-full" />
                 
                 {/* Simulated Screen Header */}
@@ -346,9 +338,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                     </div>
-                    <span className="text-[9px] font-black text-slate-500 tracking-widest uppercase">MASTER_COGNITION.SYS</span>
+                    <span className="text-xs font-medium text-slate-500 tracking-widest uppercase">MASTER_COGNITION.SYS</span>
                   </div>
-                  <span className="flex items-center gap-1 text-[8px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
+                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                     ONLINE
                   </span>
@@ -357,7 +349,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 {/* Simulated Core Diagnostic chart */}
                 <div className="bg-slate-900/40 border border-slate-900 rounded-2.5xl p-5 space-y-3.5 relative overflow-hidden">
                   <div className="absolute inset-0 bg-grid opacity-10" />
-                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <div className="flex justify-between items-center text-xs font-medium uppercase tracking-widest text-slate-400">
                     <span>Faculty Load Matrix</span>
                     <span className="text-sky-400">92% OPTIMAL</span>
                   </div>
@@ -379,7 +371,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                             className={`w-full bg-gradient-to-t ${item.color} rounded-t-lg`} 
                           />
                         </div>
-                        <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest">{item.l}</span>
+                        <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">{item.l}</span>
                       </div>
                     ))}
                   </div>
@@ -389,9 +381,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="p-4 bg-sky-500/5 border border-sky-500/25 rounded-2xl space-y-1 text-left">
                   <div className="flex items-center gap-2 text-sky-400">
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span className="text-[9px] font-black uppercase tracking-widest">COGNITIVE RECOMMENDATION</span>
+                    <span className="text-xs font-medium uppercase tracking-widest">COGNITIVE RECOMMENDATION</span>
                   </div>
-                  <p className="text-[10px] text-slate-300 font-medium leading-relaxed">
+                  <p className="text-xs text-slate-300 font-medium leading-relaxed">
                     {isKo 
                       ? 'AP 미적분 강사가 7교시에 연속 배치되었습니다. 번아웃 보호 장치를 켜서 4교시로 순환을 제안합니다.' 
                       : 'AP Calculus instructor assigned back-to-back lessons. Shift Monday slot to Period 3 for optimal cognitive balance.'}
@@ -412,7 +404,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
         
         {/* Title Group */}
         <div className="text-center mb-16 space-y-4">
-          <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-[8.5px] font-black uppercase tracking-widest">
+          <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-xs font-medium uppercase tracking-widest">
             {isKo ? '실시간 체험 부스' : 'NO-RISK LIVE DEMO'}
           </div>
           <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight">
@@ -429,9 +421,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
           
           {/* LEFT: COURSE BRUSH SELECTOR */}
-          <div className="lg:col-span-4 bg-slate-950/60 border border-slate-800/80 p-6 rounded-[2rem] space-y-6">
-            <h4 className="text-[10px] font-black tracking-widest text-slate-400 uppercase text-left flex items-center gap-2">
-              <MousePointerClick className="w-4 h-4 text-sky-400 animate-bounce" />
+          <div className="lg:col-span-4 bg-slate-950/60 border border-slate-800/80 p-6 rounded-2xl space-y-6">
+            <h4 className="text-xs font-medium tracking-widest text-slate-400 uppercase text-left flex items-center gap-2">
+              <MousePointerClick className="w-4 h-4 text-sky-400" />
               1. {isKo ? '교과목 브러쉬 선택' : 'SELECT SUBJECT BRUSH'}
             </h4>
             
@@ -457,13 +449,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                         <p className="text-xs font-black uppercase text-white leading-none">
                           {isKo ? sub.nameKo : sub.name}
                         </p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-wider">
+                        <p className="text-xs font-bold text-slate-400 uppercase mt-1 tracking-wider">
                           {isKo ? sub.teacherKo : sub.teacher}
                         </p>
                       </div>
                     </div>
                     {isSelected && (
-                      <span className="text-[7.5px] font-black bg-sky-500 text-slate-950 px-2 py-0.5 rounded-md uppercase tracking-widest shrink-0">
+                      <span className="text-xs font-black bg-sky-500 text-slate-950 px-2 py-0.5 rounded-md uppercase tracking-widest shrink-0">
                         {isKo ? '선택됨' : 'BRUSH ACTIVE'}
                       </span>
                     )}
@@ -475,7 +467,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             {/* Clear button */}
             <button 
               onClick={clearSandbox}
-              className="w-full py-3 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-400 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-400 font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               {isKo ? '전체 초기화' : 'RESET SANDBOX'}
@@ -495,13 +487,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="w-full bg-rose-500/10 border border-rose-500/35 p-3.5 rounded-2xl flex items-start gap-3.5 text-left"
                   >
-                    <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5 animate-bounce-short" />
+                    <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                     <div>
-                      <h5 className="text-[9px] font-black text-rose-400 uppercase tracking-widest leading-none mb-1">
+                      <h5 className="text-xs font-black text-rose-400 uppercase tracking-widest leading-none mb-1">
                         {isKo ? '실시간 교직원 규칙 위반 감지' : 'RULE INTEGRITY FLUSH ERROR'}
                       </h5>
                       {conflicts.map((conf, index) => (
-                        <p key={index} className="text-[11px] font-semibold text-rose-200 leading-relaxed uppercase tracking-tight">
+                        <p key={index} className="text-xs font-semibold text-rose-200 leading-relaxed uppercase tracking-tight">
                           • {conf}
                         </p>
                       ))}
@@ -516,10 +508,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   >
                     <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
                     <div>
-                      <h5 className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none">
+                      <h5 className="text-xs font-black text-emerald-400 uppercase tracking-widest leading-none">
                         {isKo ? '가디언 모토: 안정성 확보됨' : 'SYSTEM HEALTH: 100% COMPLIANT'}
                       </h5>
-                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                      <p className="text-xs text-slate-400 font-medium mt-0.5">
                         {isKo ? '선생님 동선과 행정 규격이 충돌 없이 유지되고 있습니다. 마음 편히 추가 배치하세요.' : 'No overlaps detected. Teachers and classrooms occupy completely safe, isolated coordinates.'}
                       </p>
                     </div>
@@ -529,14 +521,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             </div>
 
             {/* Grid display */}
-            <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-[2rem] overflow-hidden relative shadow-2xl">
+            <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl overflow-hidden relative shadow-2xl">
               <div className="absolute inset-0 bg-grid opacity-10 pointer-events-none" />
               
               <div className="flex items-center justify-between mb-4 border-b border-slate-900 pb-3">
-                <span className="text-[9.5px] font-black tracking-widest text-slate-500 uppercase">
+                <span className="text-xs font-black tracking-widest text-slate-500 uppercase">
                   2. {isKo ? '선택과정 셀에 클릭하여 배치' : 'CLICK CELLS TO SET SCHEDULE'}
                 </span>
-                <span className="text-[8.5px] font-bold text-sky-400 uppercase tracking-widest bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/25">
+                <span className="text-xs font-bold text-sky-400 uppercase tracking-widest bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/25">
                   {selectedBrush ? (isKo ? `선택: ${selectedBrush.nameKo}` : `Brush: ${selectedBrush.name}`) : (isKo ? '브러쉬 선택 대기' : 'Active Brush: None')}
                 </span>
               </div>
@@ -546,16 +538,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <table className="w-full border-collapse border border-slate-900 min-w-[500px]">
                   <thead>
                     <tr className="bg-slate-900/30">
-                      <th className="border border-slate-900 p-3.5 text-left text-[9px] font-black uppercase text-slate-500 tracking-wider w-28">
+                      <th className="border border-slate-900 p-3.5 text-left text-xs font-black uppercase text-slate-500 tracking-wider w-28">
                         {isKo ? '대상 학급' : 'TARGET CLASS'}
                       </th>
-                      <th className="border border-slate-900 p-3.5 text-center text-[9px] font-black uppercase text-slate-500 tracking-wider">
+                      <th className="border border-slate-900 p-3.5 text-center text-xs font-black uppercase text-slate-500 tracking-wider">
                         1{isKo ? '교시' : 'st Period'}
                       </th>
-                      <th className="border border-slate-900 p-3.5 text-center text-[9px] font-black uppercase text-slate-500 tracking-wider">
+                      <th className="border border-slate-900 p-3.5 text-center text-xs font-black uppercase text-slate-500 tracking-wider">
                         2{isKo ? '교시' : 'nd Period'}
                       </th>
-                      <th className="border border-slate-900 p-3.5 text-center text-[9px] font-black uppercase text-slate-500 tracking-wider">
+                      <th className="border border-slate-900 p-3.5 text-center text-xs font-black uppercase text-slate-500 tracking-wider">
                         3{isKo ? '교시' : 'rd Period'}
                       </th>
                     </tr>
@@ -591,19 +583,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                                       e.stopPropagation();
                                       setSandboxGrid(prev => ({ ...prev, [cellId]: null }));
                                     }}
-                                    className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-slate-950 text-[8px] font-black text-rose-400 border border-slate-800 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity hover:bg-rose-500 hover:text-white"
+                                    className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-slate-950 text-xs font-medium text-rose-400 border border-slate-800 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity hover:bg-rose-500 hover:text-white"
                                   >
                                     ×
                                   </button>
-                                  <span className="text-[10px] font-black uppercase text-white tracking-tight truncate">
+                                  <span className="text-xs font-medium uppercase text-white tracking-tight truncate">
                                     {isKo ? subject.nameKo : subject.name}
                                   </span>
-                                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5">
+                                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5">
                                     {isKo ? subject.teacherKo : subject.teacher}
                                   </span>
                                 </motion.div>
                               ) : (
-                                <div className="absolute inset-2 border-2 border-dashed border-slate-900 hover:border-slate-800 rounded-xl flex items-center justify-center text-[8.5px] font-black text-slate-600 transition-colors">
+                                <div className="absolute inset-2 border-2 border-dashed border-slate-900 hover:border-slate-800 rounded-xl flex items-center justify-center text-xs font-medium text-slate-600 transition-colors">
                                   {isKo ? '비어 있음' : 'VACANT'}
                                 </div>
                               )}
@@ -616,11 +608,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 </table>
               </div>
 
-              <div className="mt-4 flex flex-col sm:flex-row justify-between items-center text-[9px] font-bold text-slate-500 uppercase tracking-widest gap-4">
+              <div className="mt-4 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-widest gap-4">
                 <span>⚡ {isKo ? '한 번의 탭으로 브러쉬를 슬롯에 전파합니다' : 'Tip: click any slot with an active brush to draw.'}</span>
                 <button 
                   onClick={onTryDemo} 
-                  className="bg-sky-500/10 hover:bg-sky-500 border border-sky-500/20 hover:text-slate-950 text-sky-400 px-4 py-2 rounded-lg transition-all font-black text-[10px]"
+                  className="bg-sky-500/10 hover:bg-sky-500 border border-sky-500/20 hover:text-slate-950 text-sky-400 px-4 py-2 rounded-lg transition-all font-semibold text-xs"
                 >
                   {isKo ? '전체 관리자 버전 열기' : 'EXPAND TO FULL PLATFORM'}
                 </button>
@@ -636,7 +628,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
       <section id="features" className="relative z-10 py-24 px-6 lg:px-16 max-w-7xl mx-auto border-t border-slate-900">
         
         <div className="text-center mb-20 space-y-4">
-          <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-[8.5px] font-black uppercase tracking-widest">
+          <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-xs font-medium uppercase tracking-widest">
             {isKo ? '가디언 지능형 행정 시스템' : 'GENIAL COGNITIVE MATRIX'}
           </div>
           <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight">
@@ -656,12 +648,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           <motion.div 
             whileHover={{ y: -6 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="md:col-span-8 bg-slate-950/60 border border-slate-800/80 p-10 rounded-[3rem] relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
+            className="md:col-span-8 bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
           >
             <div className="absolute top-0 right-0 w-48 h-48 bg-sky-500/[0.04] blur-3xl pointer-events-none rounded-full" />
             <div className="space-y-4 max-w-xl">
               <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                <Layers className="w-6 h-6 animate-pulse" />
+                <Layers className="w-6 h-6" />
               </div>
               <h3 className="text-2xl font-black uppercase text-white tracking-tight">{isKo ? '크로노스 위버 AI 엔진' : 'Chronos Weaver solver'}</h3>
               <p className="text-slate-400 font-medium text-sm leading-relaxed">
@@ -670,7 +662,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   : 'Synthesizes high-density, multi-class parameters into structurally perfect matrix grids in seconds. Runs on a powerful localized constraint solver to guarantee zero-defect scheduling.'}
               </p>
             </div>
-            <div className="mt-8 flex flex-wrap gap-2 text-[8px] font-black uppercase tracking-widest">
+            <div className="mt-8 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-widest">
               <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">GEMINI LLM SOLVER</span>
               <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">STABILITY RANKING</span>
               <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">0s COMPILER</span>
@@ -681,7 +673,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           <motion.div 
             whileHover={{ y: -6 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="md:col-span-4 bg-slate-950/60 border border-slate-800/80 p-10 rounded-[3rem] relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
+            className="md:col-span-4 bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/[0.03] blur-2xl pointer-events-none rounded-full" />
             <div className="space-y-4">
@@ -695,7 +687,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   : 'Monitors manual changes in real-time. Instantly highlights duplicate bookings or lunch violations before they occur, keeping your operations fully integrated.'}
               </p>
             </div>
-            <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mt-6 flex items-center gap-1.5 hover:translate-x-1 transition-transform">
+            <span className="text-xs font-medium uppercase text-indigo-400 tracking-widest mt-6 flex items-center gap-1.5 hover:translate-x-1 transition-transform">
               {isKo ? '실시간 감시 가용' : 'LIVE PROTOCOL ACTIVE'} <ChevronRight className="w-3 h-3" />
             </span>
           </motion.div>
@@ -704,7 +696,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           <motion.div 
             whileHover={{ y: -6 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="md:col-span-4 bg-slate-950/60 border border-slate-800/80 p-10 rounded-[3rem] relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
+            className="md:col-span-4 bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
           >
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
@@ -717,7 +709,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   : 'Automated auditing of workload density, back-to-back lessons, and recovery periods. Reduces supervisor stress and increases faculty retention.'}
               </p>
             </div>
-            <div className="mt-6 p-4 bg-rose-500/5 rounded-2xl border border-rose-500/20 text-[9.5px] font-black uppercase tracking-widest text-rose-300">
+            <div className="mt-6 p-4 bg-rose-500/5 rounded-2xl border border-rose-500/20 text-xs font-medium uppercase tracking-widest text-rose-300">
               {isKo ? '교원 복지 최우선 보장제' : 'PROACTIVE RETENTION PROTECTION'}
             </div>
           </motion.div>
@@ -726,7 +718,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           <motion.div 
             whileHover={{ y: -6 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="md:col-span-8 bg-slate-950/60 border border-slate-800/80 p-10 rounded-[3rem] relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
+            className="md:col-span-8 bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
           >
             <div className="absolute bottom-0 right-0 w-64 h-32 bg-teal-500/[0.03] blur-3xl pointer-events-none rounded-full" />
             <div className="space-y-4 max-w-2xl">
@@ -740,7 +732,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   : 'Traces your curriculum milestones. Interleaves school syllabus guidelines with weekly scheduling grids to ensure students achieve academic targets seamlessly.'}
               </p>
             </div>
-            <div className="mt-8 flex flex-wrap gap-2 text-[8px] font-black uppercase tracking-widest">
+            <div className="mt-8 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-widest">
               <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">WEEKLY MILESTONES</span>
               <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">TEXTBOOK REPOSITORY</span>
               <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">STANDARDS BINDER</span>
@@ -754,7 +746,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
       <section className="relative z-10 py-24 px-6 lg:px-16 max-w-7xl mx-auto border-t border-slate-900">
         
         <div className="text-center mb-16 space-y-4">
-          <span className="text-sky-400 text-[10px] font-black uppercase tracking-[0.5em]">{isKo ? '행정 제어 센터' : 'ADMINISTRATOR HUB'}</span>
+          <span className="text-sky-400 text-xs font-medium uppercase tracking-[0.5em]">{isKo ? '행정 제어 센터' : 'ADMINISTRATOR HUB'}</span>
           <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight">{isKo ? '통합 제어부 미리보기' : 'CHRONOS CONSOLE SUITE'}</h2>
           
           {/* Tab buttons */}
@@ -767,9 +759,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-5 py-2.5 rounded-2xl text-[9.5px] font-black uppercase tracking-widest transition-all ${
+                className={`px-5 py-2.5 rounded-2xl text-xs font-medium uppercase tracking-widest transition-all ${
                   activeTab === tab.id 
-                    ? 'bg-sky-500 text-slate-950 shadow-md font-black' 
+                    ? 'bg-sky-500 text-slate-950 shadow-md font-semibold' 
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -780,7 +772,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
         </div>
 
         {/* Dynamic Interactive Screenshot Panel */}
-        <div className="bg-slate-950/80 border border-slate-800 p-8 rounded-[3.5rem] shadow-2xl max-w-5xl mx-auto relative overflow-hidden text-left min-h-[380px] flex flex-col justify-between">
+        <div className="bg-slate-950/80 border border-slate-800 p-8 rounded-2xl shadow-2xl max-w-5xl mx-auto relative overflow-hidden text-left min-h-[380px] flex flex-col justify-between">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/[0.02] blur-3xl pointer-events-none rounded-full" />
           
           <AnimatePresence mode="wait">
@@ -796,7 +788,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="md:col-span-6 space-y-6">
                   <div className="inline-flex items-center gap-2 text-sky-400">
                     <Calendar className="w-5 h-5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{isKo ? '자동 정렬 행렬' : 'Master Matrix Alignment'}</span>
+                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '자동 정렬 행렬' : 'Master Matrix Alignment'}</span>
                   </div>
                   <h3 className="text-3xl font-black uppercase text-white tracking-tight">
                     {isKo ? '충돌 없는 최적의 경로 발굴' : 'GENERATE COMPLIANT BLUEPRINTS'}
@@ -809,17 +801,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   <div className="flex gap-4">
                     <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-center flex-1">
                       <p className="text-xl font-black text-white">0s</p>
-                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1">{isKo ? '수작업 시간 단축' : 'Calculation Lag'}</p>
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">{isKo ? '수작업 시간 단축' : 'Calculation Lag'}</p>
                     </div>
                     <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-center flex-1">
                       <p className="text-xl font-black text-indigo-400">100%</p>
-                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1">{isKo ? '정부 행정 규격 달성' : 'Constraint Defense'}</p>
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">{isKo ? '정부 행정 규격 달성' : 'Constraint Defense'}</p>
                     </div>
                   </div>
                 </div>
                 <div className="md:col-span-6">
                   <div className="bg-slate-900/50 p-6 rounded-2.5xl border border-slate-800 space-y-3">
-                    <div className="flex justify-between text-[10px] font-black uppercase text-slate-500 border-b border-slate-900 pb-2">
+                    <div className="flex justify-between text-xs font-medium uppercase text-slate-500 border-b border-slate-900 pb-2">
                       <span>{isKo ? '강교사 현황' : 'TEACHER PROFILE'}</span>
                       <span>{isKo ? '상태' : 'STATUS'}</span>
                     </div>
@@ -830,10 +822,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                     ].map((row, index) => (
                       <div key={index} className="flex justify-between items-center py-2 border-b border-slate-900/40 text-xs">
                         <div>
-                          <p className="font-extrabold text-white uppercase">{row.n}</p>
-                          <p className="text-[8.5px] font-black text-slate-500 uppercase tracking-wider">{row.r}</p>
+                          <p className="font-medium text-white uppercase">{row.n}</p>
+                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{row.r}</p>
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${row.c}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium uppercase ${row.c}`}>
                           {row.s}
                         </span>
                       </div>
@@ -855,7 +847,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="md:col-span-6 space-y-6">
                   <div className="inline-flex items-center gap-2 text-rose-400">
                     <ShieldCheck className="w-5 h-5 text-indigo-400" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{isKo ? '실시간 충돌 보호' : 'Dynamic Integrity Audit'}</span>
+                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '실시간 충돌 보호' : 'Dynamic Integrity Audit'}</span>
                   </div>
                   <h3 className="text-3xl font-black uppercase text-white tracking-tight">
                     {isKo ? '조그마한 논리 모순까지 철저히 예방' : 'PREVENT DESTRUCTIVE COLLISIONS'}
@@ -875,11 +867,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                       <div className="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center text-red-400">
                         <AlertCircle className="w-4 h-4" />
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-red-400">{isKo ? '충돌 경고 로그' : 'LOGICAL CONFLICT FLUX'}</span>
+                      <span className="text-xs font-medium uppercase tracking-widest text-red-400">{isKo ? '충돌 경고 로그' : 'LOGICAL CONFLICT FLUX'}</span>
                     </div>
                     <div className="bg-slate-950/80 p-4 border border-slate-900 rounded-xl border-l-[3px] border-l-red-500 text-left">
-                      <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest">RULE_VIOLATION_072</p>
-                      <p className="text-xs font-bold text-white mt-1 leading-relaxed">
+                      <p className="text-xs font-medium text-rose-400 uppercase tracking-widest">RULE_VIOLATION_072</p>
+                      <p className="text-xs font-medium text-white mt-1 leading-relaxed">
                         {isKo 
                           ? '김교사는 이미 10학년 화학 수업에 배정되었습니다. 9학년 융합과학에 동시 배치할 수 없습니다!' 
                           : 'Instructor Sarah is booked for Grade 10 AP Biology at Period 3. Cannot duplicate slot to Grade 9 Science.'}
@@ -902,7 +894,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <div className="md:col-span-6 space-y-6">
                   <div className="inline-flex items-center gap-2 text-emerald-400">
                     <Users className="w-5 h-5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{isKo ? '교원 삶의 질 보호' : 'FACULTY WELLNESS SHIELD'}</span>
+                    <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '교원 삶의 질 보호' : 'FACULTY WELLNESS SHIELD'}</span>
                   </div>
                   <h3 className="text-3xl font-black uppercase text-white tracking-tight">
                     {isKo ? '지키지 못할 무리한 일정 타파' : 'SAFEGUARD TEACHER WELLNESS'}
@@ -917,7 +909,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   </p>
                 </div>
                 <div className="md:col-span-6 bg-slate-900/60 p-6 rounded-2.5xl border border-slate-800 space-y-4">
-                  <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-400">
+                  <div className="flex justify-between items-center text-xs font-medium uppercase text-slate-400">
                     <span>Faculty Fatigue Matrix</span>
                     <span className="text-emerald-400">98% COMPLIANT</span>
                   </div>
@@ -928,7 +920,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                       { name: 'Prof. Emily Post', label: 'Music G10', status: 'Moderate Load', width: '60%' }
                     ].map((row, index) => (
                       <div key={index} className="space-y-1">
-                        <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                        <div className="flex justify-between items-center text-xs font-medium uppercase">
                           <span className="text-white">{row.name} ({row.label})</span>
                           <span className="text-slate-500">{row.status}</span>
                         </div>
@@ -943,7 +935,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             )}
           </AnimatePresence>
 
-          <div className="pt-6 border-t border-slate-900 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+          <div className="pt-6 border-t border-slate-900 flex justify-between items-center text-xs font-medium uppercase tracking-widest text-slate-500">
             <span>CHRONOS ENGINE CORE 8.1</span>
             <button onClick={onTryDemo} className="text-sky-400 hover:text-white transition-colors">{isKo ? '대시보드 바로 가기' : 'ENTER MANAGER SUITE'} →</button>
           </div>
@@ -954,7 +946,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
       {/* Modernized Pricing Section */}
       <section id="pricing" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto border-t border-slate-900">
         <div className="text-center mb-20 space-y-4">
-          <h2 className="text-[10px] font-black text-sky-500 uppercase tracking-[0.6em]">{isKo ? '구독 옵션' : 'SUBSCRIPTION PLANS'}</h2>
+          <h2 className="text-xs font-medium text-sky-500 uppercase tracking-[0.6em]">{isKo ? '구독 옵션' : 'SUBSCRIPTION PLANS'}</h2>
           <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">{isKo ? '적합한 라이선스를 탐색하세요' : 'AI SCHEDULING FOR EVERY CAMPUS'}</h3>
           <p className="text-slate-400 font-medium max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
             {isKo ? '간단한 일정 설계용 무료 체험판부터, 다수 학급과 번아웃 정밀 모니터 대량 설비가 연계된 최상위 등급 라이선스까지.' : 'Discover flexible models for educational institutions of all sizes, from private tutoring networks to global academic systems.'}</p>
@@ -965,15 +957,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
            {/* Tier 1 */}
            <motion.div 
              whileHover={{ y: -4 }}
-             className="bg-slate-950/60 border border-slate-800/80 p-12 rounded-[3rem] flex flex-col justify-between gap-10 hover:border-slate-705/80 transition-all text-left"
+             className="bg-slate-950/60 border border-slate-800/80 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-slate-705/80 transition-all text-left"
            >
               <div className="space-y-6">
-                <div className="inline-flex px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 text-[9px] font-black uppercase tracking-widest">
+                <div className="inline-flex px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 text-xs font-medium uppercase tracking-widest">
                   {isKo ? '개인 및 소규모 체험' : 'STARTER LAB'}
                 </div>
                 <div>
                   <h4 className="text-5xl font-black uppercase tracking-tighter text-white">{isKo ? '0원' : '$0'}</h4>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 tracking-widest">{isKo ? '기간 제한 제한 없음' : 'NO TIME CARD CONSTRAINT'}</p>
+                  <p className="text-xs font-medium text-slate-500 uppercase mt-2 tracking-widest">{isKo ? '기간 제한 제한 없음' : 'NO TIME CARD CONSTRAINT'}</p>
                 </div>
                 <p className="text-[13px] font-medium text-slate-400 leading-relaxed">
                   {isKo ? '가디언 엔진의 실시간 규칙 모순 모니터와 기본적인 드래그 일정 편집 기능을 가볍게 탐닉할 수 있습니다.' : 'Test coordinate scheduling models to easily trace conflicts and construct reliable schedule grids for personal study use.'}
@@ -990,7 +982,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                       <div className="w-5 h-5 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-400">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
+                      <span className="text-xs font-medium uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
                     </div>
                   ))}
                 </div>
@@ -1000,7 +992,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onTryDemo} 
-                className="w-full py-4.5 rounded-2xl bg-white hover:bg-sky-400 text-slate-950 text-[10.5px] font-black uppercase tracking-widest transition-all shadow-xl"
+                className="w-full py-4.5 rounded-2xl bg-white hover:bg-sky-400 text-slate-950 text-xs font-semibold uppercase tracking-widest transition-all shadow-xl"
               >
                 {isKo ? '체험 Sandbox 시작' : 'Access Free Sandbox'}
               </motion.button>
@@ -1009,19 +1001,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
            {/* Tier 2: Pro */}
            <motion.div 
              whileHover={{ y: -4 }}
-             className="bg-indigo-600/10 border-2 border-indigo-500/30 p-12 rounded-[3rem] flex flex-col justify-between gap-10 hover:border-indigo-500/60 transition-all text-left relative overflow-hidden shadow-[0_30px_60px_rgba(30,27,75,0.4)]"
+             className="bg-indigo-600/10 border-2 border-indigo-500/30 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-indigo-500/60 transition-all text-left relative overflow-hidden shadow-[0_30px_60px_rgba(30,27,75,0.4)]"
            >
-              <div className="absolute top-0 right-0 py-6 px-12 transform rotate-45 translate-x-12 translate-y-4 bg-indigo-500 text-white text-[8px] font-extrabold uppercase tracking-widest text-center shadow-lg">
+              <div className="absolute top-0 right-0 py-6 px-12 transform rotate-45 translate-x-12 translate-y-4 bg-indigo-500 text-white text-xs font-semibold uppercase tracking-widest text-center shadow-lg">
                 Enterprise
               </div>
               
               <div className="space-y-6 relative z-10">
-                <div className="inline-flex px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest border border-indigo-500/30">
+                <div className="inline-flex px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-medium uppercase tracking-widest border border-indigo-500/30">
                   {isKo ? '교육기관 및 캠퍼스 전용' : 'CAMPUS EXECUTIVE'}
                 </div>
                 <div>
                   <h4 className="text-5xl font-black uppercase tracking-tighter text-white">{isKo ? '견적 상담' : 'CUSTOM'}</h4>
-                  <p className="text-[9px] font-bold text-indigo-400 uppercase mt-2 tracking-widest">{isKo ? '대규모 교원 단체 맞춤 적용' : 'SCALABLE CLOUD DISPATCH'}</p>
+                  <p className="text-xs font-medium text-indigo-400 uppercase mt-2 tracking-widest">{isKo ? '대규모 교원 단체 맞춤 적용' : 'SCALABLE CLOUD DISPATCH'}</p>
                 </div>
                 <p className="text-[13px] font-medium text-slate-400 leading-relaxed">
                   {isKo 
@@ -1040,7 +1032,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                       <div className="w-5 h-5 rounded-full bg-indigo-400/20 flex items-center justify-center text-indigo-400">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
+                      <span className="text-xs font-medium uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
                     </div>
                   ))}
                 </div>
@@ -1050,7 +1042,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onEnter} 
-                className="w-full py-4.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10.5px] font-black uppercase tracking-widest transition-all relative z-10 border border-white/10"
+                className="w-full py-4.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold uppercase tracking-widest transition-all relative z-10 border border-white/10"
               >
                 {isKo ? '영업 연구팀 상담 요청' : 'Consult with Campus Engineer'}
               </motion.button>
@@ -1066,31 +1058,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center p-[1px] shadow-lg">
                 <div className="w-full h-full rounded-[11px] bg-slate-950 flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-sky-400 rounded-full animate-pulse" />
+                  <div className="w-1.5 h-1.5 bg-sky-400 rounded-full" />
                 </div>
               </div>
-              <span className="text-base font-black tracking-[0.2em] text-white uppercase">EduPlanner.Pro</span>
+              <span className="text-base font-medium tracking-[0.2em] text-white uppercase">EduPlanner.Pro</span>
             </div>
-            <p className="text-[9.5px] font-medium uppercase tracking-[0.3em] text-slate-500 max-w-sm leading-relaxed">
+            <p className="text-xs font-medium uppercase tracking-[0.3em] text-slate-500 max-w-sm leading-relaxed">
               Smarter Institutional Infrastructures. Powered by Gemini Cognitive Optimization. Engineered for Academic Excellence.
             </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-16">
             <div className="space-y-5 text-left">
-              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{isKo ? '탐색' : 'Navigation'}</h4>
+              <h4 className="text-xs font-medium text-white uppercase tracking-[0.3em]">{isKo ? '탐색' : 'Navigation'}</h4>
               <div className="flex flex-col gap-3.5">
-                <button onClick={() => scrollTo('sandbox')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '샌드박스 체험' : 'Interactive Sandbox'}</button>
-                <button onClick={() => scrollTo('features')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '기술 사양' : 'Intelligence Tech'}</button>
-                <button onClick={() => scrollTo('pricing')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '구독' : 'License model'}</button>
+                <button onClick={() => scrollTo('sandbox')} className="text-xs font-medium text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '샌드박스 체험' : 'Interactive Sandbox'}</button>
+                <button onClick={() => scrollTo('features')} className="text-xs font-medium text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '기술 사양' : 'Intelligence Tech'}</button>
+                <button onClick={() => scrollTo('pricing')} className="text-xs font-medium text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '구독' : 'License model'}</button>
               </div>
             </div>
             
             <div className="space-y-5 text-left">
-              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{isKo ? '법률 파트' : 'Legal Compliance'}</h4>
+              <h4 className="text-xs font-medium text-white uppercase tracking-[0.3em]">{isKo ? '법률 파트' : 'Legal Compliance'}</h4>
               <div className="flex flex-col gap-3.5">
-                <button onClick={() => openLegal('privacy')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '개인정보 처리원칙' : 'Privacy Protection'}</button>
-                <button onClick={() => openLegal('terms')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '이용 서비스 약정' : 'Terms & Conditions'}</button>
+                <button onClick={() => openLegal('privacy')} className="text-xs font-medium text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '개인정보 처리원칙' : 'Privacy Protection'}</button>
+                <button onClick={() => openLegal('terms')} className="text-xs font-medium text-slate-400 uppercase tracking-widest hover:text-sky-400 text-left transition-colors">{isKo ? '이용 서비스 약정' : 'Terms & Conditions'}</button>
               </div>
             </div>
           </div>
@@ -1098,10 +1090,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
         </div>
         
         <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-slate-900 flex flex-col sm:flex-row justify-between items-center gap-6">
-          <div className="text-[9px] font-black uppercase tracking-[0.35em] text-slate-600">
+          <div className="text-xs font-medium uppercase tracking-[0.35em] text-slate-600">
             © {new Date().getFullYear()} EduPlanner Pro. ALL RIGHTS RESERVED. IN COMPLIANCE WITH EDUCATION CORES.
           </div>
-          <div className="flex items-center gap-4 text-slate-600 text-[10px] font-bold">
+          <div className="flex items-center gap-4 text-slate-600 text-xs font-bold">
             <Globe className="w-4 h-4" />
             <span>GLOBAL OS V8.19</span>
           </div>

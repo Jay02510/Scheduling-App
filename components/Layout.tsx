@@ -38,11 +38,11 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 overflow-x-hidden font-inter">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#0f172a] overflow-x-hidden font-inter">
       <nav className="w-full md:w-64 bg-[#0f172a] text-white p-5 flex flex-col md:min-h-screen md:sticky md:top-0 flex-shrink-0 z-20 no-print">
         <div className="mb-10 px-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl gradient-primary flex-shrink-0 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <div className="w-9 h-9 rounded-2xl gradient-primary flex-shrink-0 flex items-center justify-center shadow-lg shadow-sky-500/20">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
@@ -50,21 +50,21 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
             <h1 className="text-sm font-black tracking-widest truncate uppercase">EduPlanner</h1>
           </div>
           
-          <div className="flex bg-slate-800 p-0.5 rounded-lg text-[8px] font-black no-print">
-             <button onClick={() => setLanguage('ko')} className={`px-2 py-1 rounded-md transition-all ${language === 'ko' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>KR</button>
-             <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-md transition-all ${language === 'en' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>EN</button>
+          <div className="flex bg-slate-800 p-0.5 rounded-lg text-xs font-black no-print">
+             <button onClick={() => setLanguage('ko')} className={`px-2 py-1 rounded-md transition-all ${language === 'ko' ? 'bg-sky-500 text-white' : 'text-slate-500'}`}>KR</button>
+             <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-md transition-all ${language === 'en' ? 'bg-sky-500 text-white' : 'text-slate-500'}`}>EN</button>
           </div>
         </div>
 
         {isPremium ? (
           <div className="mb-6 px-5 py-2.5 bg-sky-500/10 border border-sky-500/30 rounded-2xl flex items-center justify-center gap-2">
              <div className="w-2 h-2 rounded-full bg-sky-400"></div>
-             <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest">PRO ACCESS ACTIVE</span>
+             <span className="text-xs font-black text-sky-400 uppercase tracking-widest">PRO ACCESS ACTIVE</span>
           </div>
         ) : (
           <div className="mb-6 px-5 py-2.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center gap-2">
              <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-             <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">FREE STARTER MODE</span>
+             <span className="text-xs font-black text-amber-400 uppercase tracking-widest">FREE STARTER MODE</span>
           </div>
         )}
         
@@ -75,12 +75,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 relative group overflow-hidden ${
+                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 relative group overflow-hidden ${
                   isActive ? 'text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 hover:translate-x-1'
                 }`}
               >
                 {isActive && (
-                  <div className="absolute inset-0 gradient-primary rounded-2xl -z-0 shadow-lg shadow-indigo-500/20 animate-fadeIn bg-indigo-600"></div>
+                  <div className="absolute inset-0 gradient-primary rounded-2xl -z-0 shadow-lg shadow-sky-500/20 animate-fadeIn bg-sky-500"></div>
                 )}
                 <svg className={`w-4 h-4 relative z-10 transition-all duration-300 ${isActive ? 'text-white scale-110' : 'text-slate-500 group-hover:text-slate-300 group-hover:scale-110'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={tab.icon} />
@@ -94,13 +94,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
         <div className="mt-auto pt-8 border-t border-white/5 space-y-4">
           <button
             onClick={onOpenFeedback}
-            className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-indigo-400 hover:text-white hover:bg-indigo-600/10 transition-all group border border-indigo-500/10"
+            className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-sky-400 hover:text-white hover:bg-sky-500/10 transition-all group border border-sky-500/10"
           >
             <div className="relative">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full"></div>
             </div>
             <span>Give Feedback</span>
           </button>
@@ -108,7 +108,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
           {onLogout && (
             <button
               onClick={onLogout}
-              className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-rose-400 hover:text-white hover:bg-rose-500/10 transition-all group border border-rose-500/10"
+              className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-rose-400 hover:text-white hover:bg-rose-500/10 transition-all group border border-rose-500/10"
             >
               <svg className="w-4 h-4 text-rose-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -119,7 +119,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
         </div>
       </nav>
 
-      <main className="flex-1 p-6 md:p-10 lg:p-12 overflow-y-auto h-screen max-w-full bg-slate-50 scroll-smooth">
+      <main className="flex-1 p-6 md:p-10 lg:p-12 overflow-y-auto h-screen max-w-full bg-[#0a0f1e] scroll-smooth">
         <div className="max-w-6xl mx-auto w-full">
           {children}
         </div>
