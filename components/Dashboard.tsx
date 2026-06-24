@@ -46,7 +46,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
           <h2 className="text-5xl font-black text-white tracking-tighter">{t('school_hub')}</h2>
           <div className="flex items-center gap-3 mt-3">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-             <p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em] transition-opacity duration-500">{insights[tickerIndex]}</p>
+             <p className="text-slate-400 font-medium text-xs normal-case transition-opacity duration-500">{insights[tickerIndex]}</p>
           </div>
         </div>
         <div className="flex gap-4">
@@ -90,7 +90,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="bg-slate-900/60 p-10 rounded-2xl border border-slate-800 shadow-[6px_6px_0px_rgba(15,23,42,1)] hover:shadow-[10px_10px_0px_rgba(15,23,42,1)] transition-all duration-300 flex flex-col h-[400px]">
                  <div className="flex justify-between items-center mb-8 px-2">
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-450">{t('classroom_hub')}</h3>
+                    <h3 className="text-xs font-semibold tracking-[0.2em] text-slate-400">{t('classroom_hub')}</h3>
                     <div className="relative group/tip">
                        <span className="text-xs font-bold text-sky-600 uppercase cursor-help underline decoration-dotted">Jump to Schedule</span>
                        <div className="absolute bottom-full right-0 mb-3 w-48 p-4 bg-slate-900 text-white rounded-2xl text-xs font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50">
@@ -103,7 +103,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
                        <button key={c.id} onClick={() => onJump?.(c.id, 'class')} className="w-full flex items-center justify-between p-5 bg-slate-800/40 hover:bg-slate-800 border-2 border-transparent hover:border-slate-800 rounded-2xl transition-all group hover:shadow-[3px_3px_0px_rgba(15,23,42,1)]">
                           <div className="flex items-center gap-4">
                              <div className="w-10 h-10 rounded-xl shadow-inner border border-slate-900" style={{ backgroundColor: c.color }}></div>
-                             <span className="font-black text-slate-100 uppercase text-xs tracking-tight">{c.name}</span>
+                             <span className="font-medium text-slate-100 text-xs tracking-tight">{c.name}</span>
                           </div>
                           <svg className="w-4 h-4 text-slate-350 group-hover:text-sky-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                        </button>
@@ -115,7 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
 
               <div className="bg-slate-900/60 p-10 rounded-2xl border border-slate-800 shadow-[6px_6px_0px_rgba(15,23,42,1)] hover:shadow-[10px_10px_0px_rgba(15,23,42,1)] transition-all duration-300 flex flex-col h-[400px]">
                  <div className="flex justify-between items-center mb-8 px-2">
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-450">{t('faculty_registry')}</h3>
+                    <h3 className="text-xs font-semibold tracking-[0.2em] text-slate-400">{t('faculty_registry')}</h3>
                     <span className="text-xs font-bold text-slate-400 uppercase">{t('live_index')}</span>
                   </div>
                   <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
@@ -124,8 +124,8 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
                            <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 font-black text-xs border border-slate-900 shadow-sm" style={{ backgroundColor: t.color }}>{t.name[0] || 'T'}</div>
                               <div className="text-left">
-                                  <p className="font-black text-slate-100 uppercase text-xs">{t.name}</p>
-                                  <p className="text-xs font-black text-slate-450 uppercase tracking-widest mt-0.5">{t.role}</p>
+                                  <p className="font-medium text-slate-100 text-xs">{t.name}</p>
+                                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-0.5">{t.role}</p>
                               </div>
                            </div>
                            <svg className="w-4 h-4 text-slate-355 group-hover:text-sky-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
@@ -142,7 +142,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teachers = [], classes = [], text
           <div className="bg-[#0f172a] p-12 rounded-2xl border-[3px] border-slate-900 shadow-[6px_6px_0px_rgba(15,23,42,1)] text-white relative overflow-hidden group min-h-[400px] flex flex-col justify-between">
             <div className="absolute top-[-20%] right-[-20%] w-64 h-64 gradient-primary blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
             <div>
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-sky-400 mb-8">{t('executive_summary')}</h3>
+              <h3 className="text-xs font-medium tracking-[0.04em] text-sky-400 mb-8">{t('executive_summary')}</h3>
               <div className="space-y-6">
                 <div className="flex items-center justify-between border-b border-white/5 pb-6">
                   <span className="text-sm font-bold text-slate-400">{t('operational_health')}</span>

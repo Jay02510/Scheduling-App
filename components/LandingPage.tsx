@@ -1,5 +1,21 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useInView, useScroll, useMotionValueEvent } from 'motion/react';
+
+const FadeUp = ({ children, delay = 0, className = '' }: { children: React.ReactNode, delay?: number, className?: string }) => {
+  const ref = React.useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 24 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
 import { 
   Sparkles, 
   Layers, 
@@ -71,11 +87,42 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
 
   const [sandboxResetCounter, setSandboxResetCounter] = useState(0);
 
+  const [counted, setCounted] = React.useState(false);
+  React.useEffect(() => {
+    const timer = setTimeout(() => setCounted(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const [scrolled, setScrolled] = React.useState(false);
+  const [activeSection, setActiveSection] = React.useState('hero');
+  const { scrollY } = useScroll();
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setScrolled(latest > 80);
+  });
+
+  React.useEffect(() => {
+    const sections = ['hero', 'sandbox', 'features', 'pricing'];
+    const observers = sections.map(id => {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      const obs = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) setActiveSection(id);
+      }, { threshold: 0.3 });
+      obs.observe(el);
+      return obs;
+    });
+    return () => observers.forEach(obs => obs?.disconnect());
+  }, []);
+
+  const [lastDropped, setLastDropped] = React.useState<string | null>(null);
+
   const handleCellClick = (cellId: string) => {
     setSandboxGrid(prev => ({
       ...prev,
       [cellId]: selectedBrush
     }));
+    setLastDropped(cellId);
+    setTimeout(() => setLastDropped(null), 300);
   };
 
   const clearSandbox = () => {
@@ -130,18 +177,55 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
     setLegalView({ isOpen: true, type });
   };
 
+  const TimetableBg = () => (
+    <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <pattern id="tgrid" width="120" height="60" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="120" y2="0" stroke="#94a3b8" strokeWidth="0.5"/>
+          <line x1="0" y1="0" x2="0" y2="60" stroke="#94a3b8" strokeWidth="0.5"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#tgrid)" />
+      {[
+        { x: 10, y: 10, w: 90, color: '#0ea5e9', delay: '0.2s' },
+        { x: 130, y: 10, w: 70, color: '#2dd4bf', delay: '0.4s' },
+        { x: 250, y: 10, w: 100, color: '#0ea5e9', delay: '0.6s' },
+        { x: 10, y: 70, w: 70, color: '#a78bfa', delay: '0.8s' },
+        { x: 130, y: 70, w: 90, color: '#0ea5e9', delay: '1.0s' },
+        { x: 370, y: 70, w: 80, color: '#2dd4bf', delay: '1.2s' },
+        { x: 10, y: 130, w: 100, color: '#2dd4bf', delay: '1.4s' },
+        { x: 250, y: 130, w: 70, color: '#a78bfa', delay: '1.6s' },
+        { x: 490, y: 10, w: 90, color: '#0ea5e9', delay: '1.8s' },
+        { x: 490, y: 70, w: 70, color: '#2dd4bf', delay: '2.0s' },
+        { x: 370, y: 130, w: 100, color: '#0ea5e9', delay: '2.2s' },
+      ].map((pill, i) => (
+        <rect
+          key={i}
+          x={pill.x} y={pill.y + 4} width={pill.w} height={20}
+          rx="4" fill={pill.color} fillOpacity="0.6"
+          className="timetable-pill"
+          style={{ animationDelay: pill.delay, animationFillMode: 'both' }}
+        />
+      ))}
+    </svg>
+  );
+
   return (
     <div className="relative min-h-screen bg-[#020617] text-white overflow-x-hidden font-inter selection:bg-sky-500/30">
       
       {/* Background Interactive Ambient Field */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         {/* Futuristic Laser Matrix Grid */}
-        <div className="absolute inset-0 bg-grid opacity-25" />
+        <TimetableBg />
       </div>
 
       {/* Floating Futuristic Dock Header */}
       <nav className="fixed top-6 left-0 right-0 z-[100] px-4">
-        <div className="max-w-6xl mx-auto bg-slate-950/75 backdrop-blur-2xl border border-slate-800/80 rounded-2xl py-3 px-5 flex items-center justify-between shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)]">
+        <motion.div
+          animate={{ paddingTop: scrolled ? '0.5rem' : '0.75rem', paddingBottom: scrolled ? '0.5rem' : '0.75rem' }}
+          transition={{ duration: 0.2 }}
+          className="max-w-6xl mx-auto bg-slate-950/75 backdrop-blur-2xl border border-slate-800/80 rounded-3xl px-5 flex items-center justify-between shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)]"
+        >
           <div className="flex items-center gap-8">
             <div 
               className="flex items-center gap-3 cursor-pointer group" 
@@ -157,18 +241,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               </span>
             </div>
             
-            <div className="hidden md:flex items-center gap-8 text-xs font-medium tracking-normal text-slate-400 mb-[-2px]">
-              <button onClick={() => scrollTo('sandbox')} className="hover:text-sky-400 transition-colors py-1 relative group">
+            <div className="hidden md:flex items-center gap-8 text-xs font-medium tracking-normal mb-[-2px]">
+              <button 
+                onClick={() => scrollTo('sandbox')} 
+                className={`transition-colors py-1 relative group ${activeSection === 'sandbox' ? 'text-white' : 'text-slate-400 hover:text-sky-400'}`}
+              >
                 {isKo ? '라이브 체험' : 'Interactive Playground'}
-                <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-sky-400 group-hover:w-full transition-all duration-300" />
+                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-all duration-300 ${activeSection === 'sandbox' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
               </button>
-              <button onClick={() => scrollTo('features')} className="hover:text-sky-400 transition-colors py-1 relative group">
+              <button 
+                onClick={() => scrollTo('features')} 
+                className={`transition-colors py-1 relative group ${activeSection === 'features' ? 'text-white' : 'text-slate-400 hover:text-sky-400'}`}
+              >
                 {isKo ? '인텔리전스 스펙' : 'Features'}
-                <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-sky-400 group-hover:w-full transition-all duration-300" />
+                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-all duration-300 ${activeSection === 'features' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
               </button>
-              <button onClick={() => scrollTo('pricing')} className="hover:text-sky-400 transition-colors py-1 relative group">
+              <button 
+                onClick={() => scrollTo('pricing')} 
+                className={`transition-colors py-1 relative group ${activeSection === 'pricing' ? 'text-white' : 'text-slate-400 hover:text-sky-400'}`}
+              >
                 {isKo ? '라이선싱' : 'Pricing'}
-                <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-sky-400 group-hover:w-full transition-all duration-300" />
+                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-all duration-300 ${activeSection === 'pricing' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
               </button>
             </div>
           </div>
@@ -204,7 +297,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               <ChevronRight className="w-3.5 h-3.5" />
             </motion.button>
           </div>
-        </div>
+        </motion.div>
       </nav>
 
       {/* Hero Section */}
@@ -303,18 +396,36 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               transition={{ duration: 1, delay: 0.5 }}
               className="pt-10 grid grid-cols-3 gap-8 border-t border-slate-900 max-w-lg"
             >
-              <div>
-                <p className="text-2xl font-black text-sky-400">0s</p>
-                <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '실시간 동기화 지연' : 'Conflict Check Lag'}</p>
-              </div>
-              <div>
-                <p className="text-2xl font-black text-white">99.8%</p>
-                <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '교원 탈진 보호율' : 'Burnout Protected'}</p>
-              </div>
-              <div>
-                <p className="text-2xl font-black text-sky-400">Gemini</p>
-                <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '순수 지능형 인프라' : 'Deep Solver model'}</p>
-              </div>
+              <FadeUp delay={0.1}>
+                <div>
+                  <p className="text-2xl font-black text-sky-400">
+                    <motion.span initial={{ opacity: 0, scale: 0.5 }} animate={counted ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
+                      0s
+                    </motion.span>
+                  </p>
+                  <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '실시간 동기화 지연' : 'Conflict Check Lag'}</p>
+                </div>
+              </FadeUp>
+              <FadeUp delay={0.2}>
+                <div>
+                  <p className="text-2xl font-black text-white">
+                    <motion.span initial={{ opacity: 0, scale: 0.5 }} animate={counted ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}>
+                      99.8%
+                    </motion.span>
+                  </p>
+                  <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '교원 탈진 보호율' : 'Burnout Protected'}</p>
+                </div>
+              </FadeUp>
+              <FadeUp delay={0.3}>
+                <div>
+                  <p className="text-2xl font-black text-sky-400">
+                    <motion.span initial={{ opacity: 0, scale: 0.5 }} animate={counted ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                      Gemini
+                    </motion.span>
+                  </p>
+                  <p className="text-xs font-medium text-slate-400 normal-case mt-1">{isKo ? '순수 지능형 인프라' : 'Deep Solver model'}</p>
+                </div>
+              </FadeUp>
             </motion.div>
           </div>
 
@@ -327,7 +438,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           >
             <div className="relative w-full max-w-md aspect-[4/4] group">
               {/* Main Holo Card Terminal */}
-              <div className="relative bg-slate-950/80 border-2 border-sky-500/20 shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl rounded-2xl p-8 space-y-6 overflow-hidden">
+              <div className="relative bg-slate-950/80 border-2 hero-card-border shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl rounded-2xl p-8 space-y-6 overflow-hidden transition-shadow duration-1000">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 blur-3xl rounded-full" />
                 
                 {/* Simulated Screen Header */}
@@ -367,7 +478,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                           <motion.div 
                             initial={{ height: 0 }}
                             animate={{ height: item.v }}
-                            transition={{ duration: 1.5, delay: 0.5 }}
+                            transition={{ duration: 0.8, delay: id * 0.15 + 0.3, ease: [0.16, 1, 0.3, 1] }}
                             className={`w-full bg-gradient-to-t ${item.color} rounded-t-lg`} 
                           />
                         </div>
@@ -403,19 +514,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
       <section id="sandbox" className="relative z-10 py-24 px-6 lg:px-16 max-w-7xl mx-auto border-t border-slate-900">
         
         {/* Title Group */}
-        <div className="text-center mb-16 space-y-4">
-          <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-xs font-medium uppercase tracking-widest">
-            {isKo ? '실시간 체험 부스' : 'NO-RISK LIVE DEMO'}
+        <FadeUp delay={0}>
+          <div className="text-center mb-16 space-y-4">
+            <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-xs font-medium uppercase tracking-[0.06em]">
+              {isKo ? '실시간 체험 부스' : 'NO-RISK LIVE DEMO'}
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+              {isKo ? '시간표 충돌 방지 엔진 체험하기' : 'Teacher collision playground'}
+            </h2>
+            <p className="text-slate-400 font-medium max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
+              {isKo 
+                ? '아래 교과목을 클릭하여 시간표 슬롯 에 할당해 보세요. 동일 시간에 같은 교사가 중복 지정될 시, 지능형 엔진이 즉각적으로 경고를 전송합니다.' 
+                : 'Pick a course brush from below, then click any grid cell in Grade 9 or 10. If teachers overlap in the same period, watch the logic collision safety warnings dynamically flare open!'}
+            </p>
           </div>
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight">
-            {isKo ? '시간표 충돌 방지 엔진 체험하기' : 'TEACHER COLLISION PLAYGROUND'}
-          </h2>
-          <p className="text-slate-400 font-medium max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-            {isKo 
-              ? '아래 교과목을 클릭하여 시간표 슬롯 에 할당해 보세요. 동일 시간에 같은 교사가 중복 지정될 시, 지능형 엔진이 즉각적으로 경고를 전송합니다.' 
-              : 'Pick a course brush from below, then click any grid cell in Grade 9 or 10. If teachers overlap in the same period, watch the logic collision safety warnings dynamically flare open!'}
-          </p>
-        </div>
+        </FadeUp>
 
         {/* Master Sandbox Console Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
@@ -538,16 +651,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <table className="w-full border-collapse border border-slate-900 min-w-[500px]">
                   <thead>
                     <tr className="bg-slate-900/30">
-                      <th className="border border-slate-900 p-3.5 text-left text-xs font-black uppercase text-slate-500 tracking-wider w-28">
-                        {isKo ? '대상 학급' : 'TARGET CLASS'}
+                      <th className="border border-slate-900 p-3.5 text-left text-xs font-medium text-slate-500 tracking-wider w-28">
+                        {isKo ? '대상 학급' : 'Target class'}
                       </th>
-                      <th className="border border-slate-900 p-3.5 text-center text-xs font-black uppercase text-slate-500 tracking-wider">
+                      <th className="border border-slate-900 p-3.5 text-center text-xs font-medium text-slate-500 tracking-wider">
                         1{isKo ? '교시' : 'st Period'}
                       </th>
-                      <th className="border border-slate-900 p-3.5 text-center text-xs font-black uppercase text-slate-500 tracking-wider">
+                      <th className="border border-slate-900 p-3.5 text-center text-xs font-medium text-slate-500 tracking-wider">
                         2{isKo ? '교시' : 'nd Period'}
                       </th>
-                      <th className="border border-slate-900 p-3.5 text-center text-xs font-black uppercase text-slate-500 tracking-wider">
+                      <th className="border border-slate-900 p-3.5 text-center text-xs font-medium text-slate-500 tracking-wider">
                         3{isKo ? '교시' : 'rd Period'}
                       </th>
                     </tr>
@@ -561,6 +674,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                         {['period1', 'period2', 'period3'].map((period) => {
                           const cellId = `${grade}-${period}`;
                           const subject = sandboxGrid[cellId];
+                          const isLastDropped = cellId === lastDropped;
+                          const hasConflict = !!(sandboxGrid[`G9-${period}`] && sandboxGrid[`G10-${period}`] && sandboxGrid[`G9-${period}`]?.teacher === sandboxGrid[`G10-${period}`]?.teacher);
                           return (
                             <td 
                               key={period} 
@@ -571,7 +686,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                                 <motion.div 
                                   initial={{ scale: 0.9, opacity: 0 }}
                                   animate={{ scale: 1, opacity: 1 }}
-                                  className="w-full h-full rounded-xl p-2 flex flex-col justify-center text-left border relative group/item"
+                                  className={`w-full h-full rounded-xl p-2 flex flex-col justify-center text-left border relative group/item ${isLastDropped ? 'cell-drop' : ''} ${hasConflict ? 'conflict-cell' : ''}`}
                                   style={{ 
                                     backgroundColor: `${subject.color}15`, 
                                     borderColor: `${subject.color}80` 
@@ -595,7 +710,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                                   </span>
                                 </motion.div>
                               ) : (
-                                <div className="absolute inset-2 border-2 border-dashed border-slate-900 hover:border-slate-800 rounded-xl flex items-center justify-center text-xs font-medium text-slate-600 transition-colors">
+                                <div className={`absolute inset-2 border-2 border-dashed border-slate-900 hover:border-slate-800 rounded-xl flex items-center justify-center text-xs font-medium text-slate-600 transition-all ${selectedBrush ? 'hover:scale-[1.02] transition-transform duration-200' : 'transition-colors'}`}>
                                   {isKo ? '비어 있음' : 'VACANT'}
                                 </div>
                               )}
@@ -628,11 +743,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
       <section id="features" className="relative z-10 py-24 px-6 lg:px-16 max-w-7xl mx-auto border-t border-slate-900">
         
         <div className="text-center mb-20 space-y-4">
-          <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-xs font-medium uppercase tracking-widest">
+          <div className="inline-flex gap-2.5 px-3 py-1 bg-sky-500/10 border border-sky-400/20 rounded-full text-sky-400 text-xs font-medium uppercase tracking-[0.06em]">
             {isKo ? '가디언 지능형 행정 시스템' : 'GENIAL COGNITIVE MATRIX'}
           </div>
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight">
-            {isKo ? '복잡한 조율 과정을 자동화하는 비결' : 'EDUCATIONAL ORCHESTRATION IN DEPTH'}
+          <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+            {isKo ? '복잡한 조율 과정을 자동화하는 비결' : 'Schedule intelligence, redesigned.'}
           </h2>
           <p className="text-slate-400 font-medium max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
             {isKo 
@@ -645,99 +760,107 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 text-left">
           
           {/* Card 1: Chronos Weaver (Large) */}
-          <motion.div 
-            whileHover={{ y: -6 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="md:col-span-8 bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
-          >
-            <div className="absolute top-0 right-0 w-48 h-48 bg-sky-500/[0.04] blur-3xl pointer-events-none rounded-full" />
-            <div className="space-y-4 max-w-xl">
-              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                <Layers className="w-6 h-6" />
+          <FadeUp delay={0} className="md:col-span-8">
+            <motion.div 
+              whileHover={{ y: -6 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
+            >
+              <div className="absolute top-0 right-0 w-48 h-48 bg-sky-500/[0.04] blur-3xl pointer-events-none rounded-full" />
+              <div className="space-y-4 max-w-xl">
+                <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                  <Layers className="w-6 h-6" />
+                </div>
+                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '크로노스 위버 AI 엔진' : 'Chronos Weaver solver'}</h3>
+                <p className="text-slate-400 font-medium text-sm leading-relaxed">
+                  {isKo 
+                    ? '무제한 규칙과 시설 제약 조건을 동시에 해소하는 다목적 제약 해소 알고리즘이 탑재되어 있습니다. 버튼 클릭 한 번으로 수억 개의 가용 시간 배치 조합 중 최적의 일정을 추출하여 제안합니다.' 
+                    : 'Synthesizes high-density, multi-class parameters into structurally perfect matrix grids in seconds. Runs on a powerful localized constraint solver to guarantee zero-defect scheduling.'}
+                </p>
               </div>
-              <h3 className="text-2xl font-black uppercase text-white tracking-tight">{isKo ? '크로노스 위버 AI 엔진' : 'Chronos Weaver solver'}</h3>
-              <p className="text-slate-400 font-medium text-sm leading-relaxed">
-                {isKo 
-                  ? '무제한 규칙과 시설 제약 조건을 동시에 해소하는 다목적 제약 해소 알고리즘이 탑재되어 있습니다. 버튼 클릭 한 번으로 수억 개의 가용 시간 배치 조합 중 최적의 일정을 추출하여 제안합니다.' 
-                  : 'Synthesizes high-density, multi-class parameters into structurally perfect matrix grids in seconds. Runs on a powerful localized constraint solver to guarantee zero-defect scheduling.'}
-              </p>
-            </div>
-            <div className="mt-8 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-widest">
-              <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">GEMINI LLM SOLVER</span>
-              <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">STABILITY RANKING</span>
-              <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">0s COMPILER</span>
-            </div>
-          </motion.div>
+              <div className="mt-8 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-widest">
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">GEMINI LLM SOLVER</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">STABILITY RANKING</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">0s COMPILER</span>
+              </div>
+            </motion.div>
+          </FadeUp>
 
           {/* Card 2: Guardian Real-time Safeguard (Medium) */}
-          <motion.div 
-            whileHover={{ y: -6 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="md:col-span-4 bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/[0.03] blur-2xl pointer-events-none rounded-full" />
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                <Zap className="w-6 h-6" />
+          <FadeUp delay={0.08} className="md:col-span-4">
+            <motion.div 
+              whileHover={{ y: -6 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/[0.03] blur-2xl pointer-events-none rounded-full" />
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                  <Zap className="w-6 h-6" />
+                </div>
+                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '실시간 가디언' : 'Active Guardian'}</h3>
+                <p className="text-slate-400 font-medium text-sm leading-relaxed">
+                  {isKo 
+                    ? '수동 드래그 앤 드롭 중 발생하는 모든 일정 변경을 실시간 추적하고 충돌 사고가 나기 전에 원천 차단 시킵니다.' 
+                    : 'Monitors manual changes in real-time. Instantly highlights duplicate bookings or lunch violations before they occur, keeping your operations fully integrated.'}
+                </p>
               </div>
-              <h3 className="text-2xl font-black uppercase text-white tracking-tight">{isKo ? '실시간 가디언' : 'Active Guardian'}</h3>
-              <p className="text-slate-400 font-medium text-sm leading-relaxed">
-                {isKo 
-                  ? '수동 드래그 앤 드롭 중 발생하는 모든 일정 변경을 실시간 추적하고 충돌 사고가 나기 전에 원천 차단 시킵니다.' 
-                  : 'Monitors manual changes in real-time. Instantly highlights duplicate bookings or lunch violations before they occur, keeping your operations fully integrated.'}
-              </p>
-            </div>
-            <span className="text-xs font-medium uppercase text-sky-400 tracking-widest mt-6 flex items-center gap-1.5 hover:translate-x-1 transition-transform">
-              {isKo ? '실시간 감시 가용' : 'LIVE PROTOCOL ACTIVE'} <ChevronRight className="w-3 h-3" />
-            </span>
-          </motion.div>
+              <span className="text-xs font-medium uppercase text-sky-400 tracking-widest mt-6 flex items-center gap-1.5 hover:translate-x-1 transition-transform">
+                {isKo ? '실시간 감시 가용' : 'LIVE PROTOCOL ACTIVE'} <ChevronRight className="w-3 h-3" />
+              </span>
+            </motion.div>
+          </FadeUp>
 
           {/* Card 3: Wellness Analytics (Medium) */}
-          <motion.div 
-            whileHover={{ y: -6 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="md:col-span-4 bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                <Activity className="w-6 h-6" />
+          <FadeUp delay={0.16} className="md:col-span-4">
+            <motion.div 
+              whileHover={{ y: -6 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <Activity className="w-6 h-6" />
+                </div>
+                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '번아웃 위기 진단' : 'Resiliency Index'}</h3>
+                <p className="text-slate-400 font-medium text-sm leading-relaxed">
+                  {isKo 
+                    ? '교직원들의 수업 연강 일수, 여유 교시 부족, 전공 외 시간 배치 비율 등을 진단하여 탈진 지수를 점수화하여 모니터링합니다.' 
+                    : 'Automated auditing of workload density, back-to-back lessons, and recovery periods. Reduces supervisor stress and increases faculty retention.'}
+                </p>
               </div>
-              <h3 className="text-2xl font-black uppercase text-white tracking-tight">{isKo ? '번아웃 위기 진단' : 'Resiliency Index'}</h3>
-              <p className="text-slate-400 font-medium text-sm leading-relaxed">
-                {isKo 
-                  ? '교직원들의 수업 연강 일수, 여유 교시 부족, 전공 외 시간 배치 비율 등을 진단하여 탈진 지수를 점수화하여 모니터링합니다.' 
-                  : 'Automated auditing of workload density, back-to-back lessons, and recovery periods. Reduces supervisor stress and increases faculty retention.'}
-              </p>
-            </div>
-            <div className="mt-6 p-4 bg-rose-500/5 rounded-2xl border border-rose-500/20 text-xs font-medium uppercase tracking-widest text-rose-300">
-              {isKo ? '교원 복지 최우선 보장제' : 'PROACTIVE RETENTION PROTECTION'}
-            </div>
-          </motion.div>
+              <div className="mt-6 p-4 bg-rose-500/5 rounded-2xl border border-rose-500/20 text-xs font-medium uppercase tracking-widest text-rose-300">
+                {isKo ? '교원 복지 최우선 보장제' : 'PROACTIVE RETENTION PROTECTION'}
+              </div>
+            </motion.div>
+          </FadeUp>
 
           {/* Card 4: Synergy Planner (Large) */}
-          <motion.div 
-            whileHover={{ y: -6 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="md:col-span-8 bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
-          >
-            <div className="absolute bottom-0 right-0 w-64 h-32 bg-teal-500/[0.03] blur-3xl pointer-events-none rounded-full" />
-            <div className="space-y-4 max-w-2xl">
-              <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
-                <FileText className="w-6 h-6" />
+          <FadeUp delay={0.24} className="md:col-span-8">
+            <motion.div 
+              whileHover={{ y: -6 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
+            >
+              <div className="absolute bottom-0 right-0 w-64 h-32 bg-teal-500/[0.03] blur-3xl pointer-events-none rounded-full" />
+              <div className="space-y-4 max-w-2xl">
+                <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <h3 className="text-2xl font-black text-white tracking-tight">{isKo ? '교육과정 로드맵 연계' : 'Quarterly Curriculum Binder'}</h3>
+                <p className="text-slate-400 font-medium text-sm leading-relaxed">
+                  {isKo 
+                    ? '단순한 행적 기록표를 넘어 각 분기별 지정 교재, 필수 수료 시간 계산, 주차별 단원 설계 대시보드를 연계하여 단절 없는 지식의 흐름을 보장합니다.' 
+                    : 'Traces your curriculum milestones. Interleaves school syllabus guidelines with weekly scheduling grids to ensure students achieve academic targets seamlessly.'}
+                </p>
               </div>
-              <h3 className="text-2xl font-black uppercase text-white tracking-tight">{isKo ? '교육과정 로드맵 연계' : 'Quarterly Curriculum Binder'}</h3>
-              <p className="text-slate-400 font-medium text-sm leading-relaxed">
-                {isKo 
-                  ? '단순한 행적 기록표를 넘어 각 분기별 지정 교재, 필수 수료 시간 계산, 주차별 단원 설계 대시보드를 연계하여 단절 없는 지식의 흐름을 보장합니다.' 
-                  : 'Traces your curriculum milestones. Interleaves school syllabus guidelines with weekly scheduling grids to ensure students achieve academic targets seamlessly.'}
-              </p>
-            </div>
-            <div className="mt-8 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-widest">
-              <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">WEEKLY MILESTONES</span>
-              <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">TEXTBOOK REPOSITORY</span>
-              <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">STANDARDS BINDER</span>
-            </div>
-          </motion.div>
+              <div className="mt-8 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-widest">
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">WEEKLY MILESTONES</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">TEXTBOOK REPOSITORY</span>
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400">STANDARDS BINDER</span>
+              </div>
+            </motion.div>
+          </FadeUp>
 
         </div>
       </section>
@@ -746,8 +869,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
       <section className="relative z-10 py-24 px-6 lg:px-16 max-w-7xl mx-auto border-t border-slate-900">
         
         <div className="text-center mb-16 space-y-4">
-          <span className="text-sky-400 text-xs font-medium uppercase tracking-[0.5em]">{isKo ? '행정 제어 센터' : 'ADMINISTRATOR HUB'}</span>
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight">{isKo ? '통합 제어부 미리보기' : 'CHRONOS CONSOLE SUITE'}</h2>
+          <span className="text-sky-400 text-xs font-medium uppercase tracking-[0.06em]">{isKo ? '행정 제어 센터' : 'ADMINISTRATOR HUB'}</span>
+          <h2 className="text-3xl md:text-5xl font-black tracking-tight">{isKo ? '통합 제어부 미리보기' : 'Chronos console suite'}</h2>
           
           {/* Tab buttons */}
           <div className="flex justify-center flex-wrap gap-2 mt-8 max-w-md mx-auto bg-slate-900/60 p-1.5 rounded-3xl border border-slate-800/80">
@@ -790,8 +913,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                     <Calendar className="w-5 h-5" />
                     <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '자동 정렬 행렬' : 'Master Matrix Alignment'}</span>
                   </div>
-                  <h3 className="text-3xl font-black uppercase text-white tracking-tight">
-                    {isKo ? '충돌 없는 최적의 경로 발굴' : 'GENERATE COMPLIANT BLUEPRINTS'}
+                  <h3 className="text-3xl font-black text-white tracking-tight">
+                    {isKo ? '충돌 없는 최적의 경로 발굴' : 'Generate compliant blueprints'}
                   </h3>
                   <p className="text-slate-400 font-medium text-sm leading-relaxed">
                     {isKo 
@@ -849,8 +972,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                     <ShieldCheck className="w-5 h-5 text-sky-400" />
                     <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '실시간 충돌 보호' : 'Dynamic Integrity Audit'}</span>
                   </div>
-                  <h3 className="text-3xl font-black uppercase text-white tracking-tight">
-                    {isKo ? '조그마한 논리 모순까지 철저히 예방' : 'PREVENT DESTRUCTIVE COLLISIONS'}
+                  <h3 className="text-3xl font-black text-white tracking-tight">
+                    {isKo ? '조그마한 논리 모순까지 철저히 예방' : 'Prevent destructive collisions'}
                   </h3>
                   <p className="text-slate-400 font-medium text-sm leading-relaxed">
                     {isKo 
@@ -896,8 +1019,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                     <Users className="w-5 h-5" />
                     <span className="text-xs font-medium uppercase tracking-widest">{isKo ? '교원 삶의 질 보호' : 'FACULTY WELLNESS SHIELD'}</span>
                   </div>
-                  <h3 className="text-3xl font-black uppercase text-white tracking-tight">
-                    {isKo ? '지키지 못할 무리한 일정 타파' : 'SAFEGUARD TEACHER WELLNESS'}
+                  <h3 className="text-3xl font-black text-white tracking-tight">
+                    {isKo ? '지키지 못할 무리한 일정 타파' : 'Safeguard teacher wellness'}
                   </h3>
                   <p className="text-slate-400 font-medium text-sm leading-relaxed">
                     {isKo 
@@ -945,108 +1068,114 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
 
       {/* Modernized Pricing Section */}
       <section id="pricing" className="relative z-10 py-32 px-6 lg:px-16 max-w-screen-2xl mx-auto border-t border-slate-900">
-        <div className="text-center mb-20 space-y-4">
-          <h2 className="text-xs font-medium text-sky-500 uppercase tracking-[0.6em]">{isKo ? '구독 옵션' : 'SUBSCRIPTION PLANS'}</h2>
-          <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tight">{isKo ? '적합한 라이선스를 탐색하세요' : 'AI SCHEDULING FOR EVERY CAMPUS'}</h3>
-          <p className="text-slate-400 font-medium max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-            {isKo ? '간단한 일정 설계용 무료 체험판부터, 다수 학급과 번아웃 정밀 모니터 대량 설비가 연계된 최상위 등급 라이선스까지.' : 'Discover flexible models for educational institutions of all sizes, from private tutoring networks to global academic systems.'}</p>
-        </div>
+        <FadeUp delay={0}>
+          <div className="text-center mb-20 space-y-4">
+            <h2 className="text-xs font-medium text-sky-500 uppercase tracking-[0.06em]">{isKo ? '구독 옵션' : 'SUBSCRIPTION PLANS'}</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">{isKo ? '적합한 라이선스를 탐색하세요' : 'Simple, transparent pricing.'}</h2>
+            <p className="text-slate-400 font-medium max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
+              {isKo ? '간단한 일정 설계용 무료 체험판부터, 다수 학급과 번아웃 정밀 모니터 대량 설비가 연계된 최상위 등급 라이선스까지.' : 'Discover flexible models for educational institutions of all sizes, from private tutoring networks to global academic systems.'}</p>
+          </div>
+        </FadeUp>
 
         <div className="grid grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto gap-8 hover:translate-y-[1px] transition-transform">
            
            {/* Tier 1 */}
-           <motion.div 
-             whileHover={{ y: -4 }}
-             className="bg-slate-950/60 border border-slate-800/80 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-slate-705/80 transition-all text-left"
-           >
-              <div className="space-y-6">
-                <div className="inline-flex px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 text-xs font-medium uppercase tracking-widest">
-                  {isKo ? '개인 및 소규모 체험' : 'STARTER LAB'}
-                </div>
-                <div>
-                  <h4 className="text-5xl font-black uppercase tracking-tighter text-white">{isKo ? '0원' : '$0'}</h4>
-                  <p className="text-xs font-medium text-slate-500 uppercase mt-2 tracking-widest">{isKo ? '기간 제한 제한 없음' : 'NO TIME CARD CONSTRAINT'}</p>
-                </div>
-                <p className="text-[13px] font-medium text-slate-400 leading-relaxed">
-                  {isKo ? '가디언 엔진의 실시간 규칙 모순 모니터와 기본적인 드래그 일정 편집 기능을 가볍게 탐닉할 수 있습니다.' : 'Test coordinate scheduling models to easily trace conflicts and construct reliable schedule grids for personal study use.'}
-                </p>
-                
-                <div className="space-y-3.5 pt-4">
-                  {[
-                    { en: "Up to 3 Active Classes Sync", ko: "최대 3개 지능형 학급 전산 관리" },
-                    { en: "Real-time Conflict Interceptor", ko: "가디언 실시간 충돌 차단 탑재" },
-                    { en: "Syllabus Quarterly Planner", ko: "분기별 단원 분배기 바인더 기계" },
-                    { en: "Premium Raw Content PDF Export", ko: "인큐베이팅 PDF 인쇄 레이아웃" }
-                  ].map((f, j) => (
-                    <div key={j} className="flex items-center gap-3.5">
-                      <div className="w-5 h-5 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-400">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+           <FadeUp delay={0} className="h-full">
+             <motion.div 
+               whileHover={{ y: -4 }}
+               className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-slate-705/80 transition-all text-left"
+             >
+                <div className="space-y-6">
+                  <div className="inline-flex px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 text-xs font-medium uppercase tracking-widest">
+                    {isKo ? '개인 및 소규모 체험' : 'STARTER LAB'}
+                  </div>
+                  <div>
+                    <h4 className="text-5xl font-black uppercase tracking-tighter text-white">{isKo ? '0원' : '$0'}</h4>
+                    <p className="text-xs font-medium text-slate-500 uppercase mt-2 tracking-widest">{isKo ? '기간 제한 제한 없음' : 'NO TIME CARD CONSTRAINT'}</p>
+                  </div>
+                  <p className="text-[13px] font-medium text-slate-400 leading-relaxed">
+                    {isKo ? '가디언 엔진의 실시간 규칙 모순 모니터와 기본적인 드래그 일정 편집 기능을 가볍게 탐닉할 수 있습니다.' : 'Test coordinate scheduling models to easily trace conflicts and construct reliable schedule grids for personal study use.'}
+                  </p>
+                  
+                  <div className="space-y-3.5 pt-4">
+                    {[
+                      { en: "Up to 3 Active Classes Sync", ko: "최대 3개 지능형 학급 전산 관리" },
+                      { en: "Real-time Conflict Interceptor", ko: "가디언 실시간 충돌 차단 탑재" },
+                      { en: "Syllabus Quarterly Planner", ko: "분기별 단원 분배기 바인더 기계" },
+                      { en: "Premium Raw Content PDF Export", ko: "인큐베이팅 PDF 인쇄 레이아웃" }
+                    ].map((f, j) => (
+                      <div key={j} className="flex items-center gap-3.5">
+                        <div className="w-5 h-5 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-400">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs font-medium uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
                       </div>
-                      <span className="text-xs font-medium uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onTryDemo} 
-                className="w-full py-4.5 rounded-2xl bg-white hover:bg-sky-400 text-slate-950 text-xs font-semibold uppercase tracking-widest transition-all shadow-xl"
-              >
-                {isKo ? '체험 Sandbox 시작' : 'Access Free Sandbox'}
-              </motion.button>
-           </motion.div>
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={onTryDemo} 
+                  className="w-full py-4.5 rounded-2xl bg-white hover:bg-sky-400 text-slate-950 text-xs font-semibold uppercase tracking-widest transition-all shadow-xl"
+                >
+                  {isKo ? '체험 Sandbox 시작' : 'Access Free Sandbox'}
+                </motion.button>
+             </motion.div>
+           </FadeUp>
 
            {/* Tier 2: Pro */}
-           <motion.div 
-             whileHover={{ y: -4 }}
-             className="bg-sky-500/5 border-2 border-sky-500/30 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-sky-500/60 transition-all text-left relative overflow-hidden shadow-[0_30px_60px_rgba(30,27,75,0.4)]"
-           >
-              <div className="absolute top-0 right-0 py-6 px-12 transform rotate-45 translate-x-12 translate-y-4 bg-sky-500 text-white text-xs font-semibold uppercase tracking-widest text-center shadow-lg">
-                Enterprise
-              </div>
-              
-              <div className="space-y-6 relative z-10">
-                <div className="inline-flex px-4 py-1.5 rounded-full bg-sky-500/20 text-sky-400 text-xs font-medium uppercase tracking-widest border border-sky-500/30">
-                  {isKo ? '교육기관 및 캠퍼스 전용' : 'CAMPUS EXECUTIVE'}
+           <FadeUp delay={0.12} className="h-full">
+             <motion.div 
+               whileHover={{ y: -4 }}
+               className="w-full h-full bg-sky-500/5 border-2 border-sky-500/30 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-sky-500/60 transition-all text-left relative overflow-hidden shadow-[0_30px_60px_rgba(30,27,75,0.4)]"
+             >
+                <div className="absolute top-0 right-0 py-6 px-12 transform rotate-45 translate-x-12 translate-y-4 bg-sky-500 text-white text-xs font-semibold uppercase tracking-widest text-center shadow-lg">
+                  Enterprise
                 </div>
-                <div>
-                  <h4 className="text-5xl font-black uppercase tracking-tighter text-white">{isKo ? '견적 상담' : 'CUSTOM'}</h4>
-                  <p className="text-xs font-medium text-sky-400 uppercase mt-2 tracking-widest">{isKo ? '대규모 교원 단체 맞춤 적용' : 'SCALABLE CLOUD DISPATCH'}</p>
-                </div>
-                <p className="text-[13px] font-medium text-slate-400 leading-relaxed">
-                  {isKo 
-                    ? '수십 조의 복수 학급, 전공 교사 피로도 점검, 정부 교육 시간 충족 가이드와 융합된 완전 관리 환경입니다.' 
-                    : 'A comprehensive campus deployment. Access unlimited classes, real-time workload audit dashboards, priority consulting alignment, and system uptime guarantees.'}
-                </p>
                 
-                <div className="space-y-3.5 pt-4">
-                  {[
-                    { en: "Unlimited Active Class Sync", ko: "무제한 학급 확장 결합" },
-                    { en: "High-Cognitive Resiliency Shield", ko: "번아웃 감사 및 피로 안전 경고" },
-                    { en: "Dedicated Success Engineer", ko: "동선 디자인 전임 솔루션 엔지니어" },
-                    { en: "Database Auto Cloud Backups", ko: "클라우드 스토리지 실시간 백업보존" }
-                  ].map((f, j) => (
-                    <div key={j} className="flex items-center gap-3.5">
-                      <div className="w-5 h-5 rounded-full bg-sky-400/20 flex items-center justify-center text-sky-400">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                <div className="space-y-6 relative z-10">
+                  <div className="inline-flex px-4 py-1.5 rounded-full bg-sky-500/20 text-sky-400 text-xs font-medium uppercase tracking-widest border border-sky-500/30">
+                    {isKo ? '교육기관 및 캠퍼스 전용' : 'CAMPUS EXECUTIVE'}
+                  </div>
+                  <div>
+                    <h4 className="text-5xl font-black uppercase tracking-tighter text-white">{isKo ? '견적 상담' : 'CUSTOM'}</h4>
+                    <p className="text-xs font-medium text-sky-400 uppercase mt-2 tracking-widest">{isKo ? '대규모 교원 단체 맞춤 적용' : 'SCALABLE CLOUD DISPATCH'}</p>
+                  </div>
+                  <p className="text-[13px] font-medium text-slate-400 leading-relaxed">
+                    {isKo 
+                      ? '수십 조의 복수 학급, 전공 교사 피로도 점검, 정부 교육 시간 충족 가이드와 융합된 완전 관리 환경입니다.' 
+                      : 'A comprehensive campus deployment. Access unlimited classes, real-time workload audit dashboards, priority consulting alignment, and system uptime guarantees.'}
+                  </p>
+                  
+                  <div className="space-y-3.5 pt-4">
+                    {[
+                      { en: "Unlimited Active Class Sync", ko: "무제한 학급 확장 결합" },
+                      { en: "High-Cognitive Resiliency Shield", ko: "번아웃 감사 및 피로 안전 경고" },
+                      { en: "Dedicated Success Engineer", ko: "동선 디자인 전임 솔루션 엔지니어" },
+                      { en: "Database Auto Cloud Backups", ko: "클라우드 스토리지 실시간 백업보존" }
+                    ].map((f, j) => (
+                      <div key={j} className="flex items-center gap-3.5">
+                        <div className="w-5 h-5 rounded-full bg-sky-400/20 flex items-center justify-center text-sky-400">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs font-medium uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
                       </div>
-                      <span className="text-xs font-medium uppercase tracking-widest text-slate-300">{isKo ? f.ko : f.en}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onEnter} 
-                className="w-full py-4.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold uppercase tracking-widest transition-all relative z-10 border border-white/10"
-              >
-                {isKo ? '영업 연구팀 상담 요청' : 'Consult with Campus Engineer'}
-              </motion.button>
-           </motion.div>
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={onEnter} 
+                  className="w-full py-4.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold uppercase tracking-widest transition-all relative z-10 border border-white/10"
+                >
+                  {isKo ? '영업 연구팀 상담 요청' : 'Consult with Campus Engineer'}
+                </motion.button>
+             </motion.div>
+           </FadeUp>
         </div>
       </section>
 
