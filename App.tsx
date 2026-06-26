@@ -436,8 +436,13 @@ const App: React.FC = () => {
           {activeTab === 'homerooms' && (
             !schedule ? (
               <div className="flex flex-col items-center justify-center p-12 bg-white border-2 border-slate-900 rounded-2xl shadow-[6px_6px_0px_rgba(15,23,42,1)] text-center max-w-xl mx-auto my-12 space-y-6">
-                <div className="w-16 h-16 bg-indigo-50 border-2 border-slate-900 text-indigo-650 rounded-2xl flex items-center justify-center text-3xl shadow-[3px_3px_0px_rgba(15,23,42,1)] font-bold">
-                  📅
+                <div className="w-16 h-16 bg-indigo-50 border-2 border-slate-900 text-indigo-600 rounded-2xl flex items-center justify-center shadow-[3px_3px_0px_rgba(15,23,42,1)]">
+                  <svg className="w-8 h-8 stroke-[1.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">

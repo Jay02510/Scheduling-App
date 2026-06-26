@@ -757,7 +757,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               </div>
 
               <div className="mt-4 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-widest gap-4">
-                <span>⚡ {isKo ? '한 번의 탭으로 브러쉬를 슬롯에 전파합니다' : 'Tip: click any slot with an active brush to draw.'}</span>
+                <span>{isKo ? '정보: 활성화된 브러시로 아무 슬롯이나 클릭하면 입력됩니다' : 'Tip: click any slot with an active brush to draw.'}</span>
                 <button 
                   onClick={onTryDemo} 
                   className="bg-sky-500/10 hover:bg-sky-500 border border-sky-500/20 hover:text-slate-950 text-sky-400 px-4 py-2 rounded-lg transition-all font-semibold text-xs"
@@ -1061,7 +1061,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                       : 'Too many continuous lessons can lead to fatigue. Our balanced workload helper automatically reviews back-to-back classes and break times, helping you build a healthy environment.'}
                   </p>
                   <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
-                    {isKo ? '✨ 교직원 업무 피로도 및 연강 이탈률 22% 감소 증명' : '✨ Demonstrated 22% reduction in faculty schedule fatigue'}
+                    {isKo ? '교직원 업무 피로도 및 연강 이탈률 22% 감소 증명' : 'Demonstrated 22% reduction in faculty schedule fatigue'}
                   </p>
                 </div>
                 <div className="md:col-span-6 bg-slate-900/60 p-6 rounded-2.5xl border border-slate-800 space-y-4">

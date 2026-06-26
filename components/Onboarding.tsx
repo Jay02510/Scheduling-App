@@ -332,7 +332,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     </div>
 
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-extrabold text-sm">ℹ</div>
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-extrabold text-sm">i</div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-relaxed">
                         These school periods are applied globally across all schedules to protect teacher break-times and student lunch periods.
                       </p>
