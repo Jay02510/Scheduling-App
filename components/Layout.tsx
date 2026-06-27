@@ -51,8 +51,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
           </div>
           
           <div className="flex bg-slate-800 p-0.5 rounded-lg text-xs font-black no-print">
-             <button onClick={() => setLanguage('ko')} className={`px-2 py-1 rounded-md transition-all ${language === 'ko' ? 'bg-sky-500 text-white' : 'text-slate-500'}`}>KR</button>
-             <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-md transition-all ${language === 'en' ? 'bg-sky-500 text-white' : 'text-slate-500'}`}>EN</button>
+             <button onClick={() => setLanguage('ko')} className={`px-2 py-1 rounded-md transition-colors ${language === 'ko' ? 'bg-sky-500 text-white' : 'text-slate-500'}`}>KR</button>
+             <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-md transition-colors ${language === 'en' ? 'bg-sky-500 text-white' : 'text-slate-500'}`}>EN</button>
           </div>
         </div>
 
@@ -75,17 +75,17 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 relative group overflow-hidden ${
+                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors duration-200 relative group overflow-hidden ${
                   isActive ? 'text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 hover:translate-x-1'
                 }`}
               >
                 {isActive && (
                   <div className="absolute inset-0 gradient-primary rounded-2xl -z-0 shadow-lg shadow-sky-500/20 animate-fadeIn bg-sky-500"></div>
                 )}
-                <svg className={`w-4 h-4 relative z-10 transition-all duration-300 ${isActive ? 'text-white scale-110' : 'text-slate-500 group-hover:text-slate-300 group-hover:scale-110'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 relative z-10 transition-transform duration-200 ${isActive ? 'text-white scale-110' : 'text-slate-500 group-hover:text-slate-300 group-hover:scale-110'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={tab.icon} />
                 </svg>
-                <span className="relative z-10 truncate transition-all duration-300 group-hover:tracking-wider">{tab.label}</span>
+                <span className="relative z-10 truncate transition-colors duration-200">{tab.label}</span>
               </button>
             );
           })}
@@ -94,7 +94,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
         <div className="mt-auto pt-8 border-t border-white/5 space-y-4">
           <button
             onClick={onOpenFeedback}
-            className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-sky-400 hover:text-white hover:bg-sky-500/10 transition-all group border border-sky-500/10"
+            className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-sky-400 hover:text-white hover:bg-sky-500/10 transition-colors group border border-sky-500/10"
           >
             <div className="relative">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +108,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, lang
           {onLogout && (
             <button
               onClick={onLogout}
-              className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-rose-400 hover:text-white hover:bg-rose-500/10 transition-all group border border-rose-500/10"
+              className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-rose-400 hover:text-white hover:bg-rose-500/10 transition-colors group border border-rose-500/10"
             >
               <svg className="w-4 h-4 text-rose-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

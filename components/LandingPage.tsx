@@ -1,15 +1,16 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, useInView, useScroll, useMotionValueEvent, useSpring, useMotionValue } from 'motion/react';
+import { motion, AnimatePresence, useInView, useScroll, useMotionValueEvent, useSpring, useMotionValue, useReducedMotion } from 'motion/react';
 
 const FadeUp = ({ children, delay = 0, className = '' }: { children: React.ReactNode, delay?: number, className?: string }) => {
   const ref = React.useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const shouldReduceMotion = useReducedMotion();
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+      animate={isInView ? { opacity: 1, y: 0 } : (shouldReduceMotion ? {} : { opacity: 0, y: 16 })}
+      transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
       className={className}
     >
       {children}
@@ -67,6 +68,7 @@ const LANDING_SUBJECTS: SandboxSubject[] = [
 ];
 
 const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language, setLanguage, userId, serviceError }) => {
+  const shouldReduceMotion = useReducedMotion();
   const [legalView, setLegalView] = useState<{ isOpen: boolean, type: 'privacy' | 'terms' | 'compliance' }>({
     isOpen: false,
     type: 'privacy'
@@ -89,12 +91,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const rotateX = useSpring(useMotionValue(0), { stiffness: 150, damping: 20 });
-  const rotateY = useSpring(useMotionValue(0), { stiffness: 150, damping: 20 });
+  const rotateX = useSpring(useMotionValue(0), { stiffness: 80, damping: 18 });
+  const rotateY = useSpring(useMotionValue(0), { stiffness: 80, damping: 18 });
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
+    if (shouldReduceMotion || !cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -102,7 +104,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
     const relY = (e.clientY - centerY) / (rect.height / 2);
     rotateX.set(-relY * 10);
     rotateY.set(relX * 10);
-  }, [rotateX, rotateY]);
+  }, [rotateX, rotateY, shouldReduceMotion]);
 
   const handleMouseLeave = useCallback(() => {
     rotateX.set(0);
@@ -244,9 +246,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
       {/* Floating Futuristic Dock Header */}
       <nav className="fixed top-6 left-0 right-0 z-[100] px-4">
         <motion.div
-          animate={{ paddingTop: scrolled ? '0.5rem' : '0.75rem', paddingBottom: scrolled ? '0.5rem' : '0.75rem' }}
-          transition={{ duration: 0.2 }}
-          className="max-w-6xl mx-auto bg-slate-950/75 backdrop-blur-2xl border border-slate-800/80 rounded-3xl px-5 flex items-center justify-between shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)]"
+          style={{ originY: 0 }}
+          animate={{ scaleY: scrolled ? 0.94 : 1 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-6xl mx-auto bg-slate-950/75 backdrop-blur-2xl border border-slate-800/80 rounded-3xl px-5 py-3 flex items-center justify-between shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)]"
         >
           <div className="flex items-center gap-8">
             <div 
@@ -269,21 +272,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 className={`transition-colors py-1 relative group ${activeSection === 'sandbox' ? 'text-white' : 'text-slate-400 hover:text-sky-400'}`}
               >
                 {isKo ? '라이브 체험' : 'Interactive Playground'}
-                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-all duration-300 ${activeSection === 'sandbox' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-[width] duration-300 ${activeSection === 'sandbox' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
               </button>
               <button 
                 onClick={() => scrollTo('features')} 
                 className={`transition-colors py-1 relative group ${activeSection === 'features' ? 'text-white' : 'text-slate-400 hover:text-sky-400'}`}
               >
                 {isKo ? '인텔리전스 스펙' : 'Features'}
-                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-all duration-300 ${activeSection === 'features' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-[width] duration-300 ${activeSection === 'features' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
               </button>
               <button 
                 onClick={() => scrollTo('pricing')} 
                 className={`transition-colors py-1 relative group ${activeSection === 'pricing' ? 'text-white' : 'text-slate-400 hover:text-sky-400'}`}
               >
                 {isKo ? '라이선싱' : 'Pricing'}
-                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-all duration-300 ${activeSection === 'pricing' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+                <span className={`absolute bottom-0 left-0 h-[2px] bg-sky-400 transition-[width] duration-300 ${activeSection === 'pricing' ? 'w-full' : 'w-0 group-hover:w-full'}`} />
               </button>
             </div>
           </div>
@@ -292,20 +295,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             <div className="flex bg-slate-900/90 p-1 rounded-2xl border border-slate-800/80">
               <button 
                 onClick={() => setLanguage('ko')} 
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${language === 'ko' ? 'bg-sky-500 text-slate-950 font-medium shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${language === 'ko' ? 'bg-sky-500 text-slate-950 font-medium shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 KR
               </button>
               <button 
                 onClick={() => setLanguage('en')} 
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${language === 'en' ? 'bg-sky-500 text-slate-950 font-medium shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${language === 'en' ? 'bg-sky-500 text-slate-950 font-medium shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 EN
               </button>
             </div>
             <button 
               onClick={onEnter} 
-              className="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-medium tracking-normal transition-all"
+              className="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-medium tracking-normal transition-colors"
             >
               {isKo ? '로그인' : 'Sign In'}
             </button>
@@ -313,7 +316,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onTryDemo}
-              className="bg-white hover:bg-sky-400 text-slate-950 px-5 py-2.5 rounded-2xl text-xs font-medium tracking-normal transition-all flex items-center gap-2 shadow-xl border border-white/20"
+              className="bg-white hover:bg-sky-400 text-slate-950 px-5 py-2.5 rounded-2xl text-xs font-medium tracking-normal transition-colors flex items-center gap-2 shadow-xl border border-white/20"
             >
               {isKo ? '체험판 시작' : 'Access Sandbox'}
               <ChevronRight className="w-3.5 h-3.5" />
@@ -330,8 +333,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           <div className="lg:col-span-7 space-y-8 text-left animate-fadeIn animate-duration-500">
             {serviceError && (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className="p-5 bg-rose-500/10 border border-rose-500/30 rounded-3xl flex items-start gap-4 text-left shadow-[0_0_50px_rgba(244,63,94,0.1)] mb-4 border-glow-cyan"
               >
                 <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
@@ -343,9 +347,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             )}
 
             <motion.div 
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.4, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
               className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-sky-500/10 border border-sky-400/20 backdrop-blur-md"
             >
               <Sparkles className="w-4 h-4 text-sky-400" />
@@ -355,9 +359,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             </motion.div>
             
             <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.15 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="text-4xl sm:text-6xl xl:text-[5.5rem] font-black tracking-tight leading-[0.9] uppercase"
             >
               {isKo ? (
@@ -376,9 +380,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             </motion.h1>
             
             <motion.p 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.25 }}
+              transition={{ duration: 0.5, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
               className="text-base sm:text-lg text-slate-400 font-medium max-w-2xl leading-relaxed"
             >
               {isKo 
@@ -387,16 +391,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             </motion.p>
             
             <motion.div 
-              initial={{ opacity: 0, y: 25 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.35 }}
+              transition={{ duration: 0.5, delay: 0.26, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <motion.button 
                 whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onTryDemo}
-                className="px-8 py-4.5 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-2xl font-semibold text-xs uppercase tracking-[0.2em] shadow-[0_20px_50px_-10px_rgba(14,165,233,0.4)] hover:shadow-[0_25px_60px_-8px_rgba(14,165,233,0.6)] transition-all flex items-center justify-center gap-3 border border-white/10"
+                className="px-8 py-4.5 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-2xl font-semibold text-xs uppercase tracking-[0.2em] shadow-[0_20px_50px_-10px_rgba(14,165,233,0.4)] hover:shadow-[0_25px_60px_-8px_rgba(14,165,233,0.6)] transition-shadow flex items-center justify-center gap-3 border border-white/10"
               >
                 <span>{isKo ? '무료 체험 시작하기' : 'Lauch Free Blueprint Sandbox'}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -405,7 +409,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => scrollTo('sandbox')}
-                className="px-8 py-4.5 bg-slate-900 hover:bg-slate-800 border border-slate-800/80 text-slate-300 rounded-2xl font-semibold text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3"
+                className="px-8 py-4.5 bg-slate-900 hover:bg-slate-800 border border-slate-800/80 text-slate-300 rounded-2xl font-semibold text-xs uppercase tracking-[0.2em] transition-colors flex items-center justify-center gap-3"
               >
                 <span>{isKo ? '라이브 동작 시뮬레이터' : 'Play Live Simulator'}</span>
               </motion.button>
@@ -472,7 +476,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               {/* Main Holo Card Terminal */}
               <div
                 style={{ transform: 'translateZ(0px)', transformStyle: 'preserve-3d' }}
-                className="relative bg-slate-950/80 border border-sky-500/20 hero-card-border shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl rounded-2xl p-8 space-y-6 overflow-hidden"
+                className="relative bg-slate-950/80 hero-card-border backdrop-blur-2xl rounded-2xl p-8 space-y-6 overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 blur-3xl rounded-full" />
 
@@ -582,7 +586,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                     whileHover={{ scale: 1.01, x: 2 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => setSelectedBrush(sub)}
-                    className={`w-full p-4 rounded-xl text-left border transition-all flex items-center justify-between ${
+                    className={`w-full p-4 rounded-xl text-left border transition-[color,transform] flex items-center justify-between ${
                       isSelected 
                         ? 'border-sky-400 bg-sky-500/20 shadow-[0_0_15px_rgba(14,165,233,0.2)] text-white' 
                         : 'border-slate-800/80 bg-slate-900/40 text-slate-400 hover:border-slate-700/80 hover:bg-slate-900/60'
@@ -613,7 +617,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
             {/* Clear button */}
             <button 
               onClick={clearSandbox}
-              className="w-full py-3 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-400 font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-400 font-black text-xs uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               {isKo ? '전체 초기화' : 'RESET SANDBOX'}
@@ -743,7 +747,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                                   </span>
                                 </motion.div>
                               ) : (
-                                <div className={`absolute inset-2 border-2 border-dashed border-slate-900 hover:border-slate-800 rounded-xl flex items-center justify-center text-xs font-medium text-slate-600 transition-all ${selectedBrush ? 'hover:scale-[1.02] transition-transform duration-200' : 'transition-colors'}`}>
+                                <div className={`absolute inset-2 border-2 border-dashed border-slate-900 hover:border-slate-800 rounded-xl flex items-center justify-center text-xs font-medium text-slate-600 transition-colors ${selectedBrush ? 'hover:scale-[1.02] transition-transform duration-200' : ''}`}>
                                   {isKo ? '비어 있음' : 'VACANT'}
                                 </div>
                               )}
@@ -760,7 +764,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                 <span>{isKo ? '정보: 활성화된 브러시로 아무 슬롯이나 클릭하면 입력됩니다' : 'Tip: click any slot with an active brush to draw.'}</span>
                 <button 
                   onClick={onTryDemo} 
-                  className="bg-sky-500/10 hover:bg-sky-500 border border-sky-500/20 hover:text-slate-950 text-sky-400 px-4 py-2 rounded-lg transition-all font-semibold text-xs"
+                  className="bg-sky-500/10 hover:bg-sky-500 border border-sky-500/20 hover:text-slate-950 text-sky-400 px-4 py-2 rounded-lg transition-colors font-semibold text-xs"
                 >
                   {isKo ? '전체 관리자 버전 열기' : 'EXPAND TO FULL PLATFORM'}
                 </button>
@@ -795,8 +799,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           {/* Card 1: Smart Schedule Generator (Large) */}
           <FadeUp delay={0} className="md:col-span-8">
             <motion.div 
-              whileHover={{ y: -6 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              whileHover={{ y: -4 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 22 }}
               className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
             >
               <div className="absolute top-0 right-0 w-48 h-48 bg-sky-500/[0.04] blur-3xl pointer-events-none rounded-full" />
@@ -822,8 +826,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           {/* Card 2: Guardian Real-time Safeguard (Medium) */}
           <FadeUp delay={0.08} className="md:col-span-4">
             <motion.div 
-              whileHover={{ y: -6 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              whileHover={{ y: -4 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 22 }}
               className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[350px]"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/[0.03] blur-2xl pointer-events-none rounded-full" />
@@ -847,8 +851,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           {/* Card 3: Wellness Analytics (Medium) */}
           <FadeUp delay={0.16} className="md:col-span-4">
             <motion.div 
-              whileHover={{ y: -6 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              whileHover={{ y: -4 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 22 }}
               className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
             >
               <div className="space-y-4">
@@ -871,8 +875,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
           {/* Card 4: Synergy Planner (Large) */}
           <FadeUp delay={0.24} className="md:col-span-8">
             <motion.div 
-              whileHover={{ y: -6 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              whileHover={{ y: -4 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 22 }}
               className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between group min-h-[355px]"
             >
               <div className="absolute bottom-0 right-0 w-64 h-32 bg-teal-500/[0.03] blur-3xl pointer-events-none rounded-full" />
@@ -915,7 +919,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-5 py-2.5 rounded-2xl text-xs font-medium uppercase tracking-widest transition-all ${
+                className={`px-5 py-2.5 rounded-2xl text-xs font-medium uppercase tracking-widest transition-colors ${
                   activeTab === tab.id 
                     ? 'bg-sky-500 text-slate-950 shadow-md font-semibold' 
                     : 'text-slate-400 hover:text-slate-200'
@@ -1116,7 +1120,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
            <FadeUp delay={0} className="h-full">
              <motion.div 
                whileHover={{ y: -4 }}
-               className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-slate-705/80 transition-all text-left"
+               transition={{ type: 'spring', stiffness: 200, damping: 22 }} className="w-full h-full bg-slate-950/60 border border-slate-800/80 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-slate-700/80 transition-colors text-left"
              >
                 <div className="space-y-6">
                   <div className="inline-flex px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 text-xs font-medium uppercase tracking-widest">
@@ -1151,7 +1155,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onTryDemo} 
-                  className="w-full py-4.5 rounded-2xl bg-white hover:bg-sky-400 text-slate-950 text-xs font-semibold uppercase tracking-widest transition-all shadow-xl"
+                  className="w-full py-4.5 rounded-2xl bg-white hover:bg-sky-400 text-slate-950 text-xs font-semibold uppercase tracking-widest transition-colors shadow-xl"
                 >
                   {isKo ? '체험 Sandbox 시작' : 'Access Free Sandbox'}
                 </motion.button>
@@ -1162,7 +1166,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
            <FadeUp delay={0.12} className="h-full">
              <motion.div 
                whileHover={{ y: -4 }}
-               className="w-full h-full bg-sky-500/5 border-2 border-sky-500/30 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-sky-500/60 transition-all text-left relative overflow-hidden shadow-[0_30px_60px_rgba(30,27,75,0.4)]"
+               transition={{ type: 'spring', stiffness: 200, damping: 22 }} className="w-full h-full bg-sky-500/5 border-2 border-sky-500/30 p-12 rounded-2xl flex flex-col justify-between gap-10 hover:border-sky-500/60 transition-colors text-left relative overflow-hidden shadow-[0_30px_60px_rgba(30,27,75,0.4)]"
              >
                 <div className="absolute top-0 right-0 py-6 px-12 transform rotate-45 translate-x-12 translate-y-4 bg-sky-500 text-white text-xs font-semibold uppercase tracking-widest text-center shadow-lg">
                   Enterprise
@@ -1203,7 +1207,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onTryDemo, language,
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onEnter} 
-                  className="w-full py-4.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold uppercase tracking-widest transition-all relative z-10 border border-white/10"
+                  className="w-full py-4.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold uppercase tracking-widest transition-colors relative z-10 border border-white/10"
                 >
                   {isKo ? '영업 연구팀 상담 요청' : 'Consult with Campus Engineer'}
                 </motion.button>

@@ -82,16 +82,24 @@
       }
 
       @keyframes border-breathe {
-        0%, 100% { border-color: rgba(14,165,233,0.15); }
-        50% { border-color: rgba(14,165,233,0.35); }
+        0%, 100% { box-shadow: 0 0 0 1px rgba(14,165,233,0.12), 0 30px 70px rgba(0,0,0,0.8); }
+        50% { box-shadow: 0 0 0 1px rgba(14,165,233,0.4), 0 30px 70px rgba(0,0,0,0.8); }
       }
       .hero-card-border {
         animation: border-breathe 4s ease-in-out infinite;
       }
 
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.3s ease-out both;
+      }
+
       @keyframes cell-drop {
-        0% { transform: scale(0.75); opacity: 0; }
-        60% { transform: scale(1.05); }
+        0% { transform: scale(0.88); opacity: 0; }
+        70% { transform: scale(1.03); }
         100% { transform: scale(1); opacity: 1; }
       }
       .cell-drop {
@@ -117,6 +125,22 @@
       @media print {
         nav, .no-print, button { display: none !important; }
         body { background: white !important; color: black !important; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .animate-pulse-soft,
+        .animate-float,
+        .hero-card-border,
+        .timetable-pill,
+        .cell-drop,
+        .conflict-cell,
+        .animate-ping,
+        .animate-pulse,
+        .animate-fadeIn {
+          animation: none !important;
+          transition: none !important;
+        }
+        .timetable-pill { opacity: 1; transform: none; }
+        .cell-drop { opacity: 1; transform: scale(1); }
       }
     </style>
   <script type="importmap">
